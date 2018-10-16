@@ -106,11 +106,13 @@ public class MapEquationTest {
 
         final MapEquation algo = new MapEquationAlgorithm(graph).build();
 
+        System.out.println("algo.getMDL() = " + algo.getMDL());
         algo.move(id("b"), id("a"));
         algo.move(id("c"), id("a"));
 
         algo.move(id("e"), id("d"));
         algo.move(id("f"), id("d"));
+        System.out.println("algo.getMDL() = " + algo.getMDL());
 
 
 

@@ -4,8 +4,13 @@ import com.carrotsearch.hppc.IntScatterSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.ObjectArrayList;
 import com.carrotsearch.hppc.cursors.IntCursor;
+import com.carrotsearch.hppc.cursors.ObjectCursor;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
+import org.neo4j.graphalgo.core.utils.Pointer;
+
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * @author mknblch
@@ -20,30 +25,51 @@ public class MapEquation {
     private final int[] communities;
     private final int nodeCount;
 
+    private final double totalGraphPageRankEntropy;
+
     public MapEquation(Graph graph, NodeWeights pageRanks) {
         this.pageRanks = pageRanks;
         nodeCount = Math.toIntExact(graph.nodeCount());
         this.modules = new ObjectArrayList<>(nodeCount);
         this.communities = new int[nodeCount];
+        Arrays.setAll(communities, i -> i);
+        final Pointer.DoublePointer totalGraphPRE = Pointer.wrap(0.);
         graph.forEachNode(node -> {
+            totalGraphPRE.v += entropy(pageRanks.weightOf(node));
             modules.add(new Module(node));
             return true;
         });
+        this.totalGraphPageRankEntropy = totalGraphPRE.v;
     }
 
     public void move(int node, int community) {
         final int current = communities[node];
-        final Module module = modules.get(current);
-        if (module.nodes.size() <= 1) {
-            // rm this module since it is empty
-            modules.remove(current);
-        } else {
-            // rm node from module
-            module.remove(node);
-        }
-        // move node into new community
+        this.modules.get(current).remove(node);
         this.modules.get(community).add(node);
         this.communities[node] = community;
+    }
+
+    public double getMDL() {
+
+        double totalE = 0;
+        double totalQout = 0;
+        double totalQoutE = 0;
+
+        for(Iterator<ObjectCursor<Module>> it = this.modules.iterator(); it.hasNext(); ) {
+            final Module mod = it.next().value;
+            if (mod.nodes.isEmpty()) {
+                continue;
+            }
+            final double qout = mod.qOut();
+            totalQout += qout;
+            totalQoutE += entropy(qout);
+            totalE += entropy(mod.qp());
+        }
+
+        return entropy(totalQout) -
+                2 * totalQoutE -
+                totalGraphPageRankEntropy +
+                totalE;
     }
 
     private class Module {
@@ -73,7 +99,14 @@ public class MapEquation {
             return TAU * totalPageRank * 1. - ((double) nodes.size() / nodeCount);
         }
 
+        private double qp() {
+            return qOut() * totalPageRank;
+        }
+
         public double getCodeBookLength() {
+            if (nodes.size() == 0) {
+                return 0;
+            }
             final double qp = qOut() + totalPageRank;
             double e = 0;
             for (IntCursor node : nodes) {
@@ -88,7 +121,7 @@ public class MapEquation {
     }
 
     private static double log2(double v) {
-        return Math.log10(v) / LOG2;
+        return Math.log(v) / LOG2;
     }
 
 }

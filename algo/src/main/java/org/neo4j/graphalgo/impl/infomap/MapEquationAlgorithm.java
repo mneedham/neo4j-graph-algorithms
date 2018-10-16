@@ -1,12 +1,9 @@
 package org.neo4j.graphalgo.impl.infomap;
 
 import org.neo4j.graphalgo.api.Graph;
-import org.neo4j.graphalgo.api.NodeWeights;
-import org.neo4j.graphalgo.api.WeightMapping;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
-import org.neo4j.logging.Log;
 
 import java.util.stream.LongStream;
 
@@ -29,10 +26,8 @@ public class MapEquationAlgorithm extends Algorithm<MapEquationAlgorithm> {
                 .compute(ITERATIONS)
                 .result();
         getProgressLogger().log("finished calculating pageRanks");
-
         return new MapEquation(graph, result::score);
     }
-
 
     @Override
     public MapEquationAlgorithm me() {
