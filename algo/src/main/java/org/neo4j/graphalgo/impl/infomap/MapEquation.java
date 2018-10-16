@@ -6,9 +6,6 @@ import com.carrotsearch.hppc.ObjectArrayList;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
-import org.neo4j.graphalgo.core.utils.Pointer;
-
-import java.util.Iterator;
 
 /**
  * @author mknblch
@@ -18,14 +15,12 @@ public class MapEquation {
     public static final double TAU = .15;
     public static final double LOG2 = Math.log(2);
 
-    private final Graph graph;
     private final NodeWeights pageRanks;
     private final ObjectArrayList<Module> modules;
     private final int[] communities;
     private final int nodeCount;
 
     public MapEquation(Graph graph, NodeWeights pageRanks) {
-        this.graph = graph;
         this.pageRanks = pageRanks;
         nodeCount = Math.toIntExact(graph.nodeCount());
         this.modules = new ObjectArrayList<>(nodeCount);
@@ -44,51 +39,47 @@ public class MapEquation {
             modules.remove(current);
         } else {
             // rm node from module
-            module.nodes.removeAll(node);
+            module.remove(node);
         }
         // move node into new community
-        this.modules.get(community).nodes.add(node);
+        this.modules.get(community).add(node);
+        this.communities[node] = community;
     }
 
     private class Module {
 
-        final IntSet nodes;
-
-        // todo inline
-        double totalPageRank;
+        private final IntSet nodes;
+        private double totalPageRank;
 
         private Module(int startNode) {
             this.nodes = new IntScatterSet();
             this.nodes.add(startNode);
-
+            this.totalPageRank = pageRanks.weightOf(startNode);
         }
 
-        double pageRank() {
-            double totalPr = 0.;
-            for (IntCursor c : nodes) {
-                totalPr += pageRanks.weightOf(c.value);
+        public void add(int node) {
+            this.nodes.add(node);
+            this.totalPageRank += pageRanks.weightOf(node);
+        }
+
+        public void remove(int node) {
+            if (nodes.removeAll(node) == 0) {
+                return;
             }
-            return totalPr;
+            this.totalPageRank -= pageRanks.weightOf(node);
         }
 
-
-        double proportion() {
-            return 1. - ((double) nodes.size() / graph.nodeCount());
+        public double qOut() {
+            return TAU * totalPageRank * 1. - ((double) nodes.size() / nodeCount);
         }
 
-        double qOut(double totalPr) {
-            return TAU * totalPr * proportion();
-        }
-
-        double codeBookLength() {
-            final double totalPr = pageRank();
-            final double qout = qOut(totalPr);
-            final double qp = qout * totalPr;
+        public double getCodeBookLength() {
+            final double qp = qOut() + totalPageRank;
             double e = 0;
-            for(Iterator<IntCursor> i = nodes.iterator(); i.hasNext();) {
-                e += entropy(pageRanks.weightOf(i.next().value) / qp);
+            for (IntCursor node : nodes) {
+                e += entropy(pageRanks.weightOf(node.value) / qp);
             }
-            return qp * (-entropy(qout / qp) - e);
+            return qp * (-entropy(qOut() / qp) - e);
         }
     }
 
