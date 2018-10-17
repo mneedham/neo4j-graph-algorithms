@@ -106,16 +106,33 @@ public class MapEquationTest {
 
         final MapEquation algo = new MapEquationAlgorithm(graph).build();
 
-        System.out.println("algo.getMDL() = " + algo.getMDL());
+        info(algo);
+
         algo.move(id("b"), id("a"));
         algo.move(id("c"), id("a"));
 
         algo.move(id("e"), id("d"));
         algo.move(id("f"), id("d"));
+
+        info(algo);
+
+        algo.move(id("e"), id("a"));
+        algo.move(id("f"), id("a"));
+        algo.move(id("d"), id("a"));
+
+        info(algo);
+
+    }
+
+    private void info(MapEquation algo) {
         System.out.println("algo.getMDL() = " + algo.getMDL());
-
-
-
+        System.out.println("algo.getIndexCodeLength() = " + algo.getIndexCodeLength());
+        System.out.println("algo.getModuleCodeLength() = " + algo.getModuleCodeLength());
+        System.out.println("------------------------");
+        algo.forEachModule(m -> {
+//            System.out.println("\tm.qOut() = " + m.qOut());
+            System.out.println("\tm.getCodeBookLength() = " + m.getCodeBookLength());
+        });
     }
 
     private int id(String name) {

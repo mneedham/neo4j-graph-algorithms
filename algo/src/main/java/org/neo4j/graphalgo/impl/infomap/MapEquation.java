@@ -11,6 +11,7 @@ import org.neo4j.graphalgo.core.utils.Pointer;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.function.Consumer;
 
 /**
  * @author mknblch
@@ -33,13 +34,13 @@ public class MapEquation {
         this.modules = new ObjectArrayList<>(nodeCount);
         this.communities = new int[nodeCount];
         Arrays.setAll(communities, i -> i);
-        final Pointer.DoublePointer totalGraphPRE = Pointer.wrap(0.);
+        final double[] d = {0.};
         graph.forEachNode(node -> {
-            totalGraphPRE.v += entropy(pageRanks.weightOf(node));
+            d[0] += entropy(pageRanks.weightOf(node));
             modules.add(new Module(node));
             return true;
         });
-        this.totalGraphPageRankEntropy = totalGraphPRE.v;
+        this.totalGraphPageRankEntropy = d[0];
     }
 
     public void move(int node, int community) {
@@ -72,42 +73,68 @@ public class MapEquation {
                 totalE;
     }
 
-    private class Module {
+    public void forEachModule(Consumer<Module> moduleConsumer) {
+        for (ObjectCursor<Module> module : modules) {
+            if (module.value.nodes.isEmpty()) {
+                continue;
+            }
+            moduleConsumer.accept(module.value);
+        }
+    }
+
+    public double getIndexCodeLength() {
+        if (modules.size() == 1) {
+            return 0;
+        }
+        final double[] v = {0., 0.}; // {totalQout, entropy}
+        forEachModule(m -> v[0] += m.qOut());
+        forEachModule(m -> v[1] += entropy(m.qOut() / v[0]));
+        System.out.println("Arrays.toString(v) = " + Arrays.toString(v));
+        return v[0] * -v[1];
+    }
+
+    public double getModuleCodeLength() {
+        final Pointer.DoublePointer p = Pointer.wrap(0.);
+        forEachModule(m -> p.v += m.getCodeBookLength());
+        return p.v;
+    }
+
+    public class Module {
 
         private final IntSet nodes;
-        private double totalPageRank;
+        private double modulePageRank;
 
         private Module(int startNode) {
             this.nodes = new IntScatterSet();
             this.nodes.add(startNode);
-            this.totalPageRank = pageRanks.weightOf(startNode);
+            this.modulePageRank = pageRanks.weightOf(startNode);
         }
 
         public void add(int node) {
             this.nodes.add(node);
-            this.totalPageRank += pageRanks.weightOf(node);
+            this.modulePageRank += pageRanks.weightOf(node);
         }
 
         public void remove(int node) {
             if (nodes.removeAll(node) == 0) {
                 return;
             }
-            this.totalPageRank -= pageRanks.weightOf(node);
+            this.modulePageRank -= pageRanks.weightOf(node);
         }
 
-        public double qOut() {
-            return TAU * totalPageRank * 1. - ((double) nodes.size() / nodeCount);
+        double qOut() {
+            return TAU * modulePageRank * (1. - ((double) nodes.size() / nodeCount));
         }
 
-        private double qp() {
-            return qOut() * totalPageRank;
+        double qp() {
+            return qOut() * modulePageRank;
         }
 
         public double getCodeBookLength() {
             if (nodes.size() == 0) {
                 return 0;
             }
-            final double qp = qOut() + totalPageRank;
+            final double qp = qOut() + modulePageRank;
             double e = 0;
             for (IntCursor node : nodes) {
                 e += entropy(pageRanks.weightOf(node.value) / qp);
