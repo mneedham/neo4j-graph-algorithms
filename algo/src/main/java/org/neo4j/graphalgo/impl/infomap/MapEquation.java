@@ -13,13 +13,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.Consumer;
 
+import static org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm.entropy;
+
 /**
  * @author mknblch
  */
 public class MapEquation {
-
-    public static final double TAU = .15;
-    public static final double LOG2 = Math.log(2);
 
     private final NodeWeights pageRanks;
     private final ObjectArrayList<Module> modules;
@@ -123,7 +122,7 @@ public class MapEquation {
         }
 
         double qOut() {
-            return TAU * modulePageRank * (1. - ((double) nodes.size() / nodeCount));
+            return MapEquationAlgorithm.TAU * modulePageRank * (1. - ((double) nodes.size() / nodeCount));
         }
 
         double qp() {
@@ -141,14 +140,6 @@ public class MapEquation {
             }
             return qp * (-entropy(qOut() / qp) - e);
         }
-    }
-
-    private static double entropy(double v) {
-        return v != .0 ? v * log2(v) : 0.;
-    }
-
-    private static double log2(double v) {
-        return Math.log(v) / LOG2;
     }
 
 }

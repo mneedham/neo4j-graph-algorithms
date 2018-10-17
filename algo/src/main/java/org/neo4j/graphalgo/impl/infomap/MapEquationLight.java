@@ -1,25 +1,16 @@
 package org.neo4j.graphalgo.impl.infomap;
 
-import com.carrotsearch.hppc.IntScatterSet;
-import com.carrotsearch.hppc.IntSet;
-import com.carrotsearch.hppc.ObjectArrayList;
-import com.carrotsearch.hppc.cursors.IntCursor;
-import com.carrotsearch.hppc.cursors.ObjectCursor;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
-import org.neo4j.graphalgo.core.utils.Pointer;
 
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.function.Consumer;
+
+import static org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm.entropy;
 
 /**
  * @author mknblch
  */
 public class MapEquationLight {
-
-    public static final double TAU = .15;
-    public static final double LOG2 = Math.log(2);
 
     private final NodeWeights pageRanks;
     private final int nodeCount;
@@ -109,19 +100,11 @@ public class MapEquationLight {
     }
 
     private double qOut(int node) {
-        return TAU * modulePageRank[node] * (1. - ((double) nodes[node] / nodeCount));
+        return MapEquationAlgorithm.TAU * modulePageRank[node] * (1. - ((double) nodes[node] / nodeCount));
     }
 
     private double qp(int node) {
         return qOut(node) * modulePageRank[node];
-    }
-
-    private static double entropy(double v) {
-        return v != .0 ? v * log2(v) : 0.;
-    }
-
-    private static double log2(double v) {
-        return Math.log(v) / LOG2;
     }
 
 }
