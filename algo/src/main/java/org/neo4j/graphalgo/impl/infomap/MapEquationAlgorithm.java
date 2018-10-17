@@ -29,6 +29,15 @@ public class MapEquationAlgorithm extends Algorithm<MapEquationAlgorithm> {
         return new MapEquation(graph, result::score);
     }
 
+    public MapEquationLight light() {
+        getProgressLogger().log("calculating pageRanks..");
+        final PageRankResult result = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
+                .compute(ITERATIONS)
+                .result();
+        getProgressLogger().log("finished calculating pageRanks");
+        return new MapEquationLight(graph, result::score);
+    }
+
     @Override
     public MapEquationAlgorithm me() {
         return this;
