@@ -32,6 +32,7 @@ import org.neo4j.graphalgo.core.utils.RawValues;
 import org.neo4j.graphalgo.impl.infomap.MapEquation;
 import org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm;
 import org.neo4j.graphalgo.impl.infomap.MapEquationLight;
+import org.neo4j.graphalgo.impl.infomap.MapEquationOptimization;
 import org.neo4j.graphalgo.impl.pagerank.PageRank;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
@@ -149,6 +150,30 @@ public class MapEquationTest {
 
     }
 
+
+    @Test
+    public void testOpt() throws Exception {
+
+        final MapEquationOptimization algo = new MapEquationAlgorithm(graph).opt();
+
+        info(algo);
+
+        algo.move(id("b"), id("a"));
+        algo.move(id("c"), id("a"));
+
+        algo.move(id("e"), id("d"));
+        algo.move(id("f"), id("d"));
+
+        info(algo);
+
+        algo.move(id("e"), id("a"));
+        algo.move(id("f"), id("a"));
+        algo.move(id("d"), id("a"));
+
+        info(algo);
+
+    }
+
     private void info(MapEquation algo) {
         System.out.println("algo.getMDL() = " + algo.getMDL());
         System.out.println("algo.getIndexCodeLength() = " + algo.getIndexCodeLength());
@@ -160,6 +185,11 @@ public class MapEquationTest {
     }
 
     private void info(MapEquationLight algo) {
+        System.out.println("algo.getMDL() = " + algo.getMDL());
+        System.out.println("algo.getIndexCodeLength() = " + algo.getIndexCodeLength());
+    }
+
+    private void info(MapEquationOptimization algo) {
         System.out.println("algo.getMDL() = " + algo.getMDL());
         System.out.println("algo.getIndexCodeLength() = " + algo.getIndexCodeLength());
     }
