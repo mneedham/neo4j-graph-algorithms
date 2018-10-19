@@ -18,60 +18,40 @@
  */
 package org.neo4j.graphalgo.impl;
 
-import com.carrotsearch.hppc.LongArrayList;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.graphalgo.TestProgressLogger;
 import org.neo4j.graphalgo.api.Graph;
-import org.neo4j.graphalgo.api.RelationshipConsumer;
-import org.neo4j.graphalgo.api.WeightMapping;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.huge.HugeGraphFactory;
-import org.neo4j.graphalgo.core.utils.RawValues;
 import org.neo4j.graphalgo.impl.infomap.MapEquation;
-import org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm;
-import org.neo4j.graphalgo.impl.infomap.MapEquationLight;
-import org.neo4j.graphalgo.impl.infomap.MapEquationOptimization;
-import org.neo4j.graphalgo.impl.pagerank.PageRank;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
-import org.neo4j.graphalgo.impl.pagerank.PageRankVariant;
-import org.neo4j.graphalgo.impl.yens.Dijkstra;
-import org.neo4j.graphalgo.impl.yens.WeightedPath;
-import org.neo4j.graphalgo.impl.yens.YensKShortestPaths;
-import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.DoubleConsumer;
 import java.util.stream.LongStream;
 
-import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.eq;
-import static org.mockito.Mockito.*;
 
 /**
  * Graph:
  *
  *        (b)        (e)
- *       /  \       /  \
+ *       /  \       /  \     (x)
  *     (a)--(c)---(d)--(f)
  *
  * @author mknblch
  */
 public class MapEquationTest {
 
-    public static final double DELTA = 0.001;
-
     @ClassRule
     public static ImpermanentDatabaseRule db = new ImpermanentDatabaseRule();
 
     private static Graph graph;
+    private static PageRankResult pageRankResult;
 
     @BeforeClass
     public static void setupGraph() throws KernelException {
@@ -83,6 +63,7 @@ public class MapEquationTest {
                         "CREATE (d:Node {name:'d'})\n" +
                         "CREATE (e:Node {name:'e'})\n" +
                         "CREATE (f:Node {name:'f'})\n" +
+//                        "CREATE (x:Node {name:'x'})\n" + // TODO
                         "CREATE" +
                         " (a)-[:TYPE]->(b),\n" +
                         " (a)-[:TYPE]->(c),\n" +
@@ -102,112 +83,53 @@ public class MapEquationTest {
                 .withoutNodeProperties()
                 .asUndirected(true)
                 .load(HugeGraphFactory.class);
+
+        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
+                .compute(10)
+                .result();
     }
 
     @Test
-    public void test() throws Exception {
+    public void testClustering() throws Exception {
 
-        final MapEquation algo = new MapEquationAlgorithm(graph).build();
+        final MapEquation algo = new MapEquation(graph, pageRankResult::score);
 
         info(algo);
 
+        algo.compute(10, false);
+
+
+        info(algo);
+
+    }
+
+    @Test
+    public void testMove() throws Exception {
+
+
+        final MapEquation algo = new MapEquation(graph, pageRankResult::score);
+
+        info(algo);
         algo.move(id("b"), id("a"));
         algo.move(id("c"), id("a"));
 
+        info(algo);
         algo.move(id("e"), id("d"));
         algo.move(id("f"), id("d"));
-
         info(algo);
 
+        algo.move(id("d"), id("a"));
         algo.move(id("e"), id("a"));
         algo.move(id("f"), id("a"));
-        algo.move(id("d"), id("a"));
-
-        info(algo);
-
-    }
-
-
-    @Test
-    public void testLight() throws Exception {
-
-        final MapEquationLight algo = new MapEquationAlgorithm(graph).light();
-
-        info(algo);
-
-        algo.move(id("b"), id("a"));
-        algo.move(id("c"), id("a"));
-
-        algo.move(id("e"), id("d"));
-        algo.move(id("f"), id("d"));
-
-        info(algo);
-
-        algo.move(id("e"), id("a"));
-        algo.move(id("f"), id("a"));
-        algo.move(id("d"), id("a"));
-
-        info(algo);
-
-    }
-
-
-    @Test
-    public void testOpt() throws Exception {
-
-        final MapEquationOptimization algo = new MapEquationAlgorithm(graph).opt();
-
-        info(algo);
-
-        algo.move(id("b"), id("a"));
-        algo.move(id("c"), id("a"));
-
-        algo.move(id("e"), id("d"));
-        algo.move(id("f"), id("d"));
-
-        info(algo);
-
-        algo.move(id("e"), id("a"));
-        algo.move(id("f"), id("a"));
-        algo.move(id("d"), id("a"));
-
-        info(algo);
-
-    }
-
-    @Test
-    public void testOpt2() throws Exception {
-
-        final MapEquationOptimization algo = new MapEquationAlgorithm(graph).opt();
-
-        info(algo);
-
-        algo.compute();
-
-        System.out.println(Arrays.toString(algo.getCommunities()));
-
         info(algo);
 
     }
 
     private void info(MapEquation algo) {
-        System.out.println("algo.getMDL() = " + algo.getMDL());
-        System.out.println("algo.getIndexCodeLength() = " + algo.getIndexCodeLength());
-        System.out.println("algo.getModuleCodeLength() = " + algo.getModuleCodeLength());
-        algo.forEachModule(m -> {
-//            System.out.println("\tm.qOut() = " + m.qOut());
-            System.out.println("\tm.getCodeBookLength() = " + m.getCodeBookLength());
-        });
-    }
-
-    private void info(MapEquationLight algo) {
-        System.out.println("algo.getMDL() = " + algo.getMDL());
-        System.out.println("algo.getIndexCodeLength() = " + algo.getIndexCodeLength());
-    }
-
-    private void info(MapEquationOptimization algo) {
-        System.out.println("algo.getMDL() = " + algo.getMDL());
-        System.out.println("algo.getIndexCodeLength() = " + algo.getIndexCodeLength());
+        System.out.printf("%s | mdl: %.2f | clen: %.2f%n",
+                Arrays.toString(algo.getCommunities()),
+                algo.getMDL(),
+                algo.getIndexCodeLength());
     }
 
     private int id(String name) {
