@@ -45,6 +45,7 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.DoubleConsumer;
@@ -169,6 +170,21 @@ public class MapEquationTest {
         algo.move(id("e"), id("a"));
         algo.move(id("f"), id("a"));
         algo.move(id("d"), id("a"));
+
+        info(algo);
+
+    }
+
+    @Test
+    public void testOpt2() throws Exception {
+
+        final MapEquationOptimization algo = new MapEquationAlgorithm(graph).opt();
+
+        info(algo);
+
+        algo.compute();
+
+        System.out.println(Arrays.toString(algo.getCommunities()));
 
         info(algo);
 

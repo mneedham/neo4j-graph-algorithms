@@ -1,10 +1,15 @@
 package org.neo4j.graphalgo.impl.infomap;
 
+import org.neo4j.collection.primitive.PrimitiveIntIterator;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
+import org.neo4j.graphalgo.core.sources.ShuffledNodeIterator;
+import org.neo4j.graphalgo.core.utils.Pointer;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.function.BiConsumer;
+import java.util.function.IntConsumer;
 
 import static org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm.entropy;
 
@@ -13,6 +18,7 @@ import static org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm.entropy;
  */
 public class MapEquationOptimization {
 
+    private final Graph graph;
     private final NodeWeights pageRanks;
     private final int nodeCount;
     private final double totalGraphPageRankEntropy;
@@ -25,6 +31,7 @@ public class MapEquationOptimization {
     private double totalQEntropy = 0;
 
     public MapEquationOptimization(Graph graph, NodeWeights pageRanks) {
+        this.graph = graph;
         this.pageRanks = pageRanks;
         nodeCount = Math.toIntExact(graph.nodeCount());
         this.communities = new int[nodeCount];
@@ -47,6 +54,47 @@ public class MapEquationOptimization {
         this.totalQEntropy = d[2];
         this.totalQPEntropy = d[3];
     }
+
+    public void compute() {
+
+        final PrimitiveIntIterator it = new ShuffledNodeIterator(nodeCount).nodeIterator();
+
+        for (; it.hasNext();) {
+            final int node = it.next();
+            final Pointer.DoublePointer bestMdl = Pointer.wrap(deltaMDL(node, communities[node]));
+            final Pointer.IntPointer bestCommunity = Pointer.wrap(communities[node]);
+            forEachCommunity(node, community -> {
+                final double v = deltaMDL(node, community);
+                if (v > bestMdl.v) {
+                    bestMdl.v = v;
+                    bestCommunity.v = community;
+                }
+            });
+            System.out.println("node = " + node);
+            System.out.println("bestCommunity = " + bestCommunity.v);
+            System.out.println("bestMdl = " + bestMdl.v);
+            move(node, bestCommunity.v);
+            System.out.println(Arrays.toString(communities));
+        }
+    }
+
+    public int[] getCommunities() {
+        return communities;
+    }
+
+    public void forEachCommunity(int node, IntConsumer communityConsumer) {
+        final BitSet set = new BitSet();
+        graph.forEachOutgoing(node, (s, t, r) -> {
+            final int targetCommunity = communities[t];
+            if (set.get(targetCommunity)) {
+                return true;
+            }
+            set.set(targetCommunity);
+            communityConsumer.accept(targetCommunity);
+            return true;
+        });
+    }
+
 
     public void move(int node, int community) {
         final int c = communities[node];
@@ -76,7 +124,6 @@ public class MapEquationOptimization {
                 totalGraphPageRankEntropy +
                 totalQPEntropy;
     }
-
 
     double deltaMDL(int node, int community) {
 
