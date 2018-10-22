@@ -13,8 +13,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.Consumer;
 
-import static org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm.entropy;
-
 /**
  * @author mknblch
  */
@@ -42,6 +40,10 @@ public class MapEquationLight {
             return true;
         });
         this.totalGraphPageRankEntropy = d[0];
+    }
+
+    public int[] getCommunities() {
+        return communities;
     }
 
     public void move(int node, int community) {
@@ -87,7 +89,7 @@ public class MapEquationLight {
         final double[] v = {0., 0.}; // {totalQout, entropy}
         forEachModule(m -> v[0] += m.qOut());
         forEachModule(m -> v[1] += entropy(m.qOut() / v[0]));
-        System.out.println("Arrays.toString(v) = " + Arrays.toString(v));
+//        System.out.println("Arrays.toString(v) = " + Arrays.toString(v));
         return v[0] * -v[1];
     }
 
@@ -97,7 +99,9 @@ public class MapEquationLight {
         return p.v;
     }
 
+
     public class Module {
+
         private final IntSet nodes;
         private double modulePageRank;
 
@@ -119,8 +123,12 @@ public class MapEquationLight {
             this.modulePageRank -= pageRanks.weightOf(node);
         }
 
+        double p() {
+            return 1. - ((double) nodes.size() / nodeCount);
+        }
+
         double qOut() {
-            return TAU * modulePageRank * (1. - ((double) nodes.size() / nodeCount));
+            return TAU * modulePageRank * p();
         }
 
         double qp() {
