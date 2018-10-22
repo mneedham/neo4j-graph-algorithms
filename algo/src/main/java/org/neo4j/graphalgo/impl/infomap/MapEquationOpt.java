@@ -13,13 +13,12 @@ import org.neo4j.graphalgo.impl.Algorithm;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
-import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
  * @author mknblch
  */
-public class MapEquation extends Algorithm<MapEquation> {
+public class MapEquationOpt extends Algorithm<MapEquationOpt> {
 
     private static final double LOG2 = Math.log(2);
     public static final double TAU = .15; // taken from pageRank paper
@@ -43,7 +42,7 @@ public class MapEquation extends Algorithm<MapEquation> {
     private double totalQEntropy = 0;
     private double totalQPEntropy = 0;
 
-    public MapEquation(Graph graph, NodeWeights pageRanks) {
+    public MapEquationOpt(Graph graph, NodeWeights pageRanks) {
         this.graph = graph;
         this.pageRanks = pageRanks;
         nodeCount = Math.toIntExact(graph.nodeCount());
@@ -65,14 +64,14 @@ public class MapEquation extends Algorithm<MapEquation> {
 
     }
 
-    public MapEquation compute(int iterations, boolean shuffled) {
+    public MapEquationOpt compute(int iterations, boolean shuffled) {
         double mdl = getMDL();
         for (int i = 0; i < iterations; i++) {
             final PrimitiveIntIterator it = shuffled ? new ShuffledNodeIterator(nodeCount).nodeIterator() :
                     graph.nodeIterator();
             for (; it.hasNext(); ) {
                 final int node = it.next();
-                final Pointer.DoublePointer bestMdl = Pointer.wrap(deltaMDL(node, communities[node]));
+                final Pointer.DoublePointer bestMdl = Pointer.wrap(0.) ; //deltaMDL(node, communities[node]));
                 final Pointer.IntPointer bestCommunity = Pointer.wrap(communities[node]);
                 forEachCommunity(node, community -> {
                     final double v = deltaMDL(node, community);
@@ -127,12 +126,12 @@ public class MapEquation extends Algorithm<MapEquation> {
     }
 
     @Override
-    public MapEquation me() {
+    public MapEquationOpt me() {
         return this;
     }
 
     @Override
-    public MapEquation release() {
+    public MapEquationOpt release() {
         communities = null;
         modulePageRank = null;
         nodes = null;

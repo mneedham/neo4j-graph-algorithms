@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.huge.HugeGraphFactory;
-import org.neo4j.graphalgo.impl.infomap.MapEquation;
+import org.neo4j.graphalgo.impl.infomap.MapEquationOpt;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
 import org.neo4j.graphdb.Node;
@@ -84,7 +84,7 @@ public class MapEquationTest {
                 .asUndirected(true)
                 .load(HugeGraphFactory.class);
 
-        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
+        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquationOpt.TAU, LongStream.empty())
                 .compute(10)
                 .result();
     }
@@ -92,7 +92,7 @@ public class MapEquationTest {
     @Test
     public void testClustering() throws Exception {
 
-        final MapEquation algo = new MapEquation(graph, pageRankResult::score);
+        final MapEquationOpt algo = new MapEquationOpt(graph, pageRankResult::score);
 
         info(algo);
 
@@ -107,7 +107,7 @@ public class MapEquationTest {
     public void testMove() throws Exception {
 
 
-        final MapEquation algo = new MapEquation(graph, pageRankResult::score);
+        final MapEquationOpt algo = new MapEquationOpt(graph, pageRankResult::score);
 
         info(algo);
         algo.move(id("b"), id("a"));
@@ -125,7 +125,7 @@ public class MapEquationTest {
 
     }
 
-    private void info(MapEquation algo) {
+    private void info(MapEquationOpt algo) {
         System.out.printf("%s | mdl: %.2f | clen: %.2f%n",
                 Arrays.toString(algo.getCommunities()),
                 algo.getMDL(),
