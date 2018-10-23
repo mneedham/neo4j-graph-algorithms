@@ -21,18 +21,23 @@ package org.neo4j.graphalgo.impl;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.neo4j.graphalgo.TestProgressLogger;
 import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.huge.HugeGraphFactory;
-import org.neo4j.graphalgo.impl.infomap.MapEquationLight;
+import org.neo4j.graphalgo.core.utils.ProgressLogger;
+import org.neo4j.graphalgo.impl.infomap.MapEquation;
 import org.neo4j.graphalgo.impl.infomap.MapEquationOpt;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
+import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 import java.util.stream.LongStream;
 
 import static org.mockito.AdditionalMatchers.eq;
@@ -53,6 +58,7 @@ public class MapEquationTest {
 
     private static Graph graph;
     private static PageRankResult pageRankResult;
+    private static RelationshipWeights normalizedWeights;
 
     @BeforeClass
     public static void setupGraph() throws KernelException {
@@ -64,13 +70,13 @@ public class MapEquationTest {
                         "CREATE (d:Node {name:'d'})\n" +
                         "CREATE (e:Node {name:'e'})\n" +
                         "CREATE (f:Node {name:'f'})\n" +
-                        "CREATE (x:Node {name:'x'})\n" + // TODO
+                        "CREATE (x:Node {name:'x'})\n" +
                         "CREATE" +
-                        " (a)-[:TYPE]->(b),\n" +
+                        " (b)-[:TYPE]->(a),\n" +
                         " (a)-[:TYPE]->(c),\n" +
-                        " (b)-[:TYPE]->(c),\n" +
+                        " (c)-[:TYPE]->(a),\n" +
 
-                        " (c)-[:TYPE]->(d),\n" +
+                        " (d)-[:TYPE]->(c),\n" +
 
                         " (d)-[:TYPE]->(e),\n" +
                         " (d)-[:TYPE]->(f),\n" +
@@ -88,72 +94,53 @@ public class MapEquationTest {
         pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquationOpt.TAU, LongStream.empty())
                 .compute(10)
                 .result();
+
+        normalizedWeights = (sourceNodeId, targetNodeId) -> {
+            final int degree = graph.degree(sourceNodeId, Direction.OUTGOING);
+            if (degree == 0) {
+                return 0;
+            }
+            return 1. / degree;
+        };
+    }
+
+
+    @Test
+    public void testMove() throws Exception {
+
+        final MapEquation algo = new MapEquation(graph, pageRankResult::score, normalizedWeights);
+
+        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength(), algo.getModuleCodeLength());
+        algo.move(id("b"), id("a"));
+        algo.move(id("c"), id("a"));
+
+        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength(), algo.getModuleCodeLength());
+        algo.move(id("e"), id("d"));
+        algo.move(id("f"), id("d"));
+        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength(), algo.getModuleCodeLength());
+
+        algo.move(id("d"), id("a"));
+        algo.move(id("e"), id("a"));
+        algo.move(id("f"), id("a"));
+        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength(), algo.getModuleCodeLength());
     }
 
     @Test
     public void testClustering() throws Exception {
 
-        final MapEquationOpt algo = new MapEquationOpt(graph, pageRankResult::score);
+        final MapEquation algo = new MapEquation(graph, pageRankResult::score, normalizedWeights);
+        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength(), algo.getModuleCodeLength());
 
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-
-        algo.compute(10, false);
-
-
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-
+        algo.compute(10, true);
+        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength(), algo.getModuleCodeLength());
     }
 
-    @Test
-    public void testMove() throws Exception {
-
-
-        final MapEquationOpt algo = new MapEquationOpt(graph, pageRankResult::score);
-
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-        algo.move(id("b"), id("a"));
-        algo.move(id("c"), id("a"));
-
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-        algo.move(id("e"), id("d"));
-        algo.move(id("f"), id("d"));
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-
-        algo.move(id("d"), id("a"));
-        algo.move(id("e"), id("a"));
-        algo.move(id("f"), id("a"));
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-
-    }
-
-    @Test
-    public void testLight() throws Exception {
-
-        final MapEquationLight algo = new MapEquationLight(graph, pageRankResult::score);
-
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-        algo.move(id("b"), id("a"));
-        algo.move(id("c"), id("a"));
-
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-        algo.move(id("e"), id("d"));
-        algo.move(id("f"), id("d"));
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-
-        algo.move(id("d"), id("a"));
-        algo.move(id("e"), id("a"));
-        algo.move(id("f"), id("a"));
-        info(algo.getCommunities(), algo.getMDL(), algo.getIndexCodeLength());
-
-        System.out.println("algo.getModuleCodeLength() = " + algo.getModuleCodeLength());
-
-    }
-
-    private void info(int[] communities, double mdl, double indexCodeLength) {
-        System.out.printf("%s | mdl: %.2f | clen: %.2f%n",
+    private void info(int[] communities, double mdl, double indexCodeLength, double moduleCodeLength) {
+        System.out.printf("%s | mdl: %5.2f | icl: %5.2f | mcl: %5.2f%n",
                 Arrays.toString(communities),
                 mdl,
-                indexCodeLength);
+                indexCodeLength,
+                moduleCodeLength);
     }
 
     private int id(String name) {
