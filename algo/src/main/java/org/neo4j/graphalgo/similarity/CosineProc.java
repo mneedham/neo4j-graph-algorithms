@@ -82,7 +82,7 @@ public class CosineProc extends SimilarityProc {
             Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
 
             return stream.map(SimilarityResult::squareRooted);
-        }
+        } 
     }
 
     @Procedure(name = "algo.similarity.cosine", mode = Mode.WRITE)
