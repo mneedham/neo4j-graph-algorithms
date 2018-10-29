@@ -4,6 +4,8 @@ import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
+import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
+import org.neo4j.graphalgo.core.utils.NormalizedRelationshipWeights;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.impl.infomap.MapEquation;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
@@ -51,21 +53,11 @@ public class MapEquationProc {
                 .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                 .load(config.getGraphImpl());
 
-
         final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
-                .compute(config.get("pr_iterations", 10))
+                .compute(config.getNumber("pr_iterations", 10).intValue())
                 .result();
 
-        // TODO: normalize based on sum of weights of a node
-        final RelationshipWeights normalizedWeights = (sourceNodeId, targetNodeId) -> {
-            final int degree = graph.degree(sourceNodeId, Direction.OUTGOING);
-            if (degree == 0) {
-                return 0;
-            }
-            return 1. / degree;
-        };
-
-        final int[] communities = new MapEquation(graph, pageRankResult::score, normalizedWeights)
+        final int[] communities = new MapEquation(graph, pageRankResult::score, new DegreeNormalizedRelationshipWeights(graph))
                 .compute(config.getIterations(10), config.get("shuffle", true))
                 .getCommunities();
 

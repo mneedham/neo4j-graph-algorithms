@@ -11,6 +11,7 @@ import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.sources.ShuffledNodeIterator;
 import org.neo4j.graphalgo.core.utils.Pointer;
+import org.neo4j.graphalgo.core.utils.ProgressLogger;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphdb.Direction;
 
@@ -25,17 +26,19 @@ import java.util.function.IntConsumer;
  */
 public class MapEquation extends Algorithm<MapEquation> {
 
+    public static final double TAU = .15; // from pageRank paper
     private static final double LOG2 = Math.log(2);
-    public static final double TAU = .15; // taken from pageRank paper
 
     private final NodeWeights pageRanks;
     private final int nodeCount;
     private final RelationshipWeights weights;
     private final double totalGraphPageRankEntropy;
     private final Graph graph;
+    private Direction direction = Direction.OUTGOING;
 
     private ObjectArrayList<Module> modules;
     private int[] communities;
+    private int iterations = 0;
 
     public MapEquation(Graph graph, NodeWeights pageRanks, RelationshipWeights normalizedWeights) {
         this.graph = graph;
@@ -54,8 +57,9 @@ public class MapEquation extends Algorithm<MapEquation> {
         this.totalGraphPageRankEntropy = d[0];
     }
 
-    public int[] getCommunities() {
-        return communities;
+    public MapEquation withDirection(Direction direction) {
+        this.direction = direction;
+        return this;
     }
 
     public void move(int node, int community) {
@@ -65,9 +69,18 @@ public class MapEquation extends Algorithm<MapEquation> {
         this.communities[node] = community;
     }
 
+    public int getIterations() {
+        return iterations;
+    }
+
+    public int[] getCommunities() {
+        return communities;
+    }
+
     public MapEquation compute(int iterations, boolean shuffled) {
-        for (int i = 0; i < iterations; i++) {
-            getProgressLogger().log("Iteration " + i);
+        final ProgressLogger progressLogger = getProgressLogger();
+        for (this.iterations = 0; this.iterations < iterations; this.iterations++) {
+            progressLogger.log("Iteration " + this.iterations);
             final PrimitiveIntIterator it = shuffled ?
                     new ShuffledNodeIterator(nodeCount).nodeIterator() :
                     graph.nodeIterator();
@@ -76,6 +89,50 @@ public class MapEquation extends Algorithm<MapEquation> {
             }
         }
         return this;
+    }
+
+    public double delta(int node, int community) {
+        final int p = communities[node];
+        move(node, community);
+        final double mdl = getMDL();
+        move(node, p);
+        return mdl;
+    }
+
+    public double getMDL() {
+        double totalE = .0;
+        double totalQout = .0;
+        double totalQoutE = .0;
+        for (Iterator<ObjectCursor<Module>> it = this.modules.iterator(); it.hasNext(); ) {
+            final Module mod = it.next().value;
+            if (mod.nodes.isEmpty()) {
+                continue;
+            }
+            final double qOut = mod.qOut();
+            totalQout += qOut;
+            totalQoutE += entropy(qOut);
+            totalE += entropy(mod.modulePageRank + qOut);
+        }
+        return entropy(totalQout)
+                - 2 * totalQoutE
+                - totalGraphPageRankEntropy
+                + totalE;
+    }
+
+    public double getIndexCodeLength() {
+        if (modules.size() == 1) {
+            return 0;
+        }
+        final double[] v = {0., 0.}; // {totalQout, entropy}
+        forEachModule(m -> v[0] += m.qOut());
+        forEachModule(m -> v[1] += entropy(m.qOut() / v[0]));
+        return v[0] * -v[1];
+    }
+
+    public double getModuleCodeLength() {
+        final Pointer.DoublePointer p = Pointer.wrap(0.);
+        forEachModule(m -> p.v += m.getCodeBookLength());
+        return p.v;
     }
 
     @Override
@@ -106,7 +163,6 @@ public class MapEquation extends Algorithm<MapEquation> {
                 }
             });
             if (communities[node] != bestCommunity.v) {
-//                System.out.println("move " + node + " from community " + communities[node] + " into community " + bestCommunity.v);
                 move(node, bestCommunity.v);
                 change |= true;
             }
@@ -117,7 +173,7 @@ public class MapEquation extends Algorithm<MapEquation> {
 
     private void forEachNeighboringCommunity(int node, IntConsumer communityConsumer) {
         final BitSet set = new BitSet();
-        graph.forEachOutgoing(node, (s, t, r) -> {
+        graph.forEachRelationship(node, direction, (s, t, r) -> {
             final int targetCommunity = communities[t];
             if (set.get(targetCommunity)) {
                 return true;
@@ -128,35 +184,7 @@ public class MapEquation extends Algorithm<MapEquation> {
         });
     }
 
-    public double delta(int node, int community) {
-        final int p = communities[node];
-        move(node, community);
-        final double mdl = getMDL();
-        move(node, p);
-        return mdl;
-    }
-
-    public double getMDL() {
-        double totalE = 0;
-        double totalQout = 0;
-        double totalQoutE = 0;
-        for (Iterator<ObjectCursor<Module>> it = this.modules.iterator(); it.hasNext(); ) {
-            final Module mod = it.next().value;
-            if (mod.nodes.isEmpty()) {
-                continue;
-            }
-            final double qout = mod.qOut();
-            totalQout += qout;
-            totalQoutE += entropy(qout);
-            totalE += entropy(mod.modulePageRank + mod.qOut());
-        }
-        return entropy(totalQout) -
-                2 * totalQoutE -
-                totalGraphPageRankEntropy +
-                totalE;
-    }
-
-    public void forEachModule(Consumer<Module> moduleConsumer) {
+    private void forEachModule(Consumer<Module> moduleConsumer) {
         for (ObjectCursor<Module> module : modules) {
             if (module.value.nodes.isEmpty()) {
                 continue;
@@ -165,24 +193,7 @@ public class MapEquation extends Algorithm<MapEquation> {
         }
     }
 
-    public double getIndexCodeLength() {
-        if (modules.size() == 1) {
-            return 0;
-        }
-        final double[] v = {0., 0.}; // {totalQout, entropy}
-        forEachModule(m -> v[0] += m.qOut());
-        forEachModule(m -> v[1] += entropy(m.qOut() / v[0]));
-        return v[0] * -v[1];
-    }
-
-    public double getModuleCodeLength() {
-        final Pointer.DoublePointer p = Pointer.wrap(0.);
-        forEachModule(m -> p.v += m.getCodeBookLength());
-        return p.v;
-    }
-
-
-    public class Module {
+    class Module {
 
         private final IntSet nodes;
         private double modulePageRank;
@@ -194,7 +205,9 @@ public class MapEquation extends Algorithm<MapEquation> {
         }
 
         public void add(int node) {
-            this.nodes.add(node);
+            if (!this.nodes.add(node)) {
+                return;
+            }
             this.modulePageRank += pageRanks.weightOf(node);
         }
 
@@ -208,16 +221,17 @@ public class MapEquation extends Algorithm<MapEquation> {
         double qOut() {
 
             final Pointer.DoublePointer p = Pointer.wrap(.0);
-            for (IntCursor c : nodes) {
+            final double prob = (1. - ((double) nodes.size() / nodeCount)) * (1. - TAU);
 
-                if (graph.degree(c.value, Direction.OUTGOING) == 0) {
-                    p.v += pageRanks.weightOf(c.value) * (1. - ((double) nodes.size() / nodeCount));
+            for (IntCursor c : nodes) {
+                if (graph.degree(c.value, direction) == 0) {
+                    p.v += pageRanks.weightOf(c.value) * prob;
                 } else {
-                    graph.forEachOutgoing(c.value, (sourceNodeId, targetNodeId, relationId) -> {
-                        if (communities[targetNodeId] == communities[sourceNodeId]) {
-                            return true;
-                        }
-                        p.v += pageRanks.weightOf(c.value) * weights.weightOf(c.value, targetNodeId) * (1. - TAU);
+                    final double prSource = pageRanks.weightOf(c.value);
+                    graph.forEachRelationship(c.value, direction, (sourceNodeId, targetNodeId, relationId) -> {
+                        // only count relationship weights into different communities
+                        if (communities[targetNodeId] == communities[sourceNodeId]) return true;
+                        p.v += prSource * weights.weightOf(sourceNodeId, targetNodeId) * (1. - TAU);
                         return true;
                     });
                 }
@@ -225,7 +239,7 @@ public class MapEquation extends Algorithm<MapEquation> {
             return TAU * modulePageRank * (1. - ((double) nodes.size() / nodeCount)) + p.v;
         }
 
-        public double getCodeBookLength() {
+        double getCodeBookLength() {
             if (nodes.size() == 0) {
                 return 0;
             }

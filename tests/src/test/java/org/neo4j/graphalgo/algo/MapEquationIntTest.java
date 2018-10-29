@@ -1,49 +1,34 @@
 /**
  * Copyright (c) 2017 "Neo4j, Inc." <http://neo4j.com>
- *
+ * <p>
  * This file is part of Neo4j Graph Algorithms <http://github.com/neo4j-contrib/neo4j-graph-algorithms>.
- *
+ * <p>
  * Neo4j Graph Algorithms is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.graphalgo.impl;
+package org.neo4j.graphalgo.algo;
 
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.graphalgo.TestProgressLogger;
+import org.neo4j.graphalgo.MapEquationProc;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.RelationshipWeights;
-import org.neo4j.graphalgo.core.GraphLoader;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
-import org.neo4j.graphalgo.core.huge.HugeGraphFactory;
-import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
-import org.neo4j.graphalgo.core.utils.ProgressLogger;
-import org.neo4j.graphalgo.impl.infomap.MapEquation;
-import org.neo4j.graphalgo.impl.infomap.MapEquationOpt;
-import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
-import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
+import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
-
-import java.util.Arrays;
-import java.util.function.Supplier;
-import java.util.stream.LongStream;
-
-import static org.mockito.AdditionalMatchers.eq;
 
 /**
  * Graph:
@@ -54,7 +39,9 @@ import static org.mockito.AdditionalMatchers.eq;
  *
  * @author mknblch
  */
-public class MapEquationTest {
+public class MapEquationIntTest {
+
+    private static final String QUERY = "CALL algo.mapEquation.stream('Node', 'TYPE', {shuffled:true, iterations:5, pr_iterations:10}) YIELD nodeId, community";
 
     @ClassRule
     public static ImpermanentDatabaseRule db = new ImpermanentDatabaseRule();
@@ -86,59 +73,20 @@ public class MapEquationTest {
                         " (e)-[:TYPE]->(f)";
 
         db.execute(cypher);
-
-        graph = new GraphLoader(db)
-                .withAnyRelationshipType()
-                .withAnyLabel()
-                .withoutNodeProperties()
-                .asUndirected(true)
-                .load(HeavyGraphFactory.class);
-
-        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
-                .compute(10)
-                .result();
-
-        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph);
-    }
-
-
-    @Test
-    public void testMove() throws Exception {
-
-        final MapEquation algo = new MapEquation(graph, pageRankResult::score, normalizedWeights);
-
-        info(algo);
-        algo.move(id("b"), id("a"));
-        algo.move(id("c"), id("a"));
-
-        info(algo);
-        algo.move(id("e"), id("d"));
-        algo.move(id("f"), id("d"));
-        info(algo);
-
-        algo.move(id("d"), id("a"));
-        algo.move(id("e"), id("a"));
-        algo.move(id("f"), id("a"));
-        info(algo);
+        db.resolveDependency(Procedures.class).registerProcedure(MapEquationProc.class);
     }
 
     @Test
     public void testClustering() throws Exception {
 
-        final MapEquation algo = new MapEquation(graph, pageRankResult::score, normalizedWeights);
-        info(algo);
 
-        algo.compute(10, true);
-        info(algo);
-    }
+        db.execute(QUERY).accept(row -> {
+            System.out.printf("node %d | community %d%n",
+                    row.getNumber("nodeId").intValue(),
+                    row.getNumber("community").intValue());
 
-    private void info(MapEquation algo) {
-        System.out.printf("%s | mdl: %5.2f | icl: %5.2f | mcl: %5.2f | i: %d%n",
-                Arrays.toString(algo.getCommunities()),
-                algo.getMDL(),
-                algo.getIndexCodeLength(),
-                algo.getModuleCodeLength(),
-                algo.getIterations());
+            return true;
+        });
     }
 
     private int id(String name) {
