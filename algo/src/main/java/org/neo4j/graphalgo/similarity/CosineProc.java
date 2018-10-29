@@ -26,6 +26,7 @@ import com.carrotsearch.hppc.cursors.LongDoubleCursor;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.ProcedureConstants;
 import org.neo4j.graphdb.Result;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
@@ -55,35 +56,12 @@ public class CosineProc extends SimilarityProc {
                 (s,t,cutoff) -> s.cosineSquares(cutoff, t) :
                 (s,t,cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
 
-        if(ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
-            if(skipValue == null) {
+        if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
+            if (skipValue == null) {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
             }
 
-            Result result = api.execute((String) rawData, configuration.getParams());
-            List<Map<String,Object>> data = new ArrayList<>();
-            Map<Object, LongDoubleMap> map = new HashMap<>();
-                    LongSet ids =new LongHashSet();
-            result.accept((Result.ResultVisitor<Exception>) resultRow -> {
-                Object item = resultRow.get("item");
-                long id = resultRow.getNumber("id").longValue();
-                ids.add(id);
-                double weight = resultRow.getNumber("weight").doubleValue();
-                map.compute(item, (key, agg) -> {
-                    if (agg == null) agg= new LongDoubleHashMap();
-                    agg.put(id, weight);
-                    return agg;
-                });
-                return true;
-            });
-            long[] idsArray = ids.toArray();
-            map.forEach((k,v) -> {
-                ArrayList<Number> list = new ArrayList<>(ids.size());
-                for (long id : idsArray) {
-                    list.add(v.getOrDefault(id,skipValue))   ;
-                }
-                data.add(map("item", k, "weights", list));
-            });
+            List<Map<String, Object>> data = buildMap(api, (String) rawData, configuration, skipValue);
 
             WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
 
@@ -98,7 +76,7 @@ public class CosineProc extends SimilarityProc {
 
             return stream.map(SimilarityResult::squareRooted);
         } else {
-            List<Map<String,Object>> data = (List<Map<String,Object>>) rawData;
+            List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
             WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
 
             double similarityCutoff = getSimilarityCutoff(configuration);
@@ -112,8 +90,34 @@ public class CosineProc extends SimilarityProc {
 
             return stream.map(SimilarityResult::squareRooted);
         }
+    }
 
-
+    private List<Map<String, Object>> buildMap(GraphDatabaseAPI api, String rawData, ProcedureConfiguration configuration, double skipValue) throws Exception {
+        Result result = api.execute(rawData, configuration.getParams());
+        List<Map<String,Object>> data = new ArrayList<>();
+        Map<Object, LongDoubleMap> map = new HashMap<>();
+        LongSet ids =new LongHashSet();
+        result.accept((Result.ResultVisitor<Exception>) resultRow -> {
+            Object item = resultRow.get("item");
+            long id = resultRow.getNumber("id").longValue();
+            ids.add(id);
+            double weight = resultRow.getNumber("weight").doubleValue();
+            map.compute(item, (key, agg) -> {
+                if (agg == null) agg= new LongDoubleHashMap();
+                agg.put(id, weight);
+                return agg;
+            });
+            return true;
+        });
+        long[] idsArray = ids.toArray();
+        map.forEach((k,v) -> {
+            ArrayList<Number> list = new ArrayList<>(ids.size());
+            for (long id : idsArray) {
+                list.add(v.getOrDefault(id,skipValue))   ;
+            }
+            data.add(map("item", k, "weights", list));
+        });
+        return data;
     }
 
     @Procedure(name = "algo.similarity.cosine", mode = Mode.WRITE)
