@@ -215,7 +215,7 @@ public class SimilarityProc {
         return ids;
     }
 
-    WeightedInput[] prepareWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
+    RleWeightedInput[] prepareWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
         Result result = api.execute(rawData, params);
 
         Map<Long, LongDoubleMap> map = new HashMap<>();
@@ -233,7 +233,7 @@ public class SimilarityProc {
             return true;
         });
 
-        WeightedInput[] inputs = new WeightedInput[map.size()];
+        RleWeightedInput[] inputs = new RleWeightedInput[map.size()];
         int idx = 0;
 
         long[] idsArray = ids.toArray();
@@ -241,14 +241,16 @@ public class SimilarityProc {
             Long item = entry.getKey();
             LongDoubleMap sparseWeights = entry.getValue();
 
-            double[] weights = new double[ids.size()];
-            for (int i = 0; i < idsArray.length; i++) {
-                weights[i] = sparseWeights.getOrDefault(idsArray[i], skipValue);
+            List<Number> weightsList = new ArrayList<>(ids.size());
+            for (long id : idsArray) {
+                weightsList.add(sparseWeights.getOrDefault(id, skipValue));
             }
 
-            int size = weights.length;
+            int size = weightsList.size();
             if (size > degreeCutoff) {
-                inputs[idx++] = skipValue == null ? new WeightedInput(item, weights) : new WeightedInput(item, weights, skipValue);
+                double[] weights = Weights.buildRleWeights(weightsList, REPEAT_CUTOFF);
+
+                inputs[idx++] = skipValue == null ? new RleWeightedInput(item, weights, size) : new RleWeightedInput(item, weights, size, skipValue);
             }
         }
 

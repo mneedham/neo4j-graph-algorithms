@@ -52,16 +52,14 @@ public class CosineProc extends SimilarityProc {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
 
-        SimilarityComputer<WeightedInput> computer = skipValue == null ?
-                (s,t,cutoff) -> s.cosineSquares(cutoff, t) :
-                (s,t,cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
-
         if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
             if (skipValue == null) {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
             }
 
-            WeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
+            SimilarityComputer<RleWeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
+
+            RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
 
             double similarityCutoff = getSimilarityCutoff(configuration);
             // as we don't compute the sqrt until the end
@@ -74,6 +72,10 @@ public class CosineProc extends SimilarityProc {
 
             return stream.map(SimilarityResult::squareRooted);
         } else {
+            SimilarityComputer<WeightedInput> computer = skipValue == null ?
+                    (s,t,cutoff) -> s.cosineSquares(cutoff, t) :
+                    (s,t,cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
+
             List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
             WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
 
