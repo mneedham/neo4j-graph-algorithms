@@ -136,7 +136,7 @@ public class CosineProc extends SimilarityProc {
         // as we don't compute the sqrt until the end
         if (similarityCutoff > 0d) similarityCutoff *= similarityCutoff;
         return similarityCutoff;
-    }
+    } 
 
 
 }
