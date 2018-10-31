@@ -61,7 +61,6 @@ public class CosineProc extends SimilarityProc {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
             }
 
-//            List<Map<String, Object>> data = buildMap(api, (String) rawData, configuration, skipValue);
 
             WeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
 
@@ -90,34 +89,6 @@ public class CosineProc extends SimilarityProc {
 
             return stream.map(SimilarityResult::squareRooted);
         }
-    }
-
-    private List<Map<String, Object>> buildMap(GraphDatabaseAPI api, String rawData, ProcedureConfiguration configuration, double skipValue) throws Exception {
-        Result result = api.execute(rawData, configuration.getParams());
-        List<Map<String,Object>> data = new ArrayList<>();
-        Map<Object, LongDoubleMap> map = new HashMap<>();
-        LongSet ids = new LongHashSet();
-        result.accept((Result.ResultVisitor<Exception>) resultRow -> {
-            Object item = resultRow.get("item");
-            long id = resultRow.getNumber("id").longValue();
-            ids.add(id);
-            double weight = resultRow.getNumber("weight").doubleValue();
-            map.compute(item, (key, agg) -> {
-                if (agg == null) agg= new LongDoubleHashMap();
-                agg.put(id, weight);
-                return agg;
-            });
-            return true;
-        });
-        long[] idsArray = ids.toArray();
-        map.forEach((k,v) -> {
-            ArrayList<Number> list = new ArrayList<>(ids.size());
-            for (long id : idsArray) {
-                list.add(v.getOrDefault(id,skipValue))   ;
-            }
-            data.add(map("item", k, "weights", list));
-        });
-        return data;
     }
 
     @Procedure(name = "algo.similarity.cosine", mode = Mode.WRITE)
