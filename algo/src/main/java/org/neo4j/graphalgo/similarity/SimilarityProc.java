@@ -215,6 +215,29 @@ public class SimilarityProc {
         return ids;
     }
 
+    WeightedInput[] prepareWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
+        Result result = api.execute(rawData, params);
+        List<Map<String,Object>> data = new ArrayList<>();
+
+        Map<Long, LongDoubleMap> map = new HashMap<>();
+        LongSet ids = new LongHashSet();
+        result.accept((Result.ResultVisitor<Exception>) resultRow -> {
+            long item = resultRow.getNumber("item").longValue();
+            long id = resultRow.getNumber("id").longValue();
+            ids.add(id);
+            double weight = resultRow.getNumber("weight").doubleValue();
+            map.compute(item, (key, agg) -> {
+                if (agg == null) agg= new LongDoubleHashMap();
+                agg.put(id, weight);
+                return agg;
+            });
+            return true;
+        });
+
+        return null;
+    }
+
+
     WeightedInput[] prepareWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
         WeightedInput[] inputs = new WeightedInput[data.size()];
         int idx = 0;

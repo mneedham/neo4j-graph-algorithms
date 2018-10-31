@@ -58,8 +58,14 @@ public class CosineProc extends SimilarityProc {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
             }
 
+<<<<<<< HEAD
             SimilarityComputer<RleWeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
             RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
+=======
+//            List<Map<String, Object>> data = buildMap(api, (String) rawData, configuration, skipValue);
+
+            WeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
+>>>>>>> Add new prepareWeights method for Cypher loading
 
 
             int topN = getTopN(configuration);
@@ -138,5 +144,6 @@ public class CosineProc extends SimilarityProc {
         return similarityCutoff;
     } 
 
+    
 
 }
