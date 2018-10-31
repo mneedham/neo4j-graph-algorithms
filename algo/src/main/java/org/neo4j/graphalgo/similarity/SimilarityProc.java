@@ -240,18 +240,14 @@ public class SimilarityProc {
         for (Map.Entry<Long, LongDoubleMap> entry : map.entrySet()) {
             Long item = entry.getKey();
             LongDoubleMap sparseWeights = entry.getValue();
-            ArrayList<Number> weightList = new ArrayList<>(ids.size());
-            for (long id : idsArray) {
-                weightList.add(sparseWeights.getOrDefault(id, skipValue));
+
+            double[] weights = new double[ids.size()];
+            for (int i = 0; i < idsArray.length; i++) {
+                weights[i] = sparseWeights.getOrDefault(idsArray[i], skipValue);
             }
 
-            int size = weightList.size();
+            int size = weights.length;
             if (size > degreeCutoff) {
-                double[] weights = new double[size];
-                int i = 0;
-                for (Number value : weightList) {
-                    weights[i++] = value.doubleValue();
-                }
                 inputs[idx++] = skipValue == null ? new WeightedInput(item, weights) : new WeightedInput(item, weights, skipValue);
             }
         }

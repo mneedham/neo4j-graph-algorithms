@@ -61,7 +61,6 @@ public class CosineProc extends SimilarityProc {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
             }
 
-
             WeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
 
             double similarityCutoff = getSimilarityCutoff(configuration);
