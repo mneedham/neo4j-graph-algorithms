@@ -27,7 +27,6 @@ public class WeightsTest {
                 Double.POSITIVE_INFINITY, 5.0, Double.NaN}, actuals, 0.01);
     }
 
-
     @Test
     public void rleWithOneRepeatedValue() throws Exception {
         Number[] values = {4.0, 4.0};

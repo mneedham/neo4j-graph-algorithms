@@ -215,51 +215,6 @@ public class SimilarityProc {
         return ids;
     }
 
-    RleWeightedInput[] prepareWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
-        Result result = api.execute(rawData, params);
-
-        Map<Long, LongDoubleMap> map = new HashMap<>();
-        LongSet ids = new LongHashSet();
-        result.accept((Result.ResultVisitor<Exception>) resultRow -> {
-            long item = resultRow.getNumber("item").longValue();
-            long id = resultRow.getNumber("id").longValue();
-            ids.add(id);
-            double weight = resultRow.getNumber("weight").doubleValue();
-            map.compute(item, (key, agg) -> {
-                if (agg == null) agg = new LongDoubleHashMap();
-                agg.put(id, weight);
-                return agg;
-            });
-            return true;
-        });
-
-        RleWeightedInput[] inputs = new RleWeightedInput[map.size()];
-        int idx = 0;
-
-        long[] idsArray = ids.toArray();
-        for (Map.Entry<Long, LongDoubleMap> entry : map.entrySet()) {
-            Long item = entry.getKey();
-            LongDoubleMap sparseWeights = entry.getValue();
-
-            List<Number> weightsList = new ArrayList<>(ids.size());
-            for (long id : idsArray) {
-                weightsList.add(sparseWeights.getOrDefault(id, skipValue));
-            }
-
-            int size = weightsList.size();
-            if (size > degreeCutoff) {
-                double[] weights = Weights.buildRleWeights(weightsList, REPEAT_CUTOFF);
-
-                inputs[idx++] = skipValue == null ? new RleWeightedInput(item, weights, size) : new RleWeightedInput(item, weights, size, skipValue);
-            }
-        }
-
-        if (idx != inputs.length) inputs = Arrays.copyOf(inputs, idx);
-        Arrays.sort(inputs);
-        return inputs;
-    }
-
-
     WeightedInput[] prepareWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
         WeightedInput[] inputs = new WeightedInput[data.size()];
         int idx = 0;
