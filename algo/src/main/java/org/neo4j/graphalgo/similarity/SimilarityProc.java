@@ -215,6 +215,7 @@ public class SimilarityProc {
         return ids;
     }
 
+    
     WeightedInput[] prepareWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
         WeightedInput[] inputs = new WeightedInput[data.size()];
         int idx = 0;
