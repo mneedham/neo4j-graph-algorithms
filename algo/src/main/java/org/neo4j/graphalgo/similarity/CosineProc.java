@@ -51,6 +51,7 @@ public class CosineProc extends SimilarityProc {
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) throws Exception {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
+        double similarityCutoff = similarityCutoff(configuration);
 
         if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
             if (skipValue == null) {
@@ -58,12 +59,8 @@ public class CosineProc extends SimilarityProc {
             }
 
             SimilarityComputer<RleWeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
-
             RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
 
-            double similarityCutoff = getSimilarityCutoff(configuration);
-            // as we don't compute the sqrt until the end
-            if (similarityCutoff > 0d) similarityCutoff *= similarityCutoff;
 
             int topN = getTopN(configuration);
             int topK = getTopK(configuration);
@@ -79,10 +76,6 @@ public class CosineProc extends SimilarityProc {
             List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
             WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
 
-            double similarityCutoff = getSimilarityCutoff(configuration);
-            // as we don't compute the sqrt until the end
-            if (similarityCutoff > 0d) similarityCutoff *= similarityCutoff;
-
             int topN = getTopN(configuration);
             int topK = getTopK(configuration);
 
@@ -96,29 +89,53 @@ public class CosineProc extends SimilarityProc {
     @Description("CALL algo.similarity.cosine([{item:id, weights:[weights]}], {similarityCutoff:-1,degreeCutoff:0}) " +
             "YIELD p50, p75, p90, p99, p999, p100 - computes cosine similarities")
     public Stream<SimilaritySummaryResult> cosine(
-            @Name(value = "data", defaultValue = "null") List<Map<String, Object>> data,
-            @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
+            @Name(value = "data", defaultValue = "null") Object rawData,
+            @Name(value = "config", defaultValue = "{}") Map<String, Object> config) throws Exception {
+
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
-        SimilarityComputer<WeightedInput> computer = skipValue == null ?
-                (s,t,cutoff) -> s.cosineSquares(cutoff, t) :
-                (s,t,cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
+        double similarityCutoff = similarityCutoff(configuration);
 
-        WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
+        Stream<SimilarityResult> stream;
+        int numberOfInputs;
 
+        if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
+            if (skipValue == null) {
+                throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
+            }
+
+            SimilarityComputer<RleWeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
+            RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
+            numberOfInputs = inputs.length;
+
+            int topN = getTopN(configuration);
+            int topK = getTopK(configuration);
+
+            stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);
+        } else {
+            SimilarityComputer<WeightedInput> computer = skipValue == null ?
+                    (s,t,cutoff) -> s.cosineSquares(cutoff, t) :
+                    (s,t,cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
+
+            List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
+            WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
+            numberOfInputs = inputs.length;
+
+            int topN = getTopN(configuration);
+            int topK = getTopK(configuration);
+
+            stream =  topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);
+        }
+
+        boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
+        return writeAndAggregateResults(configuration, stream, numberOfInputs, write, "SIMILAR");
+    }
+
+    private double similarityCutoff(ProcedureConfiguration configuration) {
         double similarityCutoff = getSimilarityCutoff(configuration);
         // as we don't compute the sqrt until the end
         if (similarityCutoff > 0d) similarityCutoff *= similarityCutoff;
-
-        int topN = getTopN(configuration);
-        int topK = getTopK(configuration);
-
-        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN)
-                .map(SimilarityResult::squareRooted);
-
-
-        boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
-        return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");
+        return similarityCutoff;
     }
 
 
