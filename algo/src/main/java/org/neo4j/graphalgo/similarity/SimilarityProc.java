@@ -217,7 +217,6 @@ public class SimilarityProc {
 
     WeightedInput[] prepareWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
         Result result = api.execute(rawData, params);
-        List<Map<String,Object>> data = new ArrayList<>();
 
         Map<Long, LongDoubleMap> map = new HashMap<>();
         LongSet ids = new LongHashSet();
@@ -227,14 +226,39 @@ public class SimilarityProc {
             ids.add(id);
             double weight = resultRow.getNumber("weight").doubleValue();
             map.compute(item, (key, agg) -> {
-                if (agg == null) agg= new LongDoubleHashMap();
+                if (agg == null) agg = new LongDoubleHashMap();
                 agg.put(id, weight);
                 return agg;
             });
             return true;
         });
 
-        return null;
+        WeightedInput[] inputs = new WeightedInput[map.size()];
+        int idx = 0;
+
+        long[] idsArray = ids.toArray();
+        for (Map.Entry<Long, LongDoubleMap> entry : map.entrySet()) {
+            Long item = entry.getKey();
+            LongDoubleMap sparseWeights = entry.getValue();
+            ArrayList<Number> weightList = new ArrayList<>(ids.size());
+            for (long id : idsArray) {
+                weightList.add(sparseWeights.getOrDefault(id, skipValue));
+            }
+
+            int size = weightList.size();
+            if (size > degreeCutoff) {
+                double[] weights = new double[size];
+                int i = 0;
+                for (Number value : weightList) {
+                    weights[i++] = value.doubleValue();
+                }
+                inputs[idx++] = skipValue == null ? new WeightedInput(item, weights) : new WeightedInput(item, weights, skipValue);
+            }
+        }
+
+        if (idx != inputs.length) inputs = Arrays.copyOf(inputs, idx);
+        Arrays.sort(inputs);
+        return inputs;
     }
 
 
