@@ -96,7 +96,7 @@ public class CosineProc extends SimilarityProc {
         Result result = api.execute(rawData, configuration.getParams());
         List<Map<String,Object>> data = new ArrayList<>();
         Map<Object, LongDoubleMap> map = new HashMap<>();
-        LongSet ids =new LongHashSet();
+        LongSet ids = new LongHashSet();
         result.accept((Result.ResultVisitor<Exception>) resultRow -> {
             Object item = resultRow.get("item");
             long id = resultRow.getNumber("id").longValue();
