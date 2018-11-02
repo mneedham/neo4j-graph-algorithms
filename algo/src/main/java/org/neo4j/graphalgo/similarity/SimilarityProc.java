@@ -232,7 +232,7 @@ public class SimilarityProc {
         Arrays.sort(inputs);
         return inputs;
     }
- 
+
     RleWeightedInput[] prepareWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
         Result result = api.execute(rawData, params);
 
