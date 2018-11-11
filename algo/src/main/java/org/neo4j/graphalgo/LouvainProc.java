@@ -21,6 +21,8 @@ package org.neo4j.graphalgo;
 import org.neo4j.graphalgo.api.*;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
+import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
+import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressLogger;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
@@ -29,6 +31,7 @@ import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.louvain.*;
 import org.neo4j.graphalgo.results.LouvainResult;
 import org.neo4j.kernel.api.KernelTransaction;
+import org.neo4j.kernel.impl.store.PropertyType;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
@@ -131,13 +134,17 @@ public class LouvainProc {
 
     public Graph graph(ProcedureConfiguration config) {
 
+        String property = config.getWriteProperty(DEFAULT_CLUSTER_PROPERTY);
         return new GraphLoader(api, Pools.DEFAULT)
                 .withNodeStatement(config.getNodeLabelOrQuery())
                 .withRelationshipStatement(config.getRelationshipOrQuery())
                 .withOptionalRelationshipWeightsFromProperty(config.getWeightProperty(), config.getWeightPropertyDefaultValue(1.0))
-                .withNodeProperty(config.getWriteProperty(DEFAULT_CLUSTER_PROPERTY), -1)
+                // TODO this is painful
+                .withOptionalNodeProperties(PropertyMapping.of(property, property, -1))
+                .withOptionalNodeProperty(property, -1)
+                .withOptionalNodeWeightsFromProperty(property, -1)
                 .asUndirected(true)
-                .load(config.getGraphImpl());
+                .load(HeavyGraphFactory.class);
     }
 
     private void write(Graph graph, int[][] allCommunities, int[] finalCommunities, ProcedureConfiguration configuration) {

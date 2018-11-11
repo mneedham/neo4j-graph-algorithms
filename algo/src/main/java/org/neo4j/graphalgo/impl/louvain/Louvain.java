@@ -80,11 +80,12 @@ public class Louvain extends Algorithm<Louvain> {
         nodeWeights = new double[rootNodeCount];
         tracker.add(4 * rootNodeCount);
         communityCount = rootNodeCount;
+        final WeightMapping clusterMap = ((HeavyGraph) graph)
+                .nodeProperties(LouvainProc.DEFAULT_CLUSTER_PROPERTY);
 
-
-        WeightMapping clusterMap = ((HeavyGraph) graph).nodeProperties(LouvainProc.DEFAULT_CLUSTER_PROPERTY);
-
-        Arrays.setAll(communities, i -> (int) clusterMap.get(i));
+        Arrays.setAll(communities, i -> {
+            return (int) clusterMap.get(i, i);
+        });
     }
 
     public Louvain compute(int maxLevel, int maxIterations) {
