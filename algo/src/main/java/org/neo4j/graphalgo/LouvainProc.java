@@ -134,8 +134,9 @@ public class LouvainProc {
         return new GraphLoader(api, Pools.DEFAULT)
                 .withNodeStatement(config.getNodeLabelOrQuery())
                 .withRelationshipStatement(config.getRelationshipOrQuery())
-                .asUndirected(true)
                 .withOptionalRelationshipWeightsFromProperty(config.getWeightProperty(), config.getWeightPropertyDefaultValue(1.0))
+                .withNodeProperty(config.getWriteProperty(DEFAULT_CLUSTER_PROPERTY), -1)
+                .asUndirected(true)
                 .load(config.getGraphImpl());
     }
 

@@ -22,7 +22,11 @@ import com.carrotsearch.hppc.IntObjectMap;
 import com.carrotsearch.hppc.IntObjectScatterMap;
 import com.carrotsearch.hppc.IntScatterSet;
 import com.carrotsearch.hppc.LongDoubleScatterMap;
+import org.neo4j.graphalgo.LouvainProc;
 import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.api.WeightMapping;
+import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
+import org.neo4j.graphalgo.core.neo4jview.GraphView;
 import org.neo4j.graphalgo.core.utils.ProgressLogger;
 import org.neo4j.graphalgo.core.utils.RawValues;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
@@ -76,7 +80,11 @@ public class Louvain extends Algorithm<Louvain> {
         nodeWeights = new double[rootNodeCount];
         tracker.add(4 * rootNodeCount);
         communityCount = rootNodeCount;
-        Arrays.setAll(communities, i -> i);
+
+
+        WeightMapping clusterMap = ((HeavyGraph) graph).nodeProperties(LouvainProc.DEFAULT_CLUSTER_PROPERTY);
+
+        Arrays.setAll(communities, i -> (int) clusterMap.get(i));
     }
 
     public Louvain compute(int maxLevel, int maxIterations) {
