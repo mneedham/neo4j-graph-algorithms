@@ -264,7 +264,7 @@ public final class DegreeCentralityTest {
         if (graphImpl.isAssignableFrom(HeavyCypherGraphFactory.class)) {
             graph = new GraphLoader(db)
                     .withLabel("MATCH (n:Label1) RETURN id(n) as id")
-                    .withRelationshipType("MATCH (n:Label1)-[type:TYPE3]->(m:Label1) RETURN id(n) as source,id(m) as target, propertyName.weight AS weight")
+                    .withRelationshipType("MATCH (n:Label1)-[type:TYPE3]->(m:Label1) RETURN id(n) as source,id(m) as target, type.weight AS weight")
                     .withOptionalRelationshipWeightsFromProperty("weight", 1.0)
                     .load(graphImpl);
 
