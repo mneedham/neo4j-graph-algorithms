@@ -60,10 +60,10 @@ public class LouvainClusteringIntegrationTest {
                         "CREATE (b:Node {name:'b', c:1})\n" +
                         "CREATE (d:Node {name:'d', c:1})\n" +
                         "CREATE (e:Node {name:'e', c:1})\n" +
-                        "CREATE (g:Node {name:'g', c:2})\n" +
-                        "CREATE (f:Node {name:'f', c:2})\n" +
-                        "CREATE (h:Node {name:'h', c:2})\n" +
-                        "CREATE (z:Node {name:'z', c:3})\n" +
+                        "CREATE (g:Node {name:'g', c:1})\n" +
+                        "CREATE (f:Node {name:'f', c:1})\n" +
+                        "CREATE (h:Node {name:'h', c:1})\n" +
+                        "CREATE (z:Node {name:'z', c:1})\n" + // assign impossible community to outstanding node
 
                         "CREATE" +
 
@@ -122,7 +122,7 @@ public class LouvainClusteringIntegrationTest {
 
     @Test
     public void testStream() {
-        final String cypher = "CALL algo.louvain.stream('', '', {concurrency:1, community:'c'}) " +
+        final String cypher = "CALL algo.louvain.stream('', '', {concurrency:1}) " +
                 "YIELD nodeId, community, communities";
         final IntIntScatterMap testMap = new IntIntScatterMap();
         DB.execute(cypher).accept(row -> {
@@ -133,6 +133,21 @@ public class LouvainClusteringIntegrationTest {
             return false;
         });
         assertEquals(3, testMap.size());
+    }
+
+    @Test
+    public void testPredefinedCommunities() {
+        final String cypher = "CALL algo.louvain.stream('', '', {concurrency:1, community:'c'}) " +
+                "YIELD nodeId, community, communities";
+        final IntIntScatterMap testMap = new IntIntScatterMap();
+        DB.execute(cypher).accept(row -> {
+            final long nodeId = (long) row.get("nodeId");
+            final long community = (long) row.get("community");
+            System.out.println(nodeId + ": " + community);
+            testMap.addTo((int) community, 1);
+            return false;
+        });
+        assertEquals(1, testMap.size());
     }
 
     @Test

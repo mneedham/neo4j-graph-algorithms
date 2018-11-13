@@ -126,9 +126,6 @@ public class LouvainProc {
                 .withProgressLogger(ProgressLogger.wrap(log, "Louvain"))
                 .withTerminationFlag(TerminationFlag.wrap(transaction));
 
-
-
-
         if (configuration.getString(DEFAULT_CLUSTER_PROPERTY).isPresent()) {
             // use predefined clustering
             final WeightMapping communityMap = ((NodeProperties) graph).nodeProperties(CLUSTERING_IDENTIFIER);
