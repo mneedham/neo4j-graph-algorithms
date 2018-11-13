@@ -35,6 +35,7 @@ import org.neo4j.graphalgo.impl.Algorithm;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.IntStream;
@@ -80,12 +81,9 @@ public class Louvain extends Algorithm<Louvain> {
         nodeWeights = new double[rootNodeCount];
         tracker.add(4 * rootNodeCount);
         communityCount = rootNodeCount;
-        final WeightMapping clusterMap = ((HeavyGraph) graph)
-                .nodeProperties(LouvainProc.DEFAULT_CLUSTER_PROPERTY);
+//        final WeightMapping communityMap = ((HeavyGraph) graph)
+//                .nodeProperties(LouvainProc.DEFAULT_CLUSTER_PROPERTY);
 
-        Arrays.setAll(communities, i -> {
-            return (int) clusterMap.get(i, i);
-        });
     }
 
     public Louvain compute(int maxLevel, int maxIterations) {
@@ -95,7 +93,52 @@ public class Louvain extends Algorithm<Louvain> {
         dendrogram = new int[maxLevel][];
         int nodeCount = rootNodeCount;
         for (level = 0; level < maxLevel; level++) {
-            // start modularity opzimization
+            // start modularity optimization
+            final ModularityOptimization modularityOptimization =
+                    new ModularityOptimization(graph,
+                            nodeId -> nodeWeights[nodeId],
+                            pool,
+                            concurrency,
+                            tracker)
+                            .withProgressLogger(progressLogger)
+                            .withTerminationFlag(terminationFlag)
+                            .compute(maxIterations);
+            // rebuild graph based on the community structure
+            final int[] communityIds = modularityOptimization.getCommunityIds();
+            communityCount = ModularityOptimization.normalize(communityIds);
+            // release the old algo instance
+            modularityOptimization.release();
+            progressLogger.log(
+                    "level: " + (level + 1) +
+                            " communities: " + communityCount +
+                            " q: " + modularityOptimization.getModularity());
+            if (communityCount >= nodeCount) {
+                break;
+            }
+            nodeCount = communityCount;
+            dendrogram[level] = rebuildCommunityStructure(communityIds);
+            graph = rebuildGraph(graph, communityIds, communityCount);
+        }
+        dendrogram = Arrays.copyOf(dendrogram, level);
+        return this;
+    }
+
+    public Louvain compute(WeightMapping communityMap, int maxLevel, int maxIterations) {
+        BitSet comCount = new BitSet();
+        Arrays.setAll(communities, i -> {
+            final int t = (int) communityMap.get(i, -1.0);
+            final int c = t == -1 ? i : t;
+            comCount.set(c);
+            return c;
+        });
+        // temporary graph
+        int nodeCount = comCount.cardinality();
+        Graph graph = rebuildGraph(this.root, communities, nodeCount);
+        // result arrays
+        dendrogram = new int[maxLevel][];
+
+        for (level = 0; level < maxLevel; level++) {
+            // start modularity optimization
             final ModularityOptimization modularityOptimization =
                     new ModularityOptimization(graph,
                             nodeId -> nodeWeights[nodeId],
@@ -167,8 +210,11 @@ public class Louvain extends Algorithm<Louvain> {
 
     private int[] rebuildCommunityStructure(int[] communityIds) {
         // rebuild community array
+        assert rootNodeCount == communities.length;
         final int[] ints = new int[rootNodeCount];
-        Arrays.setAll(ints, i -> communityIds[communities[i]]);
+        Arrays.setAll(ints, i -> {
+            return communityIds[communities[i]];
+        });
         communities = ints;
         return communities;
     }

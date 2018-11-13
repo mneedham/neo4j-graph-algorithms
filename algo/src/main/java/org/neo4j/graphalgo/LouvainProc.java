@@ -21,6 +21,7 @@ package org.neo4j.graphalgo;
 import org.neo4j.graphalgo.api.*;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
+import org.neo4j.graphalgo.core.ProcedureConstants;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
@@ -49,6 +50,8 @@ public class LouvainProc {
     public static final String INTERMEDIATE_COMMUNITIES_WRITE_PROPERTY = "intermediateCommunitiesWriteProperty";
     public static final String DEFAULT_CLUSTER_PROPERTY = "community";
     public static final String INCLUDE_INTERMEDIATE_COMMUNITIES = "includeIntermediateCommunities";
+
+    private static final String CLUSTERING_IDENTIFIER = "clustering";
 
     @Context
     public GraphDatabaseAPI api;
@@ -121,8 +124,18 @@ public class LouvainProc {
         // evaluation
         final Louvain louvain = new Louvain(graph, Pools.DEFAULT, configuration.getConcurrency(), AllocationTracker.create())
                 .withProgressLogger(ProgressLogger.wrap(log, "Louvain"))
-                .withTerminationFlag(TerminationFlag.wrap(transaction))
-                .compute(configuration.getIterations(10), configuration.get("innerIterations", 10));
+                .withTerminationFlag(TerminationFlag.wrap(transaction));
+
+
+
+
+        if (configuration.getString(DEFAULT_CLUSTER_PROPERTY).isPresent()) {
+            // use predefined clustering
+            final WeightMapping communityMap = ((NodeProperties) graph).nodeProperties(CLUSTERING_IDENTIFIER);
+            louvain.compute(communityMap, configuration.getIterations(10), configuration.get("innerIterations", 10));
+        } else {
+            louvain.compute(configuration.getIterations(10), configuration.get("innerIterations", 10));
+        }
 
         if (graph.nodeCount() == 0) {
             graph.release();
@@ -134,15 +147,17 @@ public class LouvainProc {
 
     public Graph graph(ProcedureConfiguration config) {
 
-        String property = config.getWriteProperty(DEFAULT_CLUSTER_PROPERTY);
-        return new GraphLoader(api, Pools.DEFAULT)
+        GraphLoader graphLoader = new GraphLoader(api, Pools.DEFAULT)
                 .withNodeStatement(config.getNodeLabelOrQuery())
                 .withRelationshipStatement(config.getRelationshipOrQuery())
-                .withOptionalRelationshipWeightsFromProperty(config.getWeightProperty(), config.getWeightPropertyDefaultValue(1.0))
-                // TODO this is painful
-                .withOptionalNodeProperties(PropertyMapping.of(property, property, -1))
-                .withOptionalNodeProperty(property, -1)
-                .withOptionalNodeWeightsFromProperty(property, -1)
+                .withOptionalRelationshipWeightsFromProperty(config.getWeightProperty(), config.getWeightPropertyDefaultValue(1.0));
+
+        config.getString(DEFAULT_CLUSTER_PROPERTY).ifPresent(propertyIdentifier -> {
+            // configure predefined clustering if set
+            graphLoader.withOptionalNodeProperties(PropertyMapping.of(CLUSTERING_IDENTIFIER, propertyIdentifier, -1));
+        });
+
+        return graphLoader
                 .asUndirected(true)
                 .load(HeavyGraphFactory.class);
     }

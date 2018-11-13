@@ -55,7 +55,7 @@ public class LouvainClusteringIntegrationTest {
     public static void setupGraph() throws KernelException {
 
         final String cypher =
-                "CREATE (a:Node {name:'a'})\n" +
+                "CREATE (a:Node {name:'a', c:1})\n" +
                         "CREATE (c:Node {name:'c', c:1})\n" + // shuffled
                         "CREATE (b:Node {name:'b', c:1})\n" +
                         "CREATE (d:Node {name:'d', c:1})\n" +
@@ -126,8 +126,9 @@ public class LouvainClusteringIntegrationTest {
                 "YIELD nodeId, community, communities";
         final IntIntScatterMap testMap = new IntIntScatterMap();
         DB.execute(cypher).accept(row -> {
+            final long nodeId = (long) row.get("nodeId");
             final long community = (long) row.get("community");
-            System.out.println(community);
+            System.out.println(nodeId + ": " + community);
             testMap.addTo((int) community, 1);
             return false;
         });
