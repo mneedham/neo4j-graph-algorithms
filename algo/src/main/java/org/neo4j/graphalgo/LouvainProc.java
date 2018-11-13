@@ -162,7 +162,7 @@ public class LouvainProc {
 
         return graphLoader
                 .asUndirected(true)
-                .load(HeavyGraphFactory.class);
+                .load(config.getGraphImpl());
     }
 
     private void write(Graph graph, int[][] allCommunities, int[] finalCommunities, ProcedureConfiguration configuration) {
