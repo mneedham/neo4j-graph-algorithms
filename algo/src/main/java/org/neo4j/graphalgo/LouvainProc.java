@@ -64,7 +64,7 @@ public class LouvainProc {
 
     @Procedure(value = "algo.louvain", mode = Mode.WRITE)
     @Description("CALL algo.louvain(label:String, relationship:String, " +
-            "{weightProperty:'weight', defaultValue:1.0, write: true, writeProperty:'community', concurrency:4}) " +
+            "{weightProperty:'weight', defaultValue:1.0, write: true, writeProperty:'community', concurrency:4, community:'propertyOfPredefinedCommunity'}) " +
             "YIELD nodes, communityCount, iterations, loadMillis, computeMillis, writeMillis")
     public Stream<LouvainResult> louvain(
             @Name(value = "label", defaultValue = "") String label,
@@ -95,7 +95,13 @@ public class LouvainProc {
 
         // evaluation
         try (ProgressTimer timer = builder.timeEval()) {
-            louvain.compute(configuration.getIterations(10), configuration.get("innerIterations", 10));
+            if (configuration.getString(DEFAULT_CLUSTER_PROPERTY).isPresent()) {
+                // use predefined clustering
+                final WeightMapping communityMap = ((NodeProperties) graph).nodeProperties(CLUSTERING_IDENTIFIER);
+                louvain.compute(communityMap, configuration.getIterations(10), configuration.get("innerIterations", 10));
+            } else {
+                louvain.compute(configuration.getIterations(10), configuration.get("innerIterations", 10));
+            }
             builder.withIterations(louvain.getLevel()).withCommunityCount(louvain.getCommunityCount());
         }
 
@@ -108,7 +114,7 @@ public class LouvainProc {
 
     @Procedure(value = "algo.louvain.stream")
     @Description("CALL algo.louvain.stream(label:String, relationship:String, " +
-            "{weightProperty:'propertyName', defaultValue:1.0, concurrency:4) " +
+            "{weightProperty:'propertyName', defaultValue:1.0, concurrency:4, community:'propertyOfPredefinedCommunity') " +
             "YIELD nodeId, community - yields a setId to each node id")
     public Stream<Louvain.StreamingResult> louvainStream(
             @Name(value = "label", defaultValue = "") String label,
