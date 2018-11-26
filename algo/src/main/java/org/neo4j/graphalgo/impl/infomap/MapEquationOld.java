@@ -18,7 +18,7 @@ import java.util.function.IntConsumer;
 /**
  * @author mknblch
  */
-public class MapEquationOpt extends Algorithm<MapEquationOpt> {
+public class MapEquationOld extends Algorithm<MapEquationOld> implements MapEquationAlgorithm {
 
     private static final double LOG2 = Math.log(2);
     public static final double TAU = .15; // taken from pageRank paper
@@ -42,7 +42,7 @@ public class MapEquationOpt extends Algorithm<MapEquationOpt> {
     private double totalQEntropy = 0;
     private double totalQPEntropy = 0;
 
-    public MapEquationOpt(Graph graph, NodeWeights pageRanks) {
+    public MapEquationOld(Graph graph, NodeWeights pageRanks) {
         this.graph = graph;
         this.pageRanks = pageRanks;
         nodeCount = Math.toIntExact(graph.nodeCount());
@@ -64,7 +64,7 @@ public class MapEquationOpt extends Algorithm<MapEquationOpt> {
 
     }
 
-    public MapEquationOpt compute(int iterations, boolean shuffled) {
+    public MapEquationOld compute(int iterations, boolean shuffled) {
         double mdl = getMDL();
         for (int i = 0; i < iterations; i++) {
             final PrimitiveIntIterator it = shuffled ? new ShuffledNodeIterator(nodeCount).nodeIterator() :
@@ -93,10 +93,12 @@ public class MapEquationOpt extends Algorithm<MapEquationOpt> {
         return this;
     }
 
+    @Override
     public int[] getCommunities() {
         return communities;
     }
 
+    @Override
     public double getMDL() {
         return entropy(totalQ)
                 - 2 * totalQEntropy
@@ -104,6 +106,7 @@ public class MapEquationOpt extends Algorithm<MapEquationOpt> {
                 + totalQPEntropy;
     }
 
+    @Override
     public double getIndexCodeLength() {
         if (getCommunityCount() <= 1) {
             return 0;
@@ -117,8 +120,19 @@ public class MapEquationOpt extends Algorithm<MapEquationOpt> {
         return totalQOut * -v;
     }
 
+    @Override
     public int getCommunityCount() {
         return modules.size();
+    }
+
+    @Override
+    public double getModuleCodeLength() {
+        return 0;
+    }
+
+    @Override
+    public int getIterations() {
+        return 0;
     }
 
     public int getNodeCount(int moduleIndex) {
@@ -126,12 +140,12 @@ public class MapEquationOpt extends Algorithm<MapEquationOpt> {
     }
 
     @Override
-    public MapEquationOpt me() {
+    public MapEquationOld me() {
         return this;
     }
 
     @Override
-    public MapEquationOpt release() {
+    public MapEquationOld release() {
         communities = null;
         modulePageRank = null;
         nodes = null;

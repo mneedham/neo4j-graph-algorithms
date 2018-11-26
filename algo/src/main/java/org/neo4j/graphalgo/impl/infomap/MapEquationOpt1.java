@@ -24,7 +24,7 @@ import java.util.function.IntConsumer;
 /**
  * @author mknblch
  */
-public class MapEquation extends Algorithm<MapEquation>  implements MapEquationAlgorithm {
+public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEquationAlgorithm {
 
     public static final double TAU = .15; // from pageRank paper
     private static final double LOG2 = Math.log(2);
@@ -40,7 +40,7 @@ public class MapEquation extends Algorithm<MapEquation>  implements MapEquationA
     private int[] communities;
     private int iterations = 0;
 
-    public MapEquation(Graph graph, NodeWeights pageRanks, RelationshipWeights normalizedWeights) {
+    public MapEquationOpt1(Graph graph, NodeWeights pageRanks, RelationshipWeights normalizedWeights) {
         this.graph = graph;
         this.pageRanks = pageRanks;
         this.weights = normalizedWeights;
@@ -57,7 +57,7 @@ public class MapEquation extends Algorithm<MapEquation>  implements MapEquationA
         this.totalGraphPageRankEntropy = d[0];
     }
 
-    public MapEquation withDirection(Direction direction) {
+    public MapEquationOpt1 withDirection(Direction direction) {
         this.direction = direction;
         return this;
     }
@@ -77,7 +77,7 @@ public class MapEquation extends Algorithm<MapEquation>  implements MapEquationA
         return communities;
     }
 
-    public MapEquation compute(int iterations, boolean shuffled) {
+    public MapEquationOpt1 compute(int iterations, boolean shuffled) {
         final ProgressLogger progressLogger = getProgressLogger();
         for (this.iterations = 0; this.iterations < iterations; this.iterations++) {
             progressLogger.log("Iteration " + this.iterations);
@@ -131,7 +131,11 @@ public class MapEquation extends Algorithm<MapEquation>  implements MapEquationA
 
     @Override
     public int getCommunityCount() {
-        return 0;
+        return modules.size();
+    }
+
+    public int getNodeCount(int moduleIndex) {
+        return modules.get(moduleIndex).nodes.size();
     }
 
     public double getModuleCodeLength() {
@@ -141,12 +145,12 @@ public class MapEquation extends Algorithm<MapEquation>  implements MapEquationA
     }
 
     @Override
-    public MapEquation me() {
+    public MapEquationOpt1 me() {
         return this;
     }
 
     @Override
-    public MapEquation release() {
+    public MapEquationOpt1 release() {
         modules.clear();
         modules = null;
         communities = null;
@@ -202,46 +206,51 @@ public class MapEquation extends Algorithm<MapEquation>  implements MapEquationA
 
         private final IntSet nodes;
         private double modulePageRank;
+        private double qOut = 0;
 
         private Module(int startNode) {
             this.nodes = new IntScatterSet();
             this.nodes.add(startNode);
             this.modulePageRank = pageRanks.weightOf(startNode);
+
+            qOut = modulePageRank * TAU; //nodeQ(startNode);
         }
 
         public void add(int node) {
             if (!this.nodes.add(node)) {
                 return;
             }
+
+            qOut += q(node);
             this.modulePageRank += pageRanks.weightOf(node);
+
         }
 
         public void remove(int node) {
-            if (nodes.removeAll(node) == 0) {
+            if (this.nodes.removeAll(node) == 0) {
                 return;
             }
+            this.qOut -= q(node);
             this.modulePageRank -= pageRanks.weightOf(node);
+
+        }
+
+        private double q(int node) {
+
+            final double prSource = pageRanks.weightOf(node);
+
+            final Pointer.DoublePointer p = Pointer.wrap(.0);
+            graph.forEachRelationship(node, direction, (sourceNodeId, targetNodeId, relationId) -> {
+                // only count relationship weights into different communities
+                if (communities[targetNodeId] == communities[sourceNodeId]) return true;
+                p.v += prSource * weights.weightOf(sourceNodeId, targetNodeId); // * (1. - TAU);
+                return true;
+            });
+            return p.v;
         }
 
         double qOut() {
-
-            final Pointer.DoublePointer p = Pointer.wrap(.0);
-            final double prob = (1. - ((double) nodes.size() / nodeCount)) * (1. - TAU);
-
-            for (IntCursor c : nodes) {
-                if (graph.degree(c.value, direction) == 0) {
-                    p.v += pageRanks.weightOf(c.value) * prob;
-                } else {
-                    final double prSource = pageRanks.weightOf(c.value);
-                    graph.forEachRelationship(c.value, direction, (sourceNodeId, targetNodeId, relationId) -> {
-                        // only count relationship weights into different communities
-                        if (communities[targetNodeId] == communities[sourceNodeId]) return true;
-                        p.v += prSource * weights.weightOf(sourceNodeId, targetNodeId) * (1. - TAU);
-                        return true;
-                    });
-                }
-            }
-            return TAU * modulePageRank * (1. - ((double) nodes.size() / nodeCount)) + p.v;
+            return qOut;
         }
 
         double getCodeBookLength() {

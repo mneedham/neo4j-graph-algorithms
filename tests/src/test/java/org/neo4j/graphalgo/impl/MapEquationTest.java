@@ -21,26 +21,21 @@ package org.neo4j.graphalgo.impl;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.graphalgo.TestProgressLogger;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.GraphLoader;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
-import org.neo4j.graphalgo.core.huge.HugeGraphFactory;
 import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
-import org.neo4j.graphalgo.core.utils.ProgressLogger;
 import org.neo4j.graphalgo.impl.infomap.MapEquation;
-import org.neo4j.graphalgo.impl.infomap.MapEquationOpt;
+import org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm;
+import org.neo4j.graphalgo.impl.infomap.MapEquationOpt1;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
-import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
 import java.util.Arrays;
-import java.util.function.Supplier;
 import java.util.stream.LongStream;
 
 import static org.mockito.AdditionalMatchers.eq;
@@ -98,6 +93,11 @@ public class MapEquationTest {
                 .compute(10)
                 .result();
 
+
+        for (int i = 0; i < 7; i++) {
+            System.out.println(pageRankResult.score(i));
+        }
+
         normalizedWeights = new DegreeNormalizedRelationshipWeights(graph);
     }
 
@@ -106,6 +106,26 @@ public class MapEquationTest {
     public void testMove() throws Exception {
 
         final MapEquation algo = new MapEquation(graph, pageRankResult::score, normalizedWeights);
+
+        info(algo);
+        algo.move(id("b"), id("a"));
+        algo.move(id("c"), id("a"));
+
+        info(algo);
+        algo.move(id("e"), id("d"));
+        algo.move(id("f"), id("d"));
+        info(algo);
+
+        algo.move(id("d"), id("a"));
+        algo.move(id("e"), id("a"));
+        algo.move(id("f"), id("a"));
+        info(algo);
+    }
+
+    @Test
+    public void testMoveOpt1() throws Exception {
+
+        final MapEquationOpt1 algo = new MapEquationOpt1(graph, pageRankResult::score, normalizedWeights);
 
         info(algo);
         algo.move(id("b"), id("a"));
@@ -132,7 +152,7 @@ public class MapEquationTest {
         info(algo);
     }
 
-    private void info(MapEquation algo) {
+    private void info(MapEquationAlgorithm algo) {
         System.out.printf("%s | mdl: %5.2f | icl: %5.2f | mcl: %5.2f | i: %d%n",
                 Arrays.toString(algo.getCommunities()),
                 algo.getMDL(),
