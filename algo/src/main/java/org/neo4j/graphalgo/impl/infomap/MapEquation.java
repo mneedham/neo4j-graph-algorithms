@@ -225,23 +225,28 @@ public class MapEquation extends Algorithm<MapEquation>  implements MapEquationA
 
         double qOut() {
 
-            final Pointer.DoublePointer p = Pointer.wrap(.0);
-            final double prob = (1. - ((double) nodes.size() / nodeCount)) * (1. - TAU);
-
+            double p = 0;
             for (IntCursor c : nodes) {
-                if (graph.degree(c.value, direction) == 0) {
-                    p.v += pageRanks.weightOf(c.value) * prob;
-                } else {
-                    final double prSource = pageRanks.weightOf(c.value);
-                    graph.forEachRelationship(c.value, direction, (sourceNodeId, targetNodeId, relationId) -> {
-                        // only count relationship weights into different communities
-                        if (communities[targetNodeId] == communities[sourceNodeId]) return true;
-                        p.v += prSource * weights.weightOf(sourceNodeId, targetNodeId) * (1. - TAU);
-                        return true;
-                    });
-                }
+                p += q(c.value);
             }
-            return TAU * modulePageRank * (1. - ((double) nodes.size() / nodeCount)) + p.v;
+            return TAU * modulePageRank * (1. - ((double) nodes.size() / nodeCount)) + p;
+        }
+
+        private double q(int node) {
+
+            final Pointer.DoublePointer p = Pointer.wrap(.0);
+            if (graph.degree(node, direction) == 0) {
+                p.v += pageRanks.weightOf(node) * (1. - ((double) nodes.size() / nodeCount)) * (1. - TAU);
+            } else {
+                final double prSource = pageRanks.weightOf(node);
+                graph.forEachRelationship(node, direction, (sourceNodeId, targetNodeId, relationId) -> {
+                    // only count relationship weights into different communities
+                    if (communities[targetNodeId] == communities[sourceNodeId]) return true;
+                    p.v += prSource * weights.weightOf(sourceNodeId, targetNodeId) * (1. - TAU);
+                    return true;
+                });
+            }
+            return p.v;
         }
 
         double getCodeBookLength() {

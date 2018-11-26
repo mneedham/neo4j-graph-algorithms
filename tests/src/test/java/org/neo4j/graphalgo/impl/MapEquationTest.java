@@ -66,25 +66,52 @@ public class MapEquationTest {
     @BeforeClass
     public static void setupGraph() throws KernelException {
 
+//        final String cypher =
+//                "CREATE (a:Node {name:'a'})\n" +
+//                        "CREATE (b:Node {name:'b'})\n" +
+//                        "CREATE (c:Node {name:'c'})\n" +
+//                        "CREATE (d:Node {name:'d'})\n" +
+//                        "CREATE (e:Node {name:'e'})\n" +
+//                        "CREATE (f:Node {name:'f'})\n" +
+//                        "CREATE (x:Node {name:'x'})\n" +
+//                        "CREATE" +
+//                        " (b)-[:TYPE]->(a),\n" +
+//                        " (a)-[:TYPE]->(c),\n" +
+//                        " (c)-[:TYPE]->(a),\n" +
+//
+//                        " (d)-[:TYPE]->(c),\n" +
+//
+//                        " (d)-[:TYPE]->(e),\n" +
+//                        " (d)-[:TYPE]->(f),\n" +
+//                        " (e)-[:TYPE]->(f)";
+
         final String cypher =
                 "CREATE (a:Node {name:'a'})\n" +
+                        "CREATE (c:Node {name:'c'})\n" + // shuffled
                         "CREATE (b:Node {name:'b'})\n" +
-                        "CREATE (c:Node {name:'c'})\n" +
                         "CREATE (d:Node {name:'d'})\n" +
                         "CREATE (e:Node {name:'e'})\n" +
+                        "CREATE (g:Node {name:'g'})\n" +
                         "CREATE (f:Node {name:'f'})\n" +
-                        "CREATE (x:Node {name:'x'})\n" +
+                        "CREATE (h:Node {name:'h'})\n" +
+                        "CREATE (z:Node {name:'z'})\n" +
+
                         "CREATE" +
-                        " (b)-[:TYPE]->(a),\n" +
+
+                        " (a)-[:TYPE]->(b),\n" +
                         " (a)-[:TYPE]->(c),\n" +
-                        " (c)-[:TYPE]->(a),\n" +
+                        " (a)-[:TYPE]->(d),\n" +
+                        " (c)-[:TYPE]->(d),\n" +
+                        " (b)-[:TYPE]->(c),\n" +
+                        " (b)-[:TYPE]->(d),\n" +
 
-                        " (d)-[:TYPE]->(c),\n" +
-
-                        " (d)-[:TYPE]->(e),\n" +
-                        " (d)-[:TYPE]->(f),\n" +
-                        " (e)-[:TYPE]->(f)";
-
+                        " (f)-[:TYPE]->(e),\n" +
+                        " (e)-[:TYPE]->(g),\n" +
+                        " (e)-[:TYPE]->(h),\n" +
+                        " (f)-[:TYPE]->(h),\n" +
+                        " (f)-[:TYPE]->(g),\n" +
+                        " (g)-[:TYPE]->(h),\n" +
+                        " (b)-[:TYPE]->(e)";
         db.execute(cypher);
 
         graph = new GraphLoader(db)
@@ -120,15 +147,18 @@ public class MapEquationTest {
         info(algo);
         algo.move(id("b"), id("a"));
         algo.move(id("c"), id("a"));
-
-        info(algo);
-        algo.move(id("e"), id("d"));
-        algo.move(id("f"), id("d"));
-        info(algo);
-
         algo.move(id("d"), id("a"));
+
+        info(algo);
+        algo.move(id("e"), id("h"));
+        algo.move(id("f"), id("h"));
+        algo.move(id("g"), id("h"));
+        info(algo);
+
         algo.move(id("e"), id("a"));
         algo.move(id("f"), id("a"));
+        algo.move(id("g"), id("a"));
+        algo.move(id("h"), id("a"));
         info(algo);
 
     }
@@ -136,20 +166,25 @@ public class MapEquationTest {
     @Test
     public void testMoveOpt1() throws Exception {
 
+        System.out.println("opt");
+
         final MapEquationOpt1 algo = new MapEquationOpt1(graph, pageRankResult, normalizedWeights);
 
         info(algo);
         algo.move(id("b"), id("a"));
         algo.move(id("c"), id("a"));
-
-        info(algo);
-        algo.move(id("e"), id("d"));
-        algo.move(id("f"), id("d"));
-        info(algo);
-
         algo.move(id("d"), id("a"));
+
+        info(algo);
+        algo.move(id("e"), id("h"));
+        algo.move(id("f"), id("h"));
+        algo.move(id("g"), id("h"));
+        info(algo);
+
         algo.move(id("e"), id("a"));
         algo.move(id("f"), id("a"));
+        algo.move(id("g"), id("a"));
+        algo.move(id("h"), id("a"));
         info(algo);
     }
 
@@ -159,9 +194,14 @@ public class MapEquationTest {
 
         final MapEquation algo = new MapEquation(graph, pageRankResult, normalizedWeights);
         info(algo);
-
-        algo.compute(10, true);
+        algo.compute(10, false);
         info(algo);
+
+        System.out.println("--- opt ---");
+        final MapEquationOpt1 algo1 = new MapEquationOpt1(graph, pageRankResult, normalizedWeights);
+        info(algo1);
+        algo.compute(10, false);
+        info(algo1);
     }
 
     private void info(MapEquationAlgorithm algo) {

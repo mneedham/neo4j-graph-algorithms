@@ -64,9 +64,10 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
 
     public void move(int node, int community) {
         final int current = communities[node];
+        this.communities[node] = community;
         this.modules.get(current).remove(node);
         this.modules.get(community).add(node);
-        this.communities[node] = community;
+
     }
 
     public int getIterations() {
@@ -211,6 +212,7 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
         private Module(int startNode) {
             this.nodes = new IntScatterSet();
             this.nodes.add(startNode);
+
             this.modulePageRank = pageRanks.weightOf(startNode);
 
             qOut = q(startNode);
@@ -232,28 +234,43 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
             }
             this.qOut -= q(node);
             this.modulePageRank -= pageRanks.weightOf(node);
-
         }
 
         private double q(int node) {
 
-            final double prSourceTau = pageRanks.weightOf(node) * (1. - TAU) / nodeCount;
+            final double prSourceTau = pageRanks.weightOf(node) * (1. - TAU);
 
+            // disconnected nodes
             if (graph.degree(node, Direction.OUTGOING) == 0) {
-                return (1. - ((double) nodes.size() / nodeCount)) * (1. - TAU);
+                return prSourceTau * (1. - ((double) nodes.size() / nodeCount));
             }
+            // rest
             final Pointer.DoublePointer p = Pointer.wrap(.0);
             graph.forEachRelationship(node, direction, (sourceNodeId, targetNodeId, relationId) -> {
-                // only count relationship weights into different communities
+                // count weights into different communities
+//                if (nodes.contains(targetNodeId)) {
+//                    return true;
+//                }
                 if (communities[targetNodeId] == communities[sourceNodeId]) return true;
-                p.v += prSourceTau * weights.weightOf(sourceNodeId, targetNodeId);
+                p.v += prSourceTau * weights.weightOf(sourceNodeId, targetNodeId) ;
                 return true;
             });
             return (p.v);
         }
 
         double qOut() {
-            return modulePageRank * TAU * (1. - (double) nodes.size() / nodeCount) + qOut;
+
+            double k = 0;
+            for (IntCursor node : nodes) {
+                k += q(node.value);
+            }
+
+            System.out.println("qOut = " + qOut + " k = " + k + " d = " + Math.abs(qOut - k));
+//
+//            System.out.println("modulePageRank = " + modulePageRank);
+//            System.out.println("m = " + m);
+            return modulePageRank * TAU * (1. - (double) nodes.size() / nodeCount)
+                    + k;
         }
 
         double qP() {
@@ -262,13 +279,14 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
 
         double getCodeBookLength() {
             final double qOut = qOut();
-            final double qp = qP();
+            final double qp = qOut + modulePageRank;
             double e = 0;
             for (IntCursor node : nodes) {
                 e += entropy(pageRanks.weightOf(node.value) / qp);
             }
             return qp * (-entropy(qOut / qp) - e);
         }
+
     }
 
 
