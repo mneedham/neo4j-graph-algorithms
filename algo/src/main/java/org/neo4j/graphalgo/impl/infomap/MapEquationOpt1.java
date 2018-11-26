@@ -100,9 +100,9 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
     }
 
     public double getMDL() {
-        double totalE = .0;
         double totalQout = .0;
         double totalQoutE = .0;
+        double totalE = .0;
         for (Iterator<ObjectCursor<Module>> it = this.modules.iterator(); it.hasNext(); ) {
             final Module mod = it.next().value;
             if (mod.nodes.isEmpty()) {
@@ -111,7 +111,7 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
             final double qOut = mod.qOut();
             totalQout += qOut;
             totalQoutE += entropy(qOut);
-            totalE += entropy(mod.modulePageRank + qOut);
+            totalE += entropy(mod.qP());
         }
         return entropy(totalQout)
                 - 2 * totalQoutE
@@ -213,7 +213,7 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
             this.nodes.add(startNode);
             this.modulePageRank = pageRanks.weightOf(startNode);
 
-            qOut = modulePageRank * TAU; //nodeQ(startNode);
+            qOut = q(startNode);
         }
 
         public void add(int node) {
@@ -221,7 +221,7 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
                 return;
             }
 
-            qOut += q(node);
+            this.qOut += q(node);
             this.modulePageRank += pageRanks.weightOf(node);
 
         }
@@ -237,28 +237,32 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
 
         private double q(int node) {
 
-            final double prSource = pageRanks.weightOf(node);
+            final double prSourceTau = pageRanks.weightOf(node) * (1. - TAU) / nodeCount;
 
+            if (graph.degree(node, Direction.OUTGOING) == 0) {
+                return (1. - ((double) nodes.size() / nodeCount)) * (1. - TAU);
+            }
             final Pointer.DoublePointer p = Pointer.wrap(.0);
             graph.forEachRelationship(node, direction, (sourceNodeId, targetNodeId, relationId) -> {
                 // only count relationship weights into different communities
                 if (communities[targetNodeId] == communities[sourceNodeId]) return true;
-                p.v += prSource * weights.weightOf(sourceNodeId, targetNodeId); // * (1. - TAU);
+                p.v += prSourceTau * weights.weightOf(sourceNodeId, targetNodeId);
                 return true;
             });
-            return p.v;
+            return (p.v);
         }
 
         double qOut() {
-            return qOut;
+            return modulePageRank * TAU * (1. - (double) nodes.size() / nodeCount) + qOut;
+        }
+
+        double qP() {
+            return qOut() + modulePageRank;
         }
 
         double getCodeBookLength() {
-            if (nodes.size() == 0) {
-                return 0;
-            }
             final double qOut = qOut();
-            final double qp = qOut + modulePageRank;
+            final double qp = qP();
             double e = 0;
             for (IntCursor node : nodes) {
                 e += entropy(pageRanks.weightOf(node.value) / qp);

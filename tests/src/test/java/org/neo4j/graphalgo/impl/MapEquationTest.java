@@ -20,17 +20,22 @@ package org.neo4j.graphalgo.impl;
 
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
+import org.neo4j.graphalgo.core.utils.GraphNormalizedRelationshipWeights;
 import org.neo4j.graphalgo.impl.infomap.MapEquation;
 import org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm;
 import org.neo4j.graphalgo.impl.infomap.MapEquationOpt1;
+import org.neo4j.graphalgo.impl.infomap.SimplePageRank;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
+import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
@@ -55,7 +60,7 @@ public class MapEquationTest {
     public static ImpermanentDatabaseRule db = new ImpermanentDatabaseRule();
 
     private static Graph graph;
-    private static PageRankResult pageRankResult;
+    private static NodeWeights pageRankResult;
     private static RelationshipWeights normalizedWeights;
 
     @BeforeClass
@@ -89,23 +94,28 @@ public class MapEquationTest {
                 .asUndirected(true)
                 .load(HeavyGraphFactory.class);
 
-        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
-                .compute(10)
-                .result();
+        // equal PRs leads to wrong results
+//        final long nodeCount = graph.nodeCount();
+//        pageRankResult = n -> .1 / nodeCount;
 
+        pageRankResult = new SimplePageRank(graph, 1. - MapEquation.TAU)
+                .compute(10);
 
-        for (int i = 0; i < 7; i++) {
-            System.out.println(pageRankResult.score(i));
-        }
+        // confusing results due to PR(j) is not normalized
+//        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
+//                .compute(10)
+//                .result()::score;
 
-        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph);
+        // normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1.);
+
+        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.OUTGOING);
     }
 
 
     @Test
     public void testMove() throws Exception {
 
-        final MapEquation algo = new MapEquation(graph, pageRankResult::score, normalizedWeights);
+        final MapEquation algo = new MapEquation(graph, pageRankResult, normalizedWeights);
 
         info(algo);
         algo.move(id("b"), id("a"));
@@ -120,12 +130,13 @@ public class MapEquationTest {
         algo.move(id("e"), id("a"));
         algo.move(id("f"), id("a"));
         info(algo);
+
     }
 
     @Test
     public void testMoveOpt1() throws Exception {
 
-        final MapEquationOpt1 algo = new MapEquationOpt1(graph, pageRankResult::score, normalizedWeights);
+        final MapEquationOpt1 algo = new MapEquationOpt1(graph, pageRankResult, normalizedWeights);
 
         info(algo);
         algo.move(id("b"), id("a"));
@@ -142,10 +153,11 @@ public class MapEquationTest {
         info(algo);
     }
 
+    @Ignore
     @Test
     public void testClustering() throws Exception {
 
-        final MapEquation algo = new MapEquation(graph, pageRankResult::score, normalizedWeights);
+        final MapEquation algo = new MapEquation(graph, pageRankResult, normalizedWeights);
         info(algo);
 
         algo.compute(10, true);
@@ -153,7 +165,7 @@ public class MapEquationTest {
     }
 
     private void info(MapEquationAlgorithm algo) {
-        System.out.printf("%s | mdl: %5.2f | icl: %5.2f | mcl: %5.2f | i: %d%n",
+        System.out.printf("%s | mdl: %5.4f | icl: %5.4f | mcl: %5.4f | i: %d%n",
                 Arrays.toString(algo.getCommunities()),
                 algo.getMDL(),
                 algo.getIndexCodeLength(),
