@@ -207,7 +207,6 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
 
         private final IntSet nodes;
         private double modulePageRank;
-        private double qOut = 0;
 
         private Module(int startNode) {
             this.nodes = new IntScatterSet();
@@ -215,7 +214,6 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
 
             this.modulePageRank = pageRanks.weightOf(startNode);
 
-            qOut = q(startNode);
         }
 
         public void add(int node) {
@@ -223,7 +221,6 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
                 return;
             }
 
-            this.qOut += q(node);
             this.modulePageRank += pageRanks.weightOf(node);
 
         }
@@ -232,7 +229,6 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
             if (this.nodes.removeAll(node) == 0) {
                 return;
             }
-            this.qOut -= q(node);
             this.modulePageRank -= pageRanks.weightOf(node);
         }
 
@@ -264,11 +260,6 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
             for (IntCursor node : nodes) {
                 k += q(node.value);
             }
-
-            System.out.println("qOut = " + qOut + " k = " + k + " d = " + Math.abs(qOut - k));
-//
-//            System.out.println("modulePageRank = " + modulePageRank);
-//            System.out.println("m = " + m);
             return modulePageRank * TAU * (1. - (double) nodes.size() / nodeCount)
                     + k;
         }
