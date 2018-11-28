@@ -5,6 +5,7 @@ package org.neo4j.graphalgo.impl.infomap;
  */
 public interface MapEquationAlgorithm {
 
+    double LOG2 = Math.log(2);
 
     int[] getCommunities();
 
@@ -17,4 +18,12 @@ public interface MapEquationAlgorithm {
     double getModuleCodeLength();
 
     int getIterations();
+
+    static double entropy(double v) {
+        return v != .0 ? v * log2(v) : 0.;
+    }
+
+    static double log2(double v) {
+        return Math.log(v) / LOG2;
+    }
 }
