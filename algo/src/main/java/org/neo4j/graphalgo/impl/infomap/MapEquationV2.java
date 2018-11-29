@@ -85,11 +85,19 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
         return 0;
     }
 
-    private static class Module {
+    private class Module {
 
+        // number of nodes
+        int n = 1;
+        // ergodic frequency
+        double p;
+        // exit probability without teleport
+        double w = 0;
+        // exit probability with teleport
+        double q;
 
-        public Module(int node) {
-
+        public Module(int startNode) {
+            p = pageRanks.weightOf(startNode);
         }
     }
 }
