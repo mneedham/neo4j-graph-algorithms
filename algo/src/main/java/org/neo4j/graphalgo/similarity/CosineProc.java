@@ -53,6 +53,9 @@ public class CosineProc extends SimilarityProc {
         Double skipValue = configuration.get("skipValue", null);
         double similarityCutoff = similarityCutoff(configuration);
 
+        int topN = getTopN(configuration);
+        int topK = getTopK(configuration);
+
         if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
             if (skipValue == null) {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
@@ -61,9 +64,6 @@ public class CosineProc extends SimilarityProc {
             SimilarityComputer<RleWeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
             RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
 
-
-            int topN = getTopN(configuration);
-            int topK = getTopK(configuration);
 
             Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
 
@@ -75,9 +75,6 @@ public class CosineProc extends SimilarityProc {
 
             List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
             WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
-
-            int topN = getTopN(configuration);
-            int topK = getTopK(configuration);
 
             Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
 
@@ -96,6 +93,9 @@ public class CosineProc extends SimilarityProc {
         Double skipValue = configuration.get("skipValue", null);
         double similarityCutoff = similarityCutoff(configuration);
 
+        int topN = getTopN(configuration);
+        int topK = getTopK(configuration);
+
         Stream<SimilarityResult> stream;
         int numberOfInputs;
 
@@ -108,8 +108,7 @@ public class CosineProc extends SimilarityProc {
             RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
             numberOfInputs = inputs.length;
 
-            int topN = getTopN(configuration);
-            int topK = getTopK(configuration);
+
 
             stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);
         } else {
@@ -120,9 +119,6 @@ public class CosineProc extends SimilarityProc {
             List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
             WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
             numberOfInputs = inputs.length;
-
-            int topN = getTopN(configuration);
-            int topK = getTopK(configuration);
 
             stream =  topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);
         }
