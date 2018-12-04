@@ -7,12 +7,14 @@ class RleWeightedInput implements Comparable<RleWeightedInput> {
     long id;
     double[] weights;
     int count;
+    private RleDecoder rleDecoder;
 
     public RleWeightedInput(long id, double[] weights, int initialSize, int nonSkipSize) {
         this.initialSize = initialSize;
         this.id = id;
         this.weights = weights;
         this.count = nonSkipSize;
+        rleDecoder = new RleDecoder(initialSize);
     }
 
     @Override
@@ -47,8 +49,6 @@ class RleWeightedInput implements Comparable<RleWeightedInput> {
     }
 
     SimilarityResult cosineSquaresSkip(double similarityCutoff, RleWeightedInput other, double skipValue) {
-
-        RleDecoder rleDecoder = new RleDecoder(initialSize);
         rleDecoder.reset(this.weights, other.weights);
 
         double[] thisWeights = rleDecoder.item1();
