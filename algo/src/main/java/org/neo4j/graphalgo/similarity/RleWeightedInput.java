@@ -2,8 +2,6 @@ package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.utils.Intersections;
 
-import static org.neo4j.graphalgo.similarity.RleTransformer.REPEAT_CUTOFF;
-
 class RleWeightedInput implements Comparable<RleWeightedInput> {
     private final int initialSize;
     long id;
@@ -49,8 +47,12 @@ class RleWeightedInput implements Comparable<RleWeightedInput> {
     }
 
     SimilarityResult cosineSquaresSkip(double similarityCutoff, RleWeightedInput other, double skipValue) {
-        double[] thisWeights = RleTransformer.decode(weights, initialSize);
-        double[] otherWeights = RleTransformer.decode(other.weights, initialSize);
+
+        RleDecoder rleDecoder = new RleDecoder(initialSize);
+        rleDecoder.reset(this.weights, other.weights);
+
+        double[] thisWeights = rleDecoder.item1();
+        double[] otherWeights = rleDecoder.item2();
 
         int len = Math.min(thisWeights.length, otherWeights.length);
         double cosineSquares = Intersections.cosineSquareSkip(thisWeights, otherWeights, len, skipValue);

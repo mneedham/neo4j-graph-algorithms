@@ -18,27 +18,16 @@
  */
 package org.neo4j.graphalgo.similarity;
 
-import com.carrotsearch.hppc.LongDoubleHashMap;
-import com.carrotsearch.hppc.LongDoubleMap;
-import com.carrotsearch.hppc.LongHashSet;
-import com.carrotsearch.hppc.LongSet;
-import com.carrotsearch.hppc.cursors.LongDoubleCursor;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.ProcedureConstants;
-import org.neo4j.graphdb.Result;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import static org.neo4j.helpers.collection.MapUtil.map;
 
 public class CosineProc extends SimilarityProc {
 
@@ -63,7 +52,6 @@ public class CosineProc extends SimilarityProc {
 
             SimilarityComputer<RleWeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
             RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
-
 
             Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
 
@@ -107,8 +95,6 @@ public class CosineProc extends SimilarityProc {
             SimilarityComputer<RleWeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
             RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
             numberOfInputs = inputs.length;
-
-
 
             stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);
         } else {
