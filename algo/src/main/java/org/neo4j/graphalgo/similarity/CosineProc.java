@@ -19,13 +19,11 @@
 package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
-import org.neo4j.graphalgo.core.ProcedureConstants;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -48,14 +46,7 @@ public class CosineProc extends SimilarityProc {
         int topK = getTopK(configuration);
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
 
-        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
-        return stream.map(SimilarityResult::squareRooted);
-    }
-
-    private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
-        return skipValue == null ?
-                (s, t, cutoff) -> s.cosineSquares(cutoff, t) :
-                (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
+        return generateStream(configuration, inputs, similarityCutoff, topN, topK, computer);
     }
 
     @Procedure(name = "algo.similarity.cosine", mode = Mode.WRITE)
@@ -74,10 +65,23 @@ public class CosineProc extends SimilarityProc {
         int topN = getTopN(configuration);
         int topK = getTopK(configuration);
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
-        Stream<SimilarityResult> stream =  topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);
+        Stream<SimilarityResult> stream = generateStream(configuration, inputs, similarityCutoff, topN, topK, computer);
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
         return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");
+    }
+
+    private Stream<SimilarityResult> generateStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
+                                                    double similarityCutoff, int topN, int topK,
+                                                    SimilarityComputer<WeightedInput> computer) {
+        return topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN)
+                .map(SimilarityResult::squareRooted);
+    }
+
+    private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
+        return skipValue == null ?
+                (s, t, cutoff) -> s.cosineSquares(cutoff, t) :
+                (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
     }
 
     private double similarityCutoff(ProcedureConfiguration configuration) {
