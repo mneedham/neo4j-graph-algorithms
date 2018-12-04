@@ -40,34 +40,22 @@ public class CosineProc extends SimilarityProc {
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) throws Exception {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
-        double similarityCutoff = similarityCutoff(configuration);
 
+        WeightedInput[] inputs = prepareInputs(rawData, configuration, skipValue);
+
+        double similarityCutoff = similarityCutoff(configuration);
         int topN = getTopN(configuration);
         int topK = getTopK(configuration);
+        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
 
-        if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
-            if (skipValue == null) {
-                throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
-            }
+        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
+        return stream.map(SimilarityResult::squareRooted);
+    }
 
-            SimilarityComputer<WeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
-            WeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
-
-            Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
-
-            return stream.map(SimilarityResult::squareRooted);
-        } else {
-            SimilarityComputer<WeightedInput> computer = skipValue == null ?
-                    (s,t,cutoff) -> s.cosineSquares(cutoff, t) :
-                    (s,t,cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
-
-            List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
-            WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
-
-            Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
-
-            return stream.map(SimilarityResult::squareRooted);
-        }
+    private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
+        return skipValue == null ?
+                (s, t, cutoff) -> s.cosineSquares(cutoff, t) :
+                (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
     }
 
     @Procedure(name = "algo.similarity.cosine", mode = Mode.WRITE)
@@ -79,38 +67,31 @@ public class CosineProc extends SimilarityProc {
 
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
-        double similarityCutoff = similarityCutoff(configuration);
 
+        WeightedInput[] inputs = prepareInputs(rawData, configuration, skipValue);
+
+        double similarityCutoff = similarityCutoff(configuration);
         int topN = getTopN(configuration);
         int topK = getTopK(configuration);
+        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
+        Stream<SimilarityResult> stream =  topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);
 
-        Stream<SimilarityResult> stream;
-        int numberOfInputs;
+        boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
+        return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");
+    }
 
+    private WeightedInput[] prepareInputs(@Name(value = "data", defaultValue = "null") Object rawData, ProcedureConfiguration configuration, Double skipValue) throws Exception {
         if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
             if (skipValue == null) {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
             }
 
-            SimilarityComputer<WeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
-            RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
-            numberOfInputs = inputs.length;
-
-            stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);
+            return prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
         } else {
-            SimilarityComputer<WeightedInput> computer = skipValue == null ?
-                    (s,t,cutoff) -> s.cosineSquares(cutoff, t) :
-                    (s,t,cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
 
             List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
-            DenseWeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
-            numberOfInputs = inputs.length;
-
-            stream =  topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);
+            return prepareWeights(data, getDegreeCutoff(configuration), skipValue);
         }
-
-        boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
-        return writeAndAggregateResults(configuration, stream, numberOfInputs, write, "SIMILAR");
     }
 
     private double similarityCutoff(ProcedureConfiguration configuration) {
