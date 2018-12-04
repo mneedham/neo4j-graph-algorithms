@@ -29,12 +29,8 @@ import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
 import org.neo4j.graphalgo.core.utils.GraphNormalizedRelationshipWeights;
-import org.neo4j.graphalgo.impl.infomap.MapEquation;
-import org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm;
-import org.neo4j.graphalgo.impl.infomap.MapEquationOpt1;
-import org.neo4j.graphalgo.impl.infomap.SimplePageRank;
+import org.neo4j.graphalgo.impl.infomap.*;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
-import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
@@ -42,8 +38,6 @@ import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
 import java.util.Arrays;
 import java.util.stream.LongStream;
-
-import static org.mockito.AdditionalMatchers.eq;
 
 /**
  * Graph:
@@ -54,7 +48,7 @@ import static org.mockito.AdditionalMatchers.eq;
  *
  * @author mknblch
  */
-public class MapEquationTest {
+public class MapEquationV2Test {
 
     @ClassRule
     public static ImpermanentDatabaseRule db = new ImpermanentDatabaseRule();
@@ -129,11 +123,12 @@ public class MapEquationTest {
                 .compute(10);
 
         // confusing results due to PR(j) is not normalized
-//        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
-//                .compute(10)
-//                .result()::score;
+        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
+                .compute(10)
+                .result()::score;
 
-//         normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1.);
+        //normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1.);
+
         normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.OUTGOING);
     }
 
@@ -141,67 +136,27 @@ public class MapEquationTest {
     @Test
     public void testMove() throws Exception {
 
-        final MapEquation algo = new MapEquation(graph, pageRankResult, normalizedWeights);
+        final MapEquationV2 algo = new MapEquationV2(graph, pageRankResult, normalizedWeights);
 
         info(algo);
-        algo.move(id("b"), id("a"));
-        algo.move(id("c"), id("a"));
-        algo.move(id("d"), id("a"));
+
+        algo.merge(id("a"), id("b"));
+        algo.merge(id("a"), id("c"));
+        algo.merge(id("a"), id("d"));
 
         info(algo);
-        algo.move(id("e"), id("h"));
-        algo.move(id("f"), id("h"));
-        algo.move(id("g"), id("h"));
+        algo.merge(id("h"), id("e"));
+        algo.merge(id("h"), id("f"));
+        algo.merge(id("h"), id("g"));
         info(algo);
 
-        algo.move(id("e"), id("a"));
-        algo.move(id("f"), id("a"));
-        algo.move(id("g"), id("a"));
-        algo.move(id("h"), id("a"));
+        algo.merge(id("a"), id("h"));
         info(algo);
 
     }
 
-    @Test
-    public void testMoveOpt1() throws Exception {
 
-        System.out.println("opt");
 
-        final MapEquationOpt1 algo = new MapEquationOpt1(graph, pageRankResult, normalizedWeights);
-
-        info(algo);
-        algo.move(id("b"), id("a"));
-        algo.move(id("c"), id("a"));
-        algo.move(id("d"), id("a"));
-
-        info(algo);
-        algo.move(id("e"), id("h"));
-        algo.move(id("f"), id("h"));
-        algo.move(id("g"), id("h"));
-        info(algo);
-
-        algo.move(id("e"), id("a"));
-        algo.move(id("f"), id("a"));
-        algo.move(id("g"), id("a"));
-        algo.move(id("h"), id("a"));
-        info(algo);
-    }
-
-    @Ignore
-    @Test
-    public void testClustering() throws Exception {
-
-        final MapEquation algo = new MapEquation(graph, pageRankResult, normalizedWeights);
-        info(algo);
-        algo.compute(10, false);
-        info(algo);
-
-        System.out.println("--- opt ---");
-        final MapEquationOpt1 algo1 = new MapEquationOpt1(graph, pageRankResult, normalizedWeights);
-        info(algo1);
-        algo.compute(10, false);
-        info(algo1);
-    }
 
     private void info(MapEquationAlgorithm algo) {
         System.out.printf("%s | mdl: %5.4f | icl: %5.4f | mcl: %5.4f | i: %d%n",

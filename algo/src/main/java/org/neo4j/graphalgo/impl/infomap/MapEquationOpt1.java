@@ -239,7 +239,7 @@ public class MapEquationOpt1 extends Algorithm<MapEquationOpt1> implements MapEq
             // disconnected nodes
             if (graph.degree(node, Direction.OUTGOING) == 0) {
                 return prSourceTau * (1. - ((double) nodes.size() / nodeCount));
-            }
+        }
             // rest
             final Pointer.DoublePointer p = Pointer.wrap(.0);
             graph.forEachRelationship(node, direction, (sourceNodeId, targetNodeId, relationId) -> {
