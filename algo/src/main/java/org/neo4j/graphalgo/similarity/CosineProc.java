@@ -50,8 +50,8 @@ public class CosineProc extends SimilarityProc {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
             }
 
-            SimilarityComputer<RleWeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
-            RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
+            SimilarityComputer<WeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
+            WeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
 
             Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
 
@@ -92,7 +92,7 @@ public class CosineProc extends SimilarityProc {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
             }
 
-            SimilarityComputer<RleWeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
+            SimilarityComputer<WeightedInput> computer = (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
             RleWeightedInput[] inputs = prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
             numberOfInputs = inputs.length;
 
@@ -103,7 +103,7 @@ public class CosineProc extends SimilarityProc {
                     (s,t,cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
 
             List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
-            WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
+            DenseWeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
             numberOfInputs = inputs.length;
 
             stream =  topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN).map(SimilarityResult::squareRooted);

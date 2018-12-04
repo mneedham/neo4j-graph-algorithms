@@ -39,11 +39,11 @@ public class EuclideanProc extends SimilarityProc {
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
-        SimilarityComputer<WeightedInput> computer = skipValue == null ?
+        SimilarityComputer<DenseWeightedInput> computer = skipValue == null ?
                 (s,t,cutoff) -> s.sumSquareDelta(cutoff, t) :
                 (s,t,cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
 
-        WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
+        DenseWeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
 
         double similarityCutoff = getSimilarityCutoff(configuration);
         // as we don't compute the sqrt until the end
@@ -65,11 +65,11 @@ public class EuclideanProc extends SimilarityProc {
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
-        SimilarityComputer<WeightedInput> computer = skipValue == null ?
+        SimilarityComputer<DenseWeightedInput> computer = skipValue == null ?
                 (s,t,cutoff) -> s.sumSquareDelta(cutoff, t) :
                 (s,t,cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
 
-        WeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
+        DenseWeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
 
         double similarityCutoff = getSimilarityCutoff(configuration);
         // as we don't compute the sqrt until the end
