@@ -2,14 +2,14 @@ package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.utils.Intersections;
 
-class RleWeightedInput implements WeightedInput {
+class SparseWeightedInput implements WeightedInput {
     private final int initialSize;
     private long id;
     double[] weights;
     private int count;
     private RleDecoder rleDecoder;
 
-    public RleWeightedInput(long id, double[] weights, int initialSize, int nonSkipSize) {
+    public SparseWeightedInput(long id, double[] weights, int initialSize, int nonSkipSize) {
         this.initialSize = initialSize;
         this.id = id;
         this.weights = weights;

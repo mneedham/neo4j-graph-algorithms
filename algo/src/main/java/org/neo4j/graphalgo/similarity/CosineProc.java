@@ -41,7 +41,7 @@ public class CosineProc extends SimilarityProc {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
 
-        WeightedInput[] inputs = prepareInputs(rawData, configuration, skipValue);
+        WeightedInput[] inputs = prepareWeights(rawData, configuration, skipValue);
 
         double similarityCutoff = similarityCutoff(configuration);
         int topN = getTopN(configuration);
@@ -68,7 +68,7 @@ public class CosineProc extends SimilarityProc {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
 
-        WeightedInput[] inputs = prepareInputs(rawData, configuration, skipValue);
+        WeightedInput[] inputs = prepareWeights(rawData, configuration, skipValue);
 
         double similarityCutoff = similarityCutoff(configuration);
         int topN = getTopN(configuration);
@@ -78,20 +78,6 @@ public class CosineProc extends SimilarityProc {
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
         return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");
-    }
-
-    private WeightedInput[] prepareInputs(@Name(value = "data", defaultValue = "null") Object rawData, ProcedureConfiguration configuration, Double skipValue) throws Exception {
-        if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
-            if (skipValue == null) {
-                throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
-            }
-
-            return prepareWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
-        } else {
-
-            List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
-            return prepareWeights(data, getDegreeCutoff(configuration), skipValue);
-        }
     }
 
     private double similarityCutoff(ProcedureConfiguration configuration) {

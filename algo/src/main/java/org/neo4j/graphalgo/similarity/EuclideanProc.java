@@ -43,7 +43,7 @@ public class EuclideanProc extends SimilarityProc {
                 (s,t,cutoff) -> s.sumSquareDelta(cutoff, t) :
                 (s,t,cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
 
-        DenseWeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
+        DenseWeightedInput[] inputs = preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
 
         double similarityCutoff = getSimilarityCutoff(configuration);
         // as we don't compute the sqrt until the end
@@ -69,7 +69,7 @@ public class EuclideanProc extends SimilarityProc {
                 (s,t,cutoff) -> s.sumSquareDelta(cutoff, t) :
                 (s,t,cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
 
-        DenseWeightedInput[] inputs = prepareWeights(data, getDegreeCutoff(configuration), skipValue);
+        DenseWeightedInput[] inputs = preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
 
         double similarityCutoff = getSimilarityCutoff(configuration);
         // as we don't compute the sqrt until the end

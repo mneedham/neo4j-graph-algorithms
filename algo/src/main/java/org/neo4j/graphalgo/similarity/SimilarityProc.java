@@ -6,6 +6,7 @@ import com.carrotsearch.hppc.LongHashSet;
 import com.carrotsearch.hppc.LongSet;
 import org.HdrHistogram.DoubleHistogram;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
+import org.neo4j.graphalgo.core.ProcedureConstants;
 import org.neo4j.graphalgo.core.utils.ParallelUtil;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.QueueBasedSpliterator;
@@ -215,7 +216,20 @@ public class SimilarityProc {
         return ids;
     }
 
-    DenseWeightedInput[] prepareWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
+    WeightedInput[] prepareWeights(Object rawData, ProcedureConfiguration configuration, Double skipValue) throws Exception {
+        if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
+            if (skipValue == null) {
+                throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
+            }
+
+            return prepareSparseWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
+        } else {
+            List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
+            return preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
+        }
+    }
+
+    DenseWeightedInput[] preparseDenseWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
         DenseWeightedInput[] inputs = new DenseWeightedInput[data.size()];
         int idx = 0;
         for (Map<String, Object> row : data) {
@@ -233,7 +247,7 @@ public class SimilarityProc {
         return inputs;
     }
 
-    RleWeightedInput[] prepareWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
+    SparseWeightedInput[] prepareSparseWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
         Result result = api.execute(rawData, params);
 
         Map<Long, LongDoubleMap> map = new HashMap<>();
@@ -251,7 +265,7 @@ public class SimilarityProc {
             return true;
         });
 
-        RleWeightedInput[] inputs = new RleWeightedInput[map.size()];
+        SparseWeightedInput[] inputs = new SparseWeightedInput[map.size()];
         int idx = 0;
 
         long[] idsArray = ids.toArray();
@@ -268,7 +282,7 @@ public class SimilarityProc {
                 int nonSkipSize = sparseWeights.size();
                 double[] weights = Weights.buildRleWeights(weightsList, REPEAT_CUTOFF);
 
-                inputs[idx++] = new RleWeightedInput(item, weights, size, nonSkipSize);
+                inputs[idx++] = new SparseWeightedInput(item, weights, size, nonSkipSize);
             }
         }
 
