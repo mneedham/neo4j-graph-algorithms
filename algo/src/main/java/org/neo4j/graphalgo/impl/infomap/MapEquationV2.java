@@ -4,16 +4,17 @@ import com.carrotsearch.hppc.*;
 import com.carrotsearch.hppc.cursors.IntObjectCursor;
 import com.carrotsearch.hppc.procedures.IntProcedure;
 import org.neo4j.graphalgo.api.Graph;
-import org.neo4j.graphalgo.api.NodeIterator;
 import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.utils.Pointer;
 import org.neo4j.graphalgo.impl.Algorithm;
 
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.function.Consumer;
 
 import static org.neo4j.graphalgo.impl.infomap.MapEquation.TAU;
-import static org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm.entropy;
+import static org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm.plogp;
 
 /**
  * @author mknblch
@@ -38,7 +39,7 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
         Arrays.setAll(communities, i -> i);
         final double[] d = {0.};
         graph.forEachNode(node -> {
-            d[0] += entropy(pageRanks.weightOf(node));
+            d[0] += plogp(pageRanks.weightOf(node));
             modules.put(node, new Module(node));
             return true;
         });
@@ -49,49 +50,89 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
 
         final double sumQi = sumQi();
         final double mdl = getMDL();
-        for (IntObjectCursor<Module> cursor : modules) {
-            final Module module = cursor.value;
+        for (int i = 0; i < 10; i++) {
 
-            module.nodes.forEach((IntProcedure) node -> {
-                final Pointer.GenericPointer<Module> best = Pointer.wrap(null);
-                final Pointer.DoublePointer m = Pointer.wrap(.0);
+            for (IntObjectCursor<Module> cursor : modules) {
+                final Module module = cursor.value;
+                System.out.println("module.moduleIndex = " + module.moduleIndex);
+                final Pointer.GenericPointer<Module> best = Pointer.wrap(module);
+                final Pointer.DoublePointer m = Pointer.wrap(Double.MAX_VALUE);
 
-                graph.forEachOutgoing(node, (s, t, r) -> {
-                    if (communities[t] == module.moduleIndex) {
-                        return true;
-                    }
-                    final Module other = modules.get(communities[t]);
+                forEachNeighboringModule(module, other -> {
                     final double v = mdl + delta(module, other, sumQi);
-                    if (v > 0. && v < m.v) {
+//                System.out.println("v = " + v);
+                    if (v > 0 && v < m.v) {
                         m.v = v;
                         best.v = other;
                     }
-                    return true;
                 });
-            });
+
+
+
+                merge(module.moduleIndex, best.v.moduleIndex);
+            }
         }
     }
 
+
+    void forEachNeighboringModule(Module m, Consumer<Module> consumer) {
+
+        final BitSet bitSet = new BitSet(nodeCount);
+
+
+        m.nodes.forEach((IntProcedure) node -> {
+            System.out.println("node = " + node);
+            graph.forEachOutgoing(node, (s, t, r) -> {
+                final int community = communities[t];
+                if (communities[s] == community) {
+                    return true;
+                }
+                if (bitSet.get(community)) {
+                    return true;
+                }
+                bitSet.set(community);
+                consumer.accept(modules.get(community));
+                return true;
+            });
+        });
+
+    }
+
+
     public void merge(int modA, int modB) {
 
+        if (modA == modB) {
+            return;
+        }
 
         System.out.println("delta(modA, modB, sumQi()) = " + delta(modules.get(modA), modules.get(modB), sumQi()));
         modules.get(modA).merge(modules.remove(modB));
     }
 
     public double delta(Module a, Module b, double sumQi) {
-        double ni = a.nodes.size() + b.nodes.size();
+
+
+        final IntSet merge = new IntScatterSet();
+        a.nodes.forEach((IntProcedure) merge::add);
+        b.nodes.forEach((IntProcedure) merge::add);
+
+        double ni = merge.size(); // a.nodes.size() + b.nodes.size();
         double pi = a.p + b.p;
         double wi = a.w + b.w - Wj_k(a, b);
         double qi = TAU * ((double) nodeCount - ni) / (nodeCount - 1.) * pi + (1. - TAU) * wi;
-        return entropy(qi - a.q - b.q + sumQi)
-                - entropy(sumQi)
-                - 2 * entropy(qi)
-                + 2 * entropy(a.q)
-                + 2 * entropy(b.q)
-                + entropy(pi + qi)
-                - entropy(a.p + a.q)
-                - entropy(b.p + b.q);
+
+//        System.out.println("qi = " + qi);
+//        System.out.println("a.q + b.q = " + (a.q + b.q));
+        
+        return plogp(qi - a.q - b.q + sumQi)
+                - plogp(sumQi)
+                - 2 * plogp(qi)
+                + 2 * plogp(a.q)
+                + 2 * plogp(b.q)
+                + plogp(pi + qi)
+                - plogp(a.p + a.q)
+                - plogp(b.p + b.q)
+            ;
     }
     
     double sumQi() {
@@ -112,11 +153,11 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
         for (IntObjectCursor<Module> cursor : modules) {
             final Module module = cursor.value;
             sumQi += module.q;
-            sumplogpQi += entropy(module.q);
-            sumPQi += entropy(module.p + module.q);
+            sumplogpQi += plogp(module.q);
+            sumPQi += plogp(module.p + module.q);
         }
 
-        return entropy(sumQi) - 2 * sumplogpQi - totalGraphPageRankEntropy + sumPQi;
+        return plogp(sumQi) - 2 * sumplogpQi - totalGraphPageRankEntropy + sumPQi;
     }
 
     @Override
@@ -154,25 +195,13 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
         return 0;
     }
 
-    double weightSum(Module l) {
-        final Pointer.DoublePointer w = Pointer.wrap(.0);
-        l.nodes.forEach((IntProcedure) n -> {
-            graph.forEachOutgoing(n, (s, t, r) -> {
-                if (communities[t] != l.moduleIndex) {
-                    w.v += weights.weightOf(s, t);
-                }
-                return true;
-            });
-        });
-        return w.v;
-    }
 
     double interModuleWeight(Module j, Module k) {
         final Pointer.DoublePointer w = Pointer.wrap(.0);
         j.nodes.forEach((IntProcedure) c -> {
             graph.forEachOutgoing(c, (s, t, r) -> {
-                if (communities[t] == k.moduleIndex) {
-                    w.v += weights.weightOf(s, t);
+                if (k.nodes.contains(t)) {
+                    w.v += (weights.weightOf(s, t));
                 }
                 return true;
             });
@@ -218,11 +247,19 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
         }
 
         public void merge(Module other) {
+
+
+            final IntSet merge = new IntScatterSet();
+            this.nodes.forEach((IntProcedure) merge::add);
+            other.nodes.forEach((IntProcedure) merge::add);
+
             p += other.p;
-            w += other.w - Wj_k(this, other);
+            w = w + other.w - Wj_k(this, other);
+            q = TAU * (((double) nodeCount - merge.size()) / (nodeCount - 1.)) * p + (1. - TAU) * w;
+
             other.nodes.forEach((IntProcedure) nodes::add);
             nodes.forEach((IntProcedure) node -> communities[node] = moduleIndex);
-            q = TAU * (((double) nodeCount - nodes.size() / (nodeCount - 1.)) * p + (1. - TAU) * w);
+
         }
     }
 }

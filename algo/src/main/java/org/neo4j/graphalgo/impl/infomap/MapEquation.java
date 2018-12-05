@@ -265,7 +265,7 @@ public class MapEquation extends Algorithm<MapEquation>  implements MapEquationA
 
 
     private static double entropy(double v) {
-        return v != .0 ? v * log2(v) : 0.;
+        return v > .0 ? v * log2(v) : 0.;
     }
 
     private static double log2(double v) {

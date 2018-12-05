@@ -95,15 +95,15 @@ public class MapEquationV2Test {
                         " (a)-[:TYPE]->(b),\n" +
                         " (a)-[:TYPE]->(c),\n" +
                         " (a)-[:TYPE]->(d),\n" +
-                        " (c)-[:TYPE]->(d),\n" +
                         " (b)-[:TYPE]->(c),\n" +
+                        " (c)-[:TYPE]->(d),\n" +
                         " (b)-[:TYPE]->(d),\n" +
 
                         " (f)-[:TYPE]->(e),\n" +
-                        " (e)-[:TYPE]->(g),\n" +
                         " (e)-[:TYPE]->(h),\n" +
-                        " (f)-[:TYPE]->(h),\n" +
+                        " (e)-[:TYPE]->(g),\n" +
                         " (f)-[:TYPE]->(g),\n" +
+                        " (f)-[:TYPE]->(h),\n" +
                         " (g)-[:TYPE]->(h),\n" +
                         " (b)-[:TYPE]->(e)";
         db.execute(cypher);
@@ -153,6 +153,30 @@ public class MapEquationV2Test {
         algo.merge(id("a"), id("h"));
         info(algo);
 
+    }
+
+    @Test
+    public void test2() throws Exception {
+
+        final MapEquationV2 algo = new MapEquationV2(graph, pageRankResult, normalizedWeights);
+
+        algo.compute();
+
+        info(algo);
+    }
+
+    @Test
+    public void testPlogp() throws Exception {
+        for (double i = -2.; i < 5.; i += 0.1) {
+            System.out.printf("plogp(%2.2f) = %.2f%n", i, MapEquationAlgorithm.plogp(i));
+        }
+    }
+
+    @Test
+    public void testLg2() throws Exception {
+        for (double i = -2.; i < 5.; i += 0.1) {
+            System.out.printf("log2(%2.2f) = %.2f%n", i, MapEquationAlgorithm.log2(i));
+        }
     }
 
 
