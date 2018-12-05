@@ -123,11 +123,11 @@ public class MapEquationV2Test {
                 .compute(10);
 
         // confusing results due to PR(j) is not normalized
-        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
-                .compute(10)
-                .result()::score;
+//        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
+//                .compute(10)
+//                .result()::score;
 
-        //normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1.);
+//        normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1.);
 
         normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.OUTGOING);
     }
