@@ -36,8 +36,8 @@ abstract class VisitRelationship {
     private final IdMap idMap;
     private final boolean shouldSort;
 
-    private int[] targets;
-    private int length;
+    int[] targets;
+    int length;
     private long prevNode;
     private boolean isSorted;
 
@@ -83,7 +83,17 @@ abstract class VisitRelationship {
         if (isSorted && targetId < prevTarget) {
             isSorted = false;
         }
-        targets[length++] = targetId;
+
+//        System.out.println(length + "->" + targetId);
+
+        if(length >= targets.length) {
+            System.out.println("[" + sourceGraphId + "] " + length + "-> " + targetId + " " + Arrays.toString(targets));
+        }
+
+        targets[length] = targetId;
+
+        length++;
+
         prevNode = nodeId;
         prevTarget = targetId;
         return true;

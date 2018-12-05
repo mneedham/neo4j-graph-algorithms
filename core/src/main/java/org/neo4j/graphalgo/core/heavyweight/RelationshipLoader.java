@@ -27,6 +27,8 @@ import org.neo4j.internal.kernel.api.PropertyCursor;
 import org.neo4j.internal.kernel.api.helpers.RelationshipSelectionCursor;
 import org.neo4j.kernel.api.KernelTransaction;
 
+import java.util.Arrays;
+
 abstract class RelationshipLoader {
     private final KernelTransaction transaction;
     private final LoadRelationships loadRelationships;
@@ -82,8 +84,17 @@ abstract class RelationshipLoader {
             // due to automatic skipping of identical targets, just adding one is enough to cover the
             // self-reference case, as it is handled as two relationships that aren't counted by BOTH
             final int[] targets = matrix.armOut(localNodeId, 1 + degree);
+
+            int inDegree = loadRelationships.degreeIn(sourceNode);
+            int outDegree = loadRelationships.degreeOut(sourceNode);
+
+            if(degree < inDegree + outDegree) {
+                System.out.println("both:" + degree + ", in:" + inDegree + ", out:" + outDegree);
+            }
+
             visitIn.prepareNextNode(localNodeId, targets);
             this.visitIn(sourceNode, visitIn);
+
             visitOut.prepareNextNode(visitIn);
             this.visitOut(sourceNode, visitOut);
             matrix.setOutDegree(localNodeId, visitOut.flush());

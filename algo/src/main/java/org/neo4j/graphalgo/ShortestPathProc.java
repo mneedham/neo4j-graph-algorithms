@@ -100,7 +100,14 @@ public class ShortestPathProc {
         }
 
 
-        final Graph graph = graphLoader.load(configuration.getGraphImpl());
+        Graph graph = null;
+        try {
+
+            graph = graphLoader.load(configuration.getGraphImpl());
+        } catch(Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
 
         if (graph.nodeCount() == 0 || startNode == null || endNode == null) {
             graph.release();
