@@ -134,6 +134,40 @@ public class SimilaritiesTest {
     }
 
     @Test
+    public void testPearsonSimilarityWithSomeRelationshipsNull() throws Exception {
+        String controlQuery =
+                "MATCH (p1:Employee)\n" +
+                        "MATCH (sk:Skill)<-[y:REQUIRES_SKILL] -(p2:Role {name:'Role 1-Analytics Manager'})\n" +
+                        "OPTIONAL MATCH (p1)-[x:HAS_SKILL]->(sk)\n" +
+                        "WITH SUM(x.proficiency * y.proficiency) AS xyDotProduct,\n" +
+                        "SQRT(REDUCE(xDot = 0.0, a IN COLLECT(x.proficiency) | xDot + a^2)) AS xLength,\n" +
+                        "SQRT(REDUCE(yDot = 0.0, b IN COLLECT(y.proficiency) | yDot + b^2)) AS yLength,\n" +
+                        "p1, p2\n" +
+                        "WITH  p1.name as name, xyDotProduct / (xLength * yLength) as pearsonSim\n" +
+                        "ORDER BY name ASC\n" +
+                        "RETURN name, toString(toInteger(pearsonSim*10000)/10000.0) as pearsonSim";
+        String bobSimilarity;
+        String jimSimilarity;
+        try (Transaction tx = db.beginTx()) {
+            Result result = db.execute(controlQuery);
+            bobSimilarity = (String) result.next().get("pearsonSim");
+            jimSimilarity = (String) result.next().get("pearsonSim");
+        }
+
+        Result result = db.execute(
+                "MATCH (sk:Skill)<-[y:REQUIRES_SKILL]-(p2:Role {name:'Role 1-Analytics Manager'})\n" +
+                        "MATCH (p1:Employee)\n" +
+                        "OPTIONAL MATCH (p1)-[x:HAS_SKILL]->(sk)\n" +
+                        "WITH p1, COLLECT(coalesce(x.proficiency, 0.0d)) as v1, COLLECT(coalesce(y.proficiency, 0.0d)) as v2\n" +
+                        "WITH p1.name as name, algo.similarity.pearson(v1, v2) as pearsonSim ORDER BY name ASC\n" +
+                        "RETURN name, toString(toInteger(pearsonSim*10000)/10000.0) as pearsonSim");
+
+        assertEquals(bobSimilarity, result.next().get("pearsonSim"));
+        assertEquals(jimSimilarity, result.next().get("pearsonSim"));
+
+    }
+
+    @Test
     public void testEuclideanDistance() throws Exception {
         String controlQuery =
                 "MATCH (p1:Employee)\n" +

@@ -75,8 +75,8 @@ public class Similarities {
             throw new RuntimeException("Vectors must be non-empty and of the same size");
         }
 
-        double vector1Mean = vector1.stream().mapToDouble(Number::doubleValue).average().getAsDouble();
-        double vector2Mean = vector2.stream().mapToDouble(Number::doubleValue).average().getAsDouble();
+        double vector1Mean = vector1.stream().mapToDouble(Number::doubleValue).average().orElse(1);
+        double vector2Mean = vector2.stream().mapToDouble(Number::doubleValue).average().orElse(1);
 
         double dotProductMinusMean = 0d;
         double xLength = 0d;
@@ -85,10 +85,12 @@ public class Similarities {
             double weight1 = vector1.get(i).doubleValue();
             double weight2 = vector2.get(i).doubleValue();
 
-            dotProductMinusMean += ((weight1 - vector1Mean) * (weight2 - vector2Mean));
+            double vector1Delta = weight1 - vector1Mean;
+            double vector2Delta = weight2 - vector2Mean;
 
-            xLength += Math.pow(weight1 - vector1Mean, 2);
-            yLength += Math.pow(weight2 - vector2Mean, 2);
+            dotProductMinusMean += (vector1Delta * vector2Delta);
+            xLength += vector1Delta * vector1Delta;
+            yLength += vector2Delta * vector2Delta;
         }
 
         return dotProductMinusMean / (Math.sqrt(xLength * yLength));
