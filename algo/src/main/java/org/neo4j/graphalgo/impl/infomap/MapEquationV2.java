@@ -30,9 +30,9 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
     private final NodeWeights pageRanks;
     private final RelationshipWeights weights;
     private final int nodeCount;
-    private final IntObjectMap<Module> modules;
     private final int[] communities;
     private final double totalGraphPageRankEntropy;
+    private final IntObjectMap<Module> modules;
     private final double weightSum;
 
     public MapEquationV2(Graph graph, NodeWeights pageRanks, RelationshipWeights normalizedWeights) {

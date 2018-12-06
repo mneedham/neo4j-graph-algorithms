@@ -60,52 +60,52 @@ public class MapEquationV2Test {
     @BeforeClass
     public static void setupGraph() throws KernelException {
 
-//        final String cypher =
-//                "CREATE (a:Node {name:'a'})\n" +
-//                        "CREATE (b:Node {name:'b'})\n" +
-//                        "CREATE (c:Node {name:'c'})\n" +
-//                        "CREATE (d:Node {name:'d'})\n" +
-//                        "CREATE (e:Node {name:'e'})\n" +
-//                        "CREATE (f:Node {name:'f'})\n" +
-//                        "CREATE (x:Node {name:'x'})\n" +
-//                        "CREATE" +
-//                        " (b)-[:TYPE]->(a),\n" +
-//                        " (a)-[:TYPE]->(c),\n" +
-//                        " (c)-[:TYPE]->(a),\n" +
-//
-//                        " (d)-[:TYPE]->(c),\n" +
-//
-//                        " (d)-[:TYPE]->(e),\n" +
-//                        " (d)-[:TYPE]->(f),\n" +
-//                        " (e)-[:TYPE]->(f)";
-
         final String cypher =
                 "CREATE (a:Node {name:'a'})\n" +
-                        "CREATE (c:Node {name:'c'})\n" + // shuffled
                         "CREATE (b:Node {name:'b'})\n" +
+                        "CREATE (c:Node {name:'c'})\n" +
                         "CREATE (d:Node {name:'d'})\n" +
                         "CREATE (e:Node {name:'e'})\n" +
-                        "CREATE (g:Node {name:'g'})\n" +
                         "CREATE (f:Node {name:'f'})\n" +
-                        "CREATE (h:Node {name:'h'})\n" +
-                        "CREATE (z:Node {name:'z'})\n" +
-
+                        "CREATE (x:Node {name:'x'})\n" +
                         "CREATE" +
-
-                        " (a)-[:TYPE]->(b),\n" +
+                        " (b)-[:TYPE]->(a),\n" +
                         " (a)-[:TYPE]->(c),\n" +
-                        " (a)-[:TYPE]->(d),\n" +
-                        " (b)-[:TYPE]->(c),\n" +
-                        " (c)-[:TYPE]->(d),\n" +
-                        " (b)-[:TYPE]->(d),\n" +
+                        " (c)-[:TYPE]->(a),\n" +
 
-                        " (f)-[:TYPE]->(e),\n" +
-                        " (e)-[:TYPE]->(h),\n" +
-                        " (e)-[:TYPE]->(g),\n" +
-                        " (f)-[:TYPE]->(g),\n" +
-                        " (f)-[:TYPE]->(h),\n" +
-                        " (g)-[:TYPE]->(h),\n" +
-                        " (b)-[:TYPE]->(e)";
+                        " (d)-[:TYPE]->(c),\n" +
+
+                        " (d)-[:TYPE]->(e),\n" +
+                        " (d)-[:TYPE]->(f),\n" +
+                        " (e)-[:TYPE]->(f)";
+
+//        final String cypher =
+//                "CREATE (a:Node {name:'a'})\n" +
+//                        "CREATE (c:Node {name:'c'})\n" + // shuffled
+//                        "CREATE (b:Node {name:'b'})\n" +
+//                        "CREATE (d:Node {name:'d'})\n" +
+//                        "CREATE (e:Node {name:'e'})\n" +
+//                        "CREATE (g:Node {name:'g'})\n" +
+//                        "CREATE (f:Node {name:'f'})\n" +
+//                        "CREATE (h:Node {name:'h'})\n" +
+//                        "CREATE (z:Node {name:'z'})\n" +
+//
+//                        "CREATE" +
+//
+//                        " (a)-[:TYPE]->(b),\n" +
+//                        " (a)-[:TYPE]->(c),\n" +
+//                        " (a)-[:TYPE]->(d),\n" +
+//                        " (b)-[:TYPE]->(c),\n" +
+//                        " (c)-[:TYPE]->(d),\n" +
+//                        " (b)-[:TYPE]->(d),\n" +
+//
+//                        " (f)-[:TYPE]->(e),\n" +
+//                        " (e)-[:TYPE]->(h),\n" +
+//                        " (e)-[:TYPE]->(g),\n" +
+//                        " (f)-[:TYPE]->(g),\n" +
+//                        " (f)-[:TYPE]->(h),\n" +
+//                        " (g)-[:TYPE]->(h),\n" +
+//                        " (b)-[:TYPE]->(e)";
         db.execute(cypher);
 
         graph = new GraphLoader(db)
