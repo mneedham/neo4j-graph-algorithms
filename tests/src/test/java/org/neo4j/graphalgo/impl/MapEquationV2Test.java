@@ -113,6 +113,7 @@ public class MapEquationV2Test {
                 .withAnyLabel()
                 .withoutNodeProperties()
                 .asUndirected(true)
+//                .withDirection(Direction.BOTH)
                 .load(HeavyGraphFactory.class);
 
         // equal PRs leads to wrong results
@@ -127,9 +128,13 @@ public class MapEquationV2Test {
 //                .compute(10)
 //                .result()::score;
 
-//        normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1.);
+        normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1.);
 
-        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.OUTGOING);
+//        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.OUTGOING);
+
+//        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.BOTH);
+
+
     }
 
 

@@ -101,17 +101,17 @@ public class MapEquationTest {
                         " (a)-[:TYPE]->(b),\n" +
                         " (a)-[:TYPE]->(c),\n" +
                         " (a)-[:TYPE]->(d),\n" +
-                        " (c)-[:TYPE]->(d),\n" +
                         " (b)-[:TYPE]->(c),\n" +
                         " (b)-[:TYPE]->(d),\n" +
-
-                        " (f)-[:TYPE]->(e),\n" +
+                        " (b)-[:TYPE]->(e),\n" +
+                        " (c)-[:TYPE]->(d),\n" +
                         " (e)-[:TYPE]->(g),\n" +
                         " (e)-[:TYPE]->(h),\n" +
+                        " (f)-[:TYPE]->(e),\n" +
                         " (f)-[:TYPE]->(h),\n" +
                         " (f)-[:TYPE]->(g),\n" +
-                        " (g)-[:TYPE]->(h),\n" +
-                        " (b)-[:TYPE]->(e)";
+                        " (g)-[:TYPE]->(h)";
+
         db.execute(cypher);
 
         graph = new GraphLoader(db)
@@ -119,6 +119,7 @@ public class MapEquationTest {
                 .withAnyLabel()
                 .withoutNodeProperties()
                 .asUndirected(true)
+//                .withDirection(Direction.BOTH)
                 .load(HeavyGraphFactory.class);
 
         // equal PRs leads to wrong results
@@ -134,7 +135,7 @@ public class MapEquationTest {
 //                .result()::score;
 
 //         normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1.);
-        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.OUTGOING);
+        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.BOTH);
     }
 
 

@@ -1,13 +1,18 @@
 package org.neo4j.graphalgo.impl.infomap;
 
-import com.carrotsearch.hppc.*;
+import com.carrotsearch.hppc.IntObjectMap;
+import com.carrotsearch.hppc.IntObjectScatterMap;
+import com.carrotsearch.hppc.IntScatterSet;
+import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntObjectCursor;
 import com.carrotsearch.hppc.procedures.IntProcedure;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
+import org.neo4j.graphalgo.core.sources.ShuffledNodeIterator;
 import org.neo4j.graphalgo.core.utils.Pointer;
 import org.neo4j.graphalgo.impl.Algorithm;
+import org.neo4j.graphdb.Direction;
 
 import java.util.Arrays;
 import java.util.BitSet;
@@ -21,6 +26,7 @@ import static org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm.plogp;
  */
 public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquationAlgorithm {
 
+    public static final Direction D = Direction.OUTGOING;
     private final Graph graph;
     private final NodeWeights pageRanks;
     private final RelationshipWeights weights;
@@ -47,29 +53,36 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
     }
 
     public void compute() {
-
-        final double sumQi = sumQi();
-        final double mdl = getMDL();
+        boolean changed = false;
         for (int i = 0; i < 10; i++) {
-
+            changed = false;
             for (IntObjectCursor<Module> cursor : modules) {
+                final double sumQi = sumQi();
+                final double mdl = getMDL();
                 final Module module = cursor.value;
-                System.out.println("module.moduleIndex = " + module.moduleIndex);
-                final Pointer.GenericPointer<Module> best = Pointer.wrap(module);
-                final Pointer.DoublePointer m = Pointer.wrap(Double.MAX_VALUE);
+//                System.out.println("module.moduleIndex = " + module.moduleIndex);
+                final Pointer.GenericPointer<Module> best = Pointer.wrap(null);
+                final Pointer.DoublePointer m = Pointer.wrap(mdl);
 
                 forEachNeighboringModule(module, other -> {
+
                     final double v = mdl + delta(module, other, sumQi);
-//                System.out.println("v = " + v);
                     if (v > 0 && v < m.v) {
                         m.v = v;
                         best.v = other;
                     }
                 });
 
+                if (null == best.v) {
+                    continue;
+                }
 
-
+                changed = true;
                 merge(module.moduleIndex, best.v.moduleIndex);
+            }
+
+            if (!changed) {
+                break;
             }
         }
     }
@@ -79,9 +92,8 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
 
         final BitSet bitSet = new BitSet(nodeCount);
 
-
         m.nodes.forEach((IntProcedure) node -> {
-            System.out.println("node = " + node);
+//            System.out.println("node = " + node);
             graph.forEachOutgoing(node, (s, t, r) -> {
                 final int community = communities[t];
                 if (communities[s] == community) {
@@ -105,25 +117,36 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
             return;
         }
 
-        System.out.println("delta(modA, modB, sumQi()) = " + delta(modules.get(modA), modules.get(modB), sumQi()));
-        modules.get(modA).merge(modules.remove(modB));
+        final Module module = modules.get(modA);
+        final double delta = delta(module, modules.get(modB), sumQi());
+        final double mdl = getMDL();
+
+
+        final Module other = modules.remove(modB);
+        final String targetSet = module.nodes.toString();
+        final String sourceSet = other.nodes.toString();
+        module.merge(other);
+
+        final double realMdl = getMDL();
+
+        System.out.printf("move %12s -> %12s | deltaL = %.3f | calc mdl %2.3f | real mdl %2.3f => %s%n", sourceSet, targetSet, delta, delta + mdl, realMdl, Arrays.toString(communities));
+
     }
 
     public double delta(Module a, Module b, double sumQi) {
 
 
+        sumQi = sumQi();
+
         final IntSet merge = new IntScatterSet();
         a.nodes.forEach((IntProcedure) merge::add);
         b.nodes.forEach((IntProcedure) merge::add);
 
-        double ni = merge.size(); // a.nodes.size() + b.nodes.size();
+        double ni = a.nodes.size() + b.nodes.size();
         double pi = a.p + b.p;
         double wi = a.w + b.w - Wj_k(a, b);
         double qi = TAU * ((double) nodeCount - ni) / (nodeCount - 1.) * pi + (1. - TAU) * wi;
 
-//        System.out.println("qi = " + qi);
-//        System.out.println("a.q + b.q = " + (a.q + b.q));
-        
         return plogp(qi - a.q - b.q + sumQi)
                 - plogp(sumQi)
                 - 2 * plogp(qi)
@@ -132,9 +155,9 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
                 + plogp(pi + qi)
                 - plogp(a.p + a.q)
                 - plogp(b.p + b.q)
-            ;
+                ;
     }
-    
+
     double sumQi() {
         double qi = .0;
         for (IntObjectCursor<Module> module : modules) {
@@ -235,14 +258,14 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
             p = pageRanks.weightOf(startNode);
             final Pointer.DoublePointer initW = Pointer.wrap(.0);
             // sum of all weights
-            graph.forEachOutgoing(startNode, (s, t, r) -> {
-                if (s == t) {
-                    return true;
-                }
-                initW.v += weights.weightOf(s, t);
-                return true;
-            });
-            w = p * initW.v;
+//            graph.forEachRelationship(startNode, D, (s, t, r) -> {
+//                if (s == t) {
+//                    return true;
+//                }
+//                initW.v += 1. / graph.degree(t, D); // weights.weightOf(s, t);
+//                return true;
+//            });
+            w = p; //initW.v;
             q = TAU * p + (1. - TAU) * w;
         }
 
