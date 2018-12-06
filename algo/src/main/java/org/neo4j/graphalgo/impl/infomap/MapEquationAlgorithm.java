@@ -11,11 +11,7 @@ public interface MapEquationAlgorithm {
 
     double getMDL();
 
-    double getIndexCodeLength();
-
     int getCommunityCount();
-
-    double getModuleCodeLength();
 
     int getIterations();
 

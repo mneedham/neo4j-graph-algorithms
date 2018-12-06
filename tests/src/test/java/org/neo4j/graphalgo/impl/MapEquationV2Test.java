@@ -18,10 +18,9 @@
  */
 package org.neo4j.graphalgo.impl;
 
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
@@ -37,6 +36,7 @@ import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.stream.LongStream;
 
 /**
@@ -48,6 +48,7 @@ import java.util.stream.LongStream;
  *
  * @author mknblch
  */
+@RunWith(Parameterized.class)
 public class MapEquationV2Test {
 
     @ClassRule
@@ -57,55 +58,73 @@ public class MapEquationV2Test {
     private static NodeWeights pageRankResult;
     private static RelationshipWeights normalizedWeights;
 
-    @BeforeClass
-    public static void setupGraph() throws KernelException {
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(
+                new Object[]{CYPHER_2x3},
+                new Object[]{CYPHER_2x4}
+        );
+    }
 
-        final String cypher =
-                "CREATE (a:Node {name:'a'})\n" +
-                        "CREATE (b:Node {name:'b'})\n" +
-                        "CREATE (c:Node {name:'c'})\n" +
-                        "CREATE (d:Node {name:'d'})\n" +
-                        "CREATE (e:Node {name:'e'})\n" +
-                        "CREATE (f:Node {name:'f'})\n" +
-                        "CREATE (x:Node {name:'x'})\n" +
-                        "CREATE" +
-                        " (b)-[:TYPE]->(a),\n" +
-                        " (a)-[:TYPE]->(c),\n" +
-                        " (c)-[:TYPE]->(a),\n" +
+    private static final String CYPHER_2x4 =
+            "CREATE (a:Node {name:'a'})\n" +
+                    "CREATE (c:Node {name:'c'})\n" + // shuffled
+                    "CREATE (b:Node {name:'b'})\n" +
+                    "CREATE (d:Node {name:'d'})\n" +
+                    "CREATE (e:Node {name:'e'})\n" +
+                    "CREATE (g:Node {name:'g'})\n" +
+                    "CREATE (f:Node {name:'f'})\n" +
+                    "CREATE (h:Node {name:'h'})\n" +
+                    "CREATE (z:Node {name:'z'})\n" +
 
-                        " (d)-[:TYPE]->(c),\n" +
+                    "CREATE" +
 
-                        " (d)-[:TYPE]->(e),\n" +
-                        " (d)-[:TYPE]->(f),\n" +
-                        " (e)-[:TYPE]->(f)";
+                    " (a)-[:TYPE]->(b),\n" +
+                    " (a)-[:TYPE]->(c),\n" +
+                    " (a)-[:TYPE]->(d),\n" +
+                    " (b)-[:TYPE]->(c),\n" +
+                    " (c)-[:TYPE]->(d),\n" +
+                    " (b)-[:TYPE]->(d),\n" +
 
-//        final String cypher =
-//                "CREATE (a:Node {name:'a'})\n" +
-//                        "CREATE (c:Node {name:'c'})\n" + // shuffled
-//                        "CREATE (b:Node {name:'b'})\n" +
-//                        "CREATE (d:Node {name:'d'})\n" +
-//                        "CREATE (e:Node {name:'e'})\n" +
-//                        "CREATE (g:Node {name:'g'})\n" +
-//                        "CREATE (f:Node {name:'f'})\n" +
-//                        "CREATE (h:Node {name:'h'})\n" +
-//                        "CREATE (z:Node {name:'z'})\n" +
-//
-//                        "CREATE" +
-//
-//                        " (a)-[:TYPE]->(b),\n" +
-//                        " (a)-[:TYPE]->(c),\n" +
-//                        " (a)-[:TYPE]->(d),\n" +
-//                        " (b)-[:TYPE]->(c),\n" +
-//                        " (c)-[:TYPE]->(d),\n" +
-//                        " (b)-[:TYPE]->(d),\n" +
-//
-//                        " (f)-[:TYPE]->(e),\n" +
-//                        " (e)-[:TYPE]->(h),\n" +
-//                        " (e)-[:TYPE]->(g),\n" +
-//                        " (f)-[:TYPE]->(g),\n" +
-//                        " (f)-[:TYPE]->(h),\n" +
-//                        " (g)-[:TYPE]->(h),\n" +
-//                        " (b)-[:TYPE]->(e)";
+                    " (f)-[:TYPE]->(e),\n" +
+                    " (e)-[:TYPE]->(h),\n" +
+                    " (e)-[:TYPE]->(g),\n" +
+                    " (f)-[:TYPE]->(g),\n" +
+                    " (f)-[:TYPE]->(h),\n" +
+                    " (g)-[:TYPE]->(h),\n" +
+                    " (b)-[:TYPE]->(e)";
+
+    private static final String CYPHER_2x3 =
+            "CREATE (a:Node {name:'a'})\n" +
+                    "CREATE (b:Node {name:'b'})\n" +
+                    "CREATE (c:Node {name:'c'})\n" +
+                    "CREATE (d:Node {name:'d'})\n" +
+                    "CREATE (e:Node {name:'e'})\n" +
+                    "CREATE (f:Node {name:'f'})\n" +
+                    "CREATE (x:Node {name:'x'})\n" +
+                    "CREATE" +
+                    " (b)-[:TYPE]->(a),\n" +
+                    " (a)-[:TYPE]->(c),\n" +
+                    " (c)-[:TYPE]->(a),\n" +
+
+                    " (d)-[:TYPE]->(c),\n" +
+
+                    " (d)-[:TYPE]->(e),\n" +
+                    " (d)-[:TYPE]->(f),\n" +
+                    " (e)-[:TYPE]->(f)";
+
+
+    public MapEquationV2Test( String cypher) {
+        this.cypher = cypher;
+    }
+
+    private final String cypher;
+
+    @Before
+    public void setupGraph() throws KernelException {
+
+        db.execute("MATCH (n) detach delete n");
+
         db.execute(cypher);
 
         graph = new GraphLoader(db)
@@ -120,13 +139,13 @@ public class MapEquationV2Test {
 //        final long nodeCount = graph.nodeCount();
 //        pageRankResult = n -> .1 / nodeCount;
 
-        pageRankResult = new SimplePageRank(graph, 1. - MapEquation.TAU)
-                .compute(10);
+//        pageRankResult = new SimplePageRank(graph, 1. - MapEquation.TAU)
+//                .compute(10);
 
         // confusing results due to PR(j) is not normalized
-//        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
-//                .compute(10)
-//                .result()::score;
+        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
+                .compute(10)
+                .result()::score;
 
 //        normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1000.);
 //        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.BOTH);
@@ -138,6 +157,7 @@ public class MapEquationV2Test {
     }
 
 
+    @Ignore("only for tests")
     @Test
     public void testMove() throws Exception {
 
@@ -158,27 +178,13 @@ public class MapEquationV2Test {
     }
 
     @Test
-    public void test2() throws Exception {
+    public void testClustering() throws Exception {
 
         final MapEquationV2 algo = new MapEquationV2(graph, pageRankResult, normalizedWeights);
 
         algo.compute();
 
         info(algo);
-    }
-
-    @Test
-    public void testPlogp() throws Exception {
-        for (double i = -2.; i < 5.; i += 0.1) {
-            System.out.printf("plogp(%2.2f) = %.2f%n", i, MapEquationAlgorithm.plogp(i));
-        }
-    }
-
-    @Test
-    public void testLg2() throws Exception {
-        for (double i = -2.; i < 5.; i += 0.1) {
-            System.out.printf("log2(%2.2f) = %.2f%n", i, MapEquationAlgorithm.log2(i));
-        }
     }
 
     private void info(MapEquationAlgorithm algo) {

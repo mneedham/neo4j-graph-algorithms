@@ -205,11 +205,9 @@ public class MapEquationTest {
     }
 
     private void info(MapEquationAlgorithm algo) {
-        System.out.printf("%s | mdl: %5.4f | icl: %5.4f | mcl: %5.4f | i: %d%n",
+        System.out.printf("%s | mdl: %5.4f | i: %d%n",
                 Arrays.toString(algo.getCommunities()),
                 algo.getMDL(),
-                algo.getIndexCodeLength(),
-                algo.getModuleCodeLength(),
                 algo.getIterations());
     }
 

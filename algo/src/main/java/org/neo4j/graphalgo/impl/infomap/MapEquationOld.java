@@ -106,7 +106,6 @@ public class MapEquationOld extends Algorithm<MapEquationOld> implements MapEqua
                 + totalQPEntropy;
     }
 
-    @Override
     public double getIndexCodeLength() {
         if (getCommunityCount() <= 1) {
             return 0;
@@ -123,11 +122,6 @@ public class MapEquationOld extends Algorithm<MapEquationOld> implements MapEqua
     @Override
     public int getCommunityCount() {
         return modules.size();
-    }
-
-    @Override
-    public double getModuleCodeLength() {
-        return 0;
     }
 
     @Override

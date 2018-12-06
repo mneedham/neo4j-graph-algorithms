@@ -57,19 +57,6 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
         this.weightSum = d[1] / 2.;
     }
 
-
-    static class Merge{
-        final Module c1;
-        final Module c2;
-        final double dl;
-
-        Merge(Module c1, Module c2, double dl) {
-            this.c1 = c1;
-            this.c2 = c2;
-            this.dl = dl;
-        }
-    }
-
     boolean optimize() {
 
         final double sumQi = sumQi();
@@ -104,9 +91,13 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
     }
 
     public void compute() {
-        boolean changed;
-        for (int j = 0; j < 10; j++) {
+        compute(10);
+    }
+
+    public void compute(int maxIterations) {
+        for (int j = 0; j < maxIterations; j++) {
             if (!optimize()) {
+                System.out.println("iterations = " + j);
                 break;
             }
 
@@ -147,6 +138,12 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
             return;
         }
 
+        if (modA > modB) {
+            int t = modB;
+            modB = modA;
+            modA = t;
+        }
+
         final Module module = modules.get(modA);
         final double mdl = getMDL();
 
@@ -169,7 +166,7 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
 
         double ni = a.nodes.size() + b.nodes.size();
         double pi = a.p + b.p;
-        double wi = a.w + b.w - Wj_k(a, b);
+        double wi = a.w + b.w - interModW(a, b);
         double qi = TAU * ((double) nodeCount - ni) / (nodeCount - 1.) * pi + (1. - TAU) * wi;
 
         return plogp(qi - a.q - b.q + sumQi)
@@ -224,17 +221,7 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
     }
 
     @Override
-    public double getIndexCodeLength() {
-        return 0;
-    }
-
-    @Override
     public int getCommunityCount() {
-        return 0;
-    }
-
-    @Override
-    public double getModuleCodeLength() {
         return 0;
     }
 
@@ -244,24 +231,30 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
     }
 
 
-    double interModuleWeight(Module j, Module k) {
+    private double interModW(Module j, Module k) {
         final Pointer.DoublePointer w = Pointer.wrap(.0);
         j.nodes.forEach((IntProcedure) c -> {
             final double p = pageRanks.weightOf(c);
             graph.forEachOutgoing(c, (s, t, r) -> {
                 if (k.nodes.contains(t)) {
                     w.v += p * weights.weightOf(s, t); // TODO check p
-//                    w.v += weights.weightOf(s, t);
-//                    w.v += weights.weightOf(s, t) + weights.weightOf(t, s);
                 }
                 return true;
             });
         });
-        return w.v;
-    }
+        k.nodes.forEach((IntProcedure) c -> {
+            final double p = pageRanks.weightOf(c);
+            graph.forEachOutgoing(c, (s, t, r) -> {
+                if (j.nodes.contains(t)) {
+                    w.v += p * weights.weightOf(s, t); // TODO check p
+                }
+                return true;
+            });
+        });
 
-    double Wj_k(Module j, Module k) {
-        return (interModuleWeight(j, k) + interModuleWeight(k, j));
+
+
+        return w.v;
     }
 
     private class Module {
@@ -299,20 +292,15 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
 
         public void merge(Module other) {
 
-
-            final IntSet merge = new IntScatterSet();
-            this.nodes.forEach((IntProcedure) merge::add);
-            other.nodes.forEach((IntProcedure) merge::add);
-
-//            final int ni = nodes.size() + other.nodes.size(); //merge.size();
-            final int ni = merge.size();
-
+            final int ni = nodes.size() + other.nodes.size(); //merge.size();
             p += other.p;
-            w += other.w - Wj_k(this, other);
+            w += other.w - interModW(this, other);
             q = TAU * (((double) nodeCount - ni) / (nodeCount - 1.)) * p + (1. - TAU) * w;
 
-            other.nodes.forEach((IntProcedure) nodes::add);
-            nodes.forEach((IntProcedure) node -> communities[node] = moduleIndex);
+            other.nodes.forEach((IntProcedure) node -> {
+                this.nodes.add(node);
+                communities[node] = moduleIndex;
+            });
 
         }
     }
