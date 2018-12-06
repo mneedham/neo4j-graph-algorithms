@@ -128,11 +128,11 @@ public class MapEquationV2Test {
 //                .compute(10)
 //                .result()::score;
 
-        normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1.);
-
-//        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.OUTGOING);
-
+//        normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1000.);
 //        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.BOTH);
+
+        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.OUTGOING);
+
 
 
     }
@@ -149,14 +149,11 @@ public class MapEquationV2Test {
         algo.merge(id("a"), id("c"));
         algo.merge(id("a"), id("d"));
 
-        info(algo);
         algo.merge(id("h"), id("e"));
         algo.merge(id("h"), id("f"));
         algo.merge(id("h"), id("g"));
-        info(algo);
 
         algo.merge(id("a"), id("h"));
-        info(algo);
 
     }
 
@@ -184,16 +181,10 @@ public class MapEquationV2Test {
         }
     }
 
-
-
-
     private void info(MapEquationAlgorithm algo) {
-        System.out.printf("%s | mdl: %5.4f | icl: %5.4f | mcl: %5.4f | i: %d%n",
+        System.out.printf("%s | mdl: %5.4f%n",
                 Arrays.toString(algo.getCommunities()),
-                algo.getMDL(),
-                algo.getIndexCodeLength(),
-                algo.getModuleCodeLength(),
-                algo.getIterations());
+                algo.getMDL());
     }
 
     private int id(String name) {
