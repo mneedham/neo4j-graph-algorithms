@@ -33,6 +33,7 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
     private final IntObjectMap<Module> modules;
     private final int[] communities;
     private final double totalGraphPageRankEntropy;
+    private final double weightSum;
 
     public MapEquationV2(Graph graph, NodeWeights pageRanks, RelationshipWeights normalizedWeights) {
         this.graph = graph;
@@ -42,13 +43,18 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
         this.modules = new IntObjectScatterMap<>(nodeCount);
         this.communities = new int[nodeCount];
         Arrays.setAll(communities, i -> i);
-        final double[] d = {0.};
+        final double[] d = {0., .0};
         graph.forEachNode(node -> {
             d[0] += plogp(pageRanks.weightOf(node));
+            graph.forEachRelationship(node, D, (s, t, r) -> {
+                d[1] += weights.weightOf(s, t);
+                return true;
+            });
             modules.put(node, new Module(node));
             return true;
         });
         this.totalGraphPageRankEntropy = d[0];
+        this.weightSum = d[1] / 2.;
     }
 
 
@@ -68,8 +74,8 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
 
         final double sumQi = sumQi();
         final Pointer.DoublePointer m = Pointer.wrap(0.);
-        final Pointer.GenericPointer<Merge> best = Pointer.wrap(null);
 
+        final int[] best = {-1, -1};
 
         for (IntObjectCursor<Module> cursor : modules) {
             final Module module = cursor.value;
@@ -82,16 +88,17 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
 
                 if (v < m.v) {
                     m.v = v;
-                    best.v = new Merge(module, other, v);
+                    best[0] = module.moduleIndex;
+                    best[1] = other.moduleIndex;
                 }
             });
         }
 
-        if (null == best.v) {
+        if (best[0] == -1) {
             return false;
         }
 
-        merge(best.v.c1.moduleIndex, best.v.c2.moduleIndex);
+        merge(best[0], best[1]);
         return true;
 
     }
@@ -144,8 +151,9 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
         final double mdl = getMDL();
 
 
+        final double delta = delta(module, modules.get(modB), sumQi());
+        // WARN dont remove before delta OR wrong output (calc still ok)
         final Module other = modules.remove(modB);
-        final double delta = delta(module, other, sumQi());
         final String targetSet = module.nodes.toString();
         final String sourceSet = other.nodes.toString();
         module.merge(other);
@@ -239,9 +247,12 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
     double interModuleWeight(Module j, Module k) {
         final Pointer.DoublePointer w = Pointer.wrap(.0);
         j.nodes.forEach((IntProcedure) c -> {
+            final double p = pageRanks.weightOf(c);
             graph.forEachOutgoing(c, (s, t, r) -> {
                 if (k.nodes.contains(t)) {
-                    w.v += weights.weightOf(s, t);
+                    w.v += p * weights.weightOf(s, t); // TODO check p
+//                    w.v += weights.weightOf(s, t);
+//                    w.v += weights.weightOf(s, t) + weights.weightOf(t, s);
                 }
                 return true;
             });
@@ -277,11 +288,11 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
             // sum of all weights
             graph.forEachRelationship(startNode, D, (s, t, r) -> {
                 if (s != t) {
-                    sumW.v += weights.weightOf(s, t) + weights.weightOf(t, s); // TODO check!
+                    sumW.v += weights.weightOf(s, t);
                 }
                 return true;
             });
-            w = p * (sumW.v) * 4;
+            w = p * sumW.v;
             q = TAU * p + (1. - TAU) * w;
 
         }
@@ -293,28 +304,16 @@ public class MapEquationV2 extends Algorithm<MapEquationV2> implements MapEquati
             this.nodes.forEach((IntProcedure) merge::add);
             other.nodes.forEach((IntProcedure) merge::add);
 
-            final int ni = nodes.size() + other.nodes.size(); //merge.size();
+//            final int ni = nodes.size() + other.nodes.size(); //merge.size();
+            final int ni = merge.size();
 
             p += other.p;
-            w = w + other.w - Wj_k(this, other);
+            w += other.w - Wj_k(this, other);
             q = TAU * (((double) nodeCount - ni) / (nodeCount - 1.)) * p + (1. - TAU) * w;
 
             other.nodes.forEach((IntProcedure) nodes::add);
             nodes.forEach((IntProcedure) node -> communities[node] = moduleIndex);
 
-        }
-
-        double realWi() {
-            final Pointer.DoublePointer wi = Pointer.wrap(.0);
-                this.nodes.forEach((IntProcedure) n -> {
-                    graph.forEachRelationship(n, D, (s, t, r) -> {
-                        if (communities[t] != communities[s]) {
-                            wi.v += weights.weightOf(s, t);
-                        }
-                        return true;
-                    });
-            });
-            return wi.v;
         }
     }
 }
