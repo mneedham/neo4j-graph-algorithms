@@ -39,16 +39,14 @@ import org.neo4j.test.rule.ImpermanentDatabaseRule;
  *
  * @author mknblch
  */
-public class MapEquationIntTest {
+public class InfoMapIntTest {
 
-    private static final String QUERY = "CALL algo.mapEquation.stream('Node', 'TYPE', {shuffled:true, iterations:5, pr_iterations:10}) YIELD nodeId, community";
+    private static final String QUERY = "CALL algo.infoMap.stream('Node', 'TYPE', {pr_iterations:10}) YIELD nodeId, community";
 
     @ClassRule
     public static ImpermanentDatabaseRule db = new ImpermanentDatabaseRule();
 
     private static Graph graph;
-    private static PageRankResult pageRankResult;
-    private static RelationshipWeights normalizedWeights;
 
     @BeforeClass
     public static void setupGraph() throws KernelException {
