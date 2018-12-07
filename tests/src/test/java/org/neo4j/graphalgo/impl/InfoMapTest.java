@@ -27,7 +27,6 @@ import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
-import org.neo4j.graphalgo.core.utils.GraphNormalizedRelationshipWeights;
 import org.neo4j.graphalgo.impl.infomap.*;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphdb.Direction;
@@ -39,24 +38,30 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.LongStream;
 
+import static org.junit.Assert.assertEquals;
+
 /**
- * Graph:
+ * --------- Graph 3x2 ---------
  *
  *        (b)        (e)
- *       /  \       /  \     (x)
+ *       /  \       /  \    (x)
  *     (a)--(c)---(d)--(f)
+ *
+ * --------- Graph 4x2 ---------
+ *
+ *      (a)-(b)---(e)-(f)
+ *       | X |     | X |    (z)
+ *      (c)-(d)   (g)-(h)
  *
  * @author mknblch
  */
 @RunWith(Parameterized.class)
-public class MapEquationV2Test {
+public class InfoMapTest {
 
     @ClassRule
     public static ImpermanentDatabaseRule db = new ImpermanentDatabaseRule();
 
     private static Graph graph;
-    private static NodeWeights pageRankResult;
-    private static RelationshipWeights normalizedWeights;
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -114,7 +119,7 @@ public class MapEquationV2Test {
                     " (e)-[:TYPE]->(f)";
 
 
-    public MapEquationV2Test( String cypher) {
+    public InfoMapTest(String cypher) {
         this.cypher = cypher;
     }
 
@@ -124,7 +129,6 @@ public class MapEquationV2Test {
     public void setupGraph() throws KernelException {
 
         db.execute("MATCH (n) detach delete n");
-
         db.execute(cypher);
 
         graph = new GraphLoader(db)
@@ -132,73 +136,23 @@ public class MapEquationV2Test {
                 .withAnyLabel()
                 .withoutNodeProperties()
                 .asUndirected(true)
-//                .withDirection(Direction.BOTH)
                 .load(HeavyGraphFactory.class);
-
-        // equal PRs leads to wrong results
-//        final long nodeCount = graph.nodeCount();
-//        pageRankResult = n -> .1 / nodeCount;
-
-//        pageRankResult = new SimplePageRank(graph, 1. - MapEquation.TAU)
-//                .compute(10);
-
-        // confusing results due to PR(j) is not normalized
-        pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
-                .compute(10)
-                .result()::score;
-
-//        normalizedWeights = new GraphNormalizedRelationshipWeights(graph, graph, (s, t) -> 1000.);
-//        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.BOTH);
-
-        normalizedWeights = new DegreeNormalizedRelationshipWeights(graph, Direction.OUTGOING);
-
-
-
-    }
-
-
-    @Ignore("only for tests")
-    @Test
-    public void testMove() throws Exception {
-
-        final MapEquationV2 algo = new MapEquationV2(graph, pageRankResult, normalizedWeights);
-
-        info(algo);
-
-        algo.merge(id("a"), id("b"));
-        algo.merge(id("a"), id("c"));
-        algo.merge(id("a"), id("d"));
-
-        algo.merge(id("h"), id("e"));
-        algo.merge(id("h"), id("f"));
-        algo.merge(id("h"), id("g"));
-
-        algo.merge(id("a"), id("h"));
-
     }
 
     @Test
     public void testClustering() throws Exception {
 
-        final MapEquationV2 algo = new MapEquationV2(graph, pageRankResult, normalizedWeights);
+        final InfoMap algo = InfoMap.unweighted(graph, 10)
+                .compute();
 
-        algo.compute();
+        assertEquals(3, algo.getCommunityCount());
 
         info(algo);
     }
 
-    private void info(MapEquationAlgorithm algo) {
-        System.out.printf("%s | mdl: %5.4f%n",
+    private void info(InfoMap algo) {
+        System.out.printf("%27s | %d iterations%n",
                 Arrays.toString(algo.getCommunities()),
-                algo.getMDL());
-    }
-
-    private int id(String name) {
-        final Node[] node = new Node[1];
-        db.execute("MATCH (n:Node) WHERE n.name = '" + name + "' RETURN n").accept(row -> {
-            node[0] = row.getNode("n");
-            return false;
-        });
-        return graph.toMappedNodeId(node[0].getId());
+                algo.getIterations());
     }
 }

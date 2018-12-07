@@ -1,16 +1,13 @@
 package org.neo4j.graphalgo;
 
 import org.neo4j.graphalgo.api.Graph;
-import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
-import org.neo4j.graphalgo.core.utils.NormalizedRelationshipWeights;
 import org.neo4j.graphalgo.core.utils.Pools;
-import org.neo4j.graphalgo.impl.infomap.MapEquation;
+import org.neo4j.graphalgo.impl.infomap.InfoMap;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
-import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
@@ -27,7 +24,7 @@ import java.util.stream.Stream;
 /**
  * @author mknblch
  */
-public class MapEquationProc {
+public class InfoMapProc {
 
     @Context
     public GraphDatabaseAPI db;
@@ -38,7 +35,7 @@ public class MapEquationProc {
     @Context
     public KernelTransaction transaction;
 
-    @Procedure("algo.mapEquation.stream")
+    @Procedure("algo.infoMap.stream")
     @Description("...")
     public Stream<Result> mapEquation(
             @Name(value = "label", defaultValue = "") String label,
@@ -53,13 +50,10 @@ public class MapEquationProc {
                 .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                 .load(config.getGraphImpl());
 
-        final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - MapEquation.TAU, LongStream.empty())
-                .compute(config.getNumber("pr_iterations", 10).intValue())
-                .result();
-
-        final int[] communities = new MapEquation(graph, pageRankResult::score, new DegreeNormalizedRelationshipWeights(graph))
-                .compute(config.getIterations(10), config.get("shuffle", true))
-                .getCommunities();
+        final int[] communities = InfoMap.unweighted(
+                    graph,
+                    config.getNumber("pr_iterations", 10).intValue())
+                .compute().getCommunities();
 
         return IntStream.range(0, Math.toIntExact(graph.nodeCount()))
                 .mapToObj(i -> new Result(graph.toOriginalNodeId(i), communities[i]));

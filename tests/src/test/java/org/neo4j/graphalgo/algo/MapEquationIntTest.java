@@ -21,7 +21,7 @@ package org.neo4j.graphalgo.algo;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.graphalgo.MapEquationProc;
+import org.neo4j.graphalgo.InfoMapProc;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
@@ -73,7 +73,7 @@ public class MapEquationIntTest {
                         " (e)-[:TYPE]->(f)";
 
         db.execute(cypher);
-        db.resolveDependency(Procedures.class).registerProcedure(MapEquationProc.class);
+        db.resolveDependency(Procedures.class).registerProcedure(InfoMapProc.class);
     }
 
     @Test

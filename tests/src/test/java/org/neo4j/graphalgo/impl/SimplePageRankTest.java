@@ -22,22 +22,12 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.graphalgo.api.Graph;
-import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
-import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
-import org.neo4j.graphalgo.impl.infomap.MapEquation;
-import org.neo4j.graphalgo.impl.infomap.MapEquationAlgorithm;
-import org.neo4j.graphalgo.impl.infomap.MapEquationOpt1;
 import org.neo4j.graphalgo.impl.infomap.SimplePageRank;
-import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
-import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
 import org.neo4j.graphdb.Node;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
-
-import java.util.Arrays;
-import java.util.stream.LongStream;
 
 import static org.junit.Assert.assertEquals;
 
