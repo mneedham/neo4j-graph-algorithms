@@ -88,17 +88,16 @@ public class PearsonSimilarityBenchmark {
     }
 
     @Benchmark
-    public void cosineSquares(Blackhole bh) throws Exception {
-        for (double[] datum : data) {
-            bh.consume(Intersections.cosineSquare(initial, datum,SIZE));
-        }
-    }
-
-
-    @Benchmark
     public void pearsonSquares(Blackhole bh) throws Exception {
         for (double[] datum : data) {
             bh.consume(Intersections.pearsonSquare(initial, datum,SIZE));
+        }
+    }
+
+    @Benchmark
+    public void pearsonSquaresSkip(Blackhole bh) throws Exception {
+        for (double[] datum : data) {
+            bh.consume(Intersections.pearsonSquareSkip(initial, datum,SIZE, 0));
         }
     }
 
