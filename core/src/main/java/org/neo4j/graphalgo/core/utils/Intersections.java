@@ -192,11 +192,8 @@ public class Intersections {
         double xLength = 0d;
         double yLength = 0d;
         for (int i = 0; i < len; i++) {
-            double weight1 = vector1[i];
-            double weight2 = vector2[i];
-
-            double vector1Delta = weight1 - vector1Mean;
-            double vector2Delta = weight2 - vector2Mean;
+            double vector1Delta = vector1[i] - vector1Mean;
+            double vector2Delta = vector2[i] - vector2Mean;
 
             dotProductMinusMean += (vector1Delta * vector2Delta);
             xLength += vector1Delta * vector1Delta;
