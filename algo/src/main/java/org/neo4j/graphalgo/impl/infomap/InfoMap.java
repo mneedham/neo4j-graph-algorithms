@@ -36,20 +36,23 @@ public class InfoMap extends Algorithm<InfoMap> {
     // default threshold
     public static final double THRESHOLD = .005;
 
-    // iteration direction is constant since the graph should be undirected
+    // iteration direction is constant (undirected graph)
     private static final Direction D = Direction.OUTGOING;
-    // number of nodes
+    // nodes in the graph
     private final int nodeCount;
     // constant TAU (0.15 was given in the original MapEq. paper https://arxiv.org/abs/0906.1405 )
     private final double tau;
-    // absolute minimum difference in deltaL for joining  2 modules together
+    // absolute minimum difference in deltaL for merging 2 modules together
     private final double threshold;
     // the graph
     private Graph graph;
     // page rank weights
     private NodeWeights pageRanks;
-    // degree normalized relationship weights (weights of one node must add up to 1.0)
+    // degree normalized relationship weights
     private RelationshipWeights weights;
+
+    // helper vars
+    private final double tau1, n1;
 
     // following values are updated during a merge
     // number of iterations the last computation took
@@ -73,14 +76,14 @@ public class InfoMap extends Algorithm<InfoMap> {
     }
 
     /**
-     * create a weighted InfoMap algo instance with precalculated pageRanks
+     * create a weighted InfoMap algo instance with pageRanks
      */
     public static InfoMap weighted(Graph graph, NodeWeights pageRanks, RelationshipWeights weights) {
         return weighted(graph, pageRanks, weights, THRESHOLD, TAU);
     }
 
     /**
-     * create a weighted InfoMap algo instance with precalculated pageRanks
+     * create a weighted InfoMap algo instance with pageRanks
      */
     public static InfoMap weighted(Graph graph, NodeWeights pageRanks, RelationshipWeights weights, double threshold, double tau) {
         return new InfoMap(
@@ -121,11 +124,11 @@ public class InfoMap extends Algorithm<InfoMap> {
     }
 
     /**
-     * @param graph graph
-     * @param pageRanks precalculated page ranks
+     * @param graph             graph
+     * @param pageRanks         page ranks
      * @param normalizedWeights normalized weights (weights of a node must sum up to 1.0)
-     * @param threshold minimum delta L for optimization
-     * @param tau constant tau (usually 0.15)
+     * @param threshold         minimum delta L for optimization
+     * @param tau               constant tau (usually 0.15)
      */
     private InfoMap(Graph graph, NodeWeights pageRanks, RelationshipWeights normalizedWeights, double threshold, double tau) {
         this.graph = graph;
@@ -136,8 +139,11 @@ public class InfoMap extends Algorithm<InfoMap> {
         this.threshold = threshold;
         this.modules = new IntObjectScatterMap<>(nodeCount);
         this.communities = new int[nodeCount];
+        this.tau1 = 1. - tau;
+        this.n1 = nodeCount - 1.;
         Arrays.setAll(communities, i -> i);
         final double[] d = {0.};
+
         graph.forEachNode(node -> {
             final Module module = new Module(node);
             modules.put(node, module);
@@ -282,7 +288,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         double ni = a.nodes.size() + b.nodes.size();
         double pi = a.p + b.p;
         double wi = a.w + b.w - interModW(a, b);
-        double qi = tau * ((double) nodeCount - ni) / (nodeCount - 1.) * pi + (1. - tau) * wi;
+        double qi = tau * pi * (nodeCount - ni) / n1 + tau1 * wi;
         return plogp(qi - a.q - b.q + sQi)
                 - plogp(sQi)
                 - 2 * plogp(qi)
@@ -306,9 +312,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         j.nodes.forEach((IntProcedure) c -> {
             graph.forEachOutgoing(c, (s, t, r) -> {
                 if (k.nodes.contains(t)) {
-                    w.v += (pageRanks.weightOf(s) * weights.weightOf(s, t)) // =>
-                            + (pageRanks.weightOf(t) * weights.weightOf(t, s)); // <=
-
+                    w.v += (pageRanks.weightOf(s) * weights.weightOf(s, t)) + (pageRanks.weightOf(t) * weights.weightOf(t, s));
                 }
                 return true;
             });
@@ -345,7 +349,7 @@ public class InfoMap extends Algorithm<InfoMap> {
             });
             p = pageRanks.weightOf(startNode);
             w = p * sumW.v;
-            q = tau * p + (1. - tau) * w;
+            q = tau * p + tau1 * w;
         }
 
         public void merge(Module other) {
@@ -353,7 +357,7 @@ public class InfoMap extends Algorithm<InfoMap> {
             p += other.p;
             w += other.w - interModW(this, other);
             sQi -= q + other.q;
-            q = tau * (((double) nodeCount - ni) / (nodeCount - 1.)) * p + (1. - tau) * w;
+            q = tau * p * (nodeCount - ni) / n1 + tau1 * w;
             sQi += q;
             other.nodes.forEach((IntProcedure) node -> {
                 this.nodes.add(node);

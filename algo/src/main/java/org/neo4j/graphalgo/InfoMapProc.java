@@ -48,6 +48,7 @@ public class InfoMapProc {
 
         final Graph graph = new GraphLoader(db, Pools.DEFAULT)
                 .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
+                .asUndirected(true)
                 .load(config.getGraphImpl());
 
         final int[] communities = InfoMap.unweighted(
