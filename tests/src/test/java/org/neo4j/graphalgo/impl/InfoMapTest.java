@@ -137,12 +137,13 @@ public class InfoMapTest {
                 .withoutNodeProperties()
                 .asUndirected(true)
                 .load(HeavyGraphFactory.class);
+
     }
 
     @Test
     public void testClustering() throws Exception {
 
-        final InfoMap algo = InfoMap.unweighted(graph, 10)
+        final InfoMap algo = InfoMap.unweighted(graph, 10, InfoMap.THRESHOLD, InfoMap.TAU)
                 .compute();
 
         assertEquals(3, algo.getCommunityCount());

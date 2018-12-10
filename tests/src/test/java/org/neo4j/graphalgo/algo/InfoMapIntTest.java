@@ -23,12 +23,16 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.graphalgo.InfoMapProc;
 import org.neo4j.graphalgo.api.Graph;
-import org.neo4j.graphalgo.api.RelationshipWeights;
-import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
 import org.neo4j.graphdb.Node;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
+
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Graph:
@@ -41,7 +45,10 @@ import org.neo4j.test.rule.ImpermanentDatabaseRule;
  */
 public class InfoMapIntTest {
 
-    private static final String QUERY = "CALL algo.infoMap.stream('Node', 'TYPE', {pr_iterations:10}) YIELD nodeId, community";
+    interface CommunityConsumer {
+
+        void test(String node, int community);
+    }
 
     @ClassRule
     public static ImpermanentDatabaseRule db = new ImpermanentDatabaseRule();
@@ -52,19 +59,19 @@ public class InfoMapIntTest {
     public static void setupGraph() throws KernelException {
 
         final String cypher =
-                "CREATE (a:Node {name:'a', pr:1.0}})\n" +
-                        "CREATE (b:Node {name:'b', pr:1.0})\n" +
-                        "CREATE (c:Node {name:'c', pr:2.0})\n" +
-                        "CREATE (d:Node {name:'d', pr:2.0})\n" +
-                        "CREATE (e:Node {name:'e', pr:1.0})\n" +
-                        "CREATE (f:Node {name:'f', pr:1.0})\n" +
-                        "CREATE (x:Node {name:'x', pr:1.0})\n" +
+                "CREATE (a:Node {name:'a', pr:1.0} )\n" +
+                "CREATE (b:Node {name:'b', pr:1.0} )\n" +
+                "CREATE (c:Node {name:'c', pr:2.0} )\n" +
+                "CREATE (d:Node {name:'d', pr:0.0} )\n" +
+                "CREATE (e:Node {name:'e', pr:0.0} )\n" +
+                "CREATE (f:Node {name:'f', pr:0.0} )\n" +
+                "CREATE (x:Node {name:'x', pr:1.0} )\n" +
                         "CREATE" +
                         " (b)-[:TYPE {v:1.0}]->(a),\n" +
                         " (a)-[:TYPE {v:1.0}]->(c),\n" +
                         " (c)-[:TYPE {v:1.0}]->(a),\n" +
 
-                        " (d)-[:TYPE {v:1.0}]->(c),\n" +
+                        " (d)-[:TYPE {v:2.0}]->(c),\n" +
 
                         " (d)-[:TYPE {v:1.0}]->(e),\n" +
                         " (d)-[:TYPE {v:1.0}]->(f),\n" +
@@ -77,22 +84,60 @@ public class InfoMapIntTest {
     @Test
     public void testUnweightedStream() throws Exception {
 
+        final CommunityConsumer consumer = mock(CommunityConsumer.class);
 
-        db.execute(QUERY).accept(row -> {
-            System.out.printf("node %d | community %d%n",
-                    row.getNumber("nodeId").intValue(),
-                    row.getNumber("community").intValue());
+        db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {pr_iterations:15}) YIELD nodeId, community")
+                .accept(row -> {
+                    consumer.test(
+                            db.getNodeById(row.getNumber("nodeId").longValue())
+                                    .getProperty("name").toString(),
+                            row.getNumber("community").intValue());
+                    return true;
+                });
 
-            return true;
-        });
+        verify(consumer, times(3)).test(anyString(), eq(0));
+        verify(consumer, times(3)).test(anyString(), eq(3));
+        verify(consumer, times(1)).test(anyString(), eq(6));
     }
 
-    private int id(String name) {
-        final Node[] node = new Node[1];
-        db.execute("MATCH (n:Node) WHERE n.name = '" + name + "' RETURN n").accept(row -> {
-            node[0] = row.getNode("n");
-            return false;
-        });
-        return graph.toMappedNodeId(node[0].getId());
+
+    @Test
+    public void testWeightedStream() throws Exception {
+
+        final CommunityConsumer consumer = mock(CommunityConsumer.class);
+
+        db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {pr_iterations:15, weightProperty:'v'}) YIELD nodeId, community")
+                .accept(row -> {
+                    consumer.test(
+                            db.getNodeById(row.getNumber("nodeId").longValue())
+                                    .getProperty("name").toString(),
+                            row.getNumber("community").intValue());
+                    return true;
+                });
+
+        verify(consumer, times(2)).test(anyString(), eq(0));
+        verify(consumer, times(4)).test(anyString(), eq(2));
+        verify(consumer, times(1)).test(anyString(), eq(6));
     }
+
+    @Test
+    public void testPredefinedPageRank() throws Exception {
+
+        final CommunityConsumer consumer = mock(CommunityConsumer.class);
+
+        db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {pageRankProperty:'pr'}) YIELD nodeId, community")
+                .accept(row -> {
+                    consumer.test(
+                            db.getNodeById(row.getNumber("nodeId").longValue())
+                                    .getProperty("name").toString(),
+                            row.getNumber("community").intValue());
+                    return true;
+                });
+
+        verify(consumer, times(4)).test(anyString(), eq(0));
+        verify(consumer, times(1)).test(anyString(), eq(4));
+        verify(consumer, times(1)).test(anyString(), eq(5));
+        verify(consumer, times(1)).test(anyString(), eq(6));
+    }
+
 }

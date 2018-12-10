@@ -16,10 +16,13 @@ import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
+import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * @author mknblch
@@ -36,7 +39,6 @@ public class InfoMapProc {
 
     @Context
     public KernelTransaction transaction;
-
 
 
     /*
@@ -91,7 +93,7 @@ public class InfoMapProc {
 
 
         // number of iterations for the pageRank computation
-        final int pageRank_iterations = config.getNumber("pr_iterations", 5).intValue();
+        final int pageRankIterations = config.getNumber("pr_iterations", 5).intValue();
         // property name (node property) for predefined pageRanks
         final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, "pageRank");
 
@@ -107,7 +109,7 @@ public class InfoMapProc {
                         .load(config.getGraphImpl());
                 infoMap = InfoMap.weighted(
                         graph,
-                        pageRank_iterations,
+                        pageRankIterations,
                         graph,
                         config.getNumber("tau", InfoMap.TAU).doubleValue(),
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
@@ -119,7 +121,7 @@ public class InfoMapProc {
                 graph = new GraphLoader(db, Pools.DEFAULT)
                         .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                         .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
-                        .withOptionalNodeProperties(PropertyMapping.of(pageRankPropertyName, "_pr", 0.))
+                        .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName,0.))
                         .asUndirected(true)
                         .load(HeavyGraphFactory.class); // NodeProperties iface on Huge?
                 infoMap = InfoMap.weighted(
@@ -139,7 +141,7 @@ public class InfoMapProc {
                         .load(config.getGraphImpl());
                 infoMap = InfoMap.unweighted(
                         graph,
-                        pageRank_iterations,
+                        pageRankIterations,
                         config.getNumber("tau", InfoMap.TAU).doubleValue(),
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
                 break;
@@ -149,7 +151,7 @@ public class InfoMapProc {
                 log.info("initializing unweighted InfoMap with predefined PageRank");
                 graph = new GraphLoader(db, Pools.DEFAULT)
                         .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
-                        .withOptionalNodeProperties(PropertyMapping.of(pageRankPropertyName, "_pr", 0.))
+                        .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
                         .asUndirected(true)
                         .load(HeavyGraphFactory.class); // NodeProperties iface on Huge?
                 infoMap = InfoMap.unweighted(
