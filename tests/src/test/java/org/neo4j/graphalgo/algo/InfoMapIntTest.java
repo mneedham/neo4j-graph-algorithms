@@ -52,30 +52,30 @@ public class InfoMapIntTest {
     public static void setupGraph() throws KernelException {
 
         final String cypher =
-                "CREATE (a:Node {name:'a'})\n" +
-                        "CREATE (b:Node {name:'b'})\n" +
-                        "CREATE (c:Node {name:'c'})\n" +
-                        "CREATE (d:Node {name:'d'})\n" +
-                        "CREATE (e:Node {name:'e'})\n" +
-                        "CREATE (f:Node {name:'f'})\n" +
-                        "CREATE (x:Node {name:'x'})\n" +
+                "CREATE (a:Node {name:'a', pr:1.0}})\n" +
+                        "CREATE (b:Node {name:'b', pr:1.0})\n" +
+                        "CREATE (c:Node {name:'c', pr:2.0})\n" +
+                        "CREATE (d:Node {name:'d', pr:2.0})\n" +
+                        "CREATE (e:Node {name:'e', pr:1.0})\n" +
+                        "CREATE (f:Node {name:'f', pr:1.0})\n" +
+                        "CREATE (x:Node {name:'x', pr:1.0})\n" +
                         "CREATE" +
-                        " (b)-[:TYPE]->(a),\n" +
-                        " (a)-[:TYPE]->(c),\n" +
-                        " (c)-[:TYPE]->(a),\n" +
+                        " (b)-[:TYPE {v:1.0}]->(a),\n" +
+                        " (a)-[:TYPE {v:1.0}]->(c),\n" +
+                        " (c)-[:TYPE {v:1.0}]->(a),\n" +
 
-                        " (d)-[:TYPE]->(c),\n" +
+                        " (d)-[:TYPE {v:1.0}]->(c),\n" +
 
-                        " (d)-[:TYPE]->(e),\n" +
-                        " (d)-[:TYPE]->(f),\n" +
-                        " (e)-[:TYPE]->(f)";
+                        " (d)-[:TYPE {v:1.0}]->(e),\n" +
+                        " (d)-[:TYPE {v:1.0}]->(f),\n" +
+                        " (e)-[:TYPE {v:1.0}]->(f)";
 
         db.execute(cypher);
         db.resolveDependency(Procedures.class).registerProcedure(InfoMapProc.class);
     }
 
     @Test
-    public void testClustering() throws Exception {
+    public void testUnweightedStream() throws Exception {
 
 
         db.execute(QUERY).accept(row -> {

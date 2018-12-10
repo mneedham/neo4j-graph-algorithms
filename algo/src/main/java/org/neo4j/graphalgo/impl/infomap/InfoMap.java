@@ -68,18 +68,11 @@ public class InfoMap extends Algorithm<InfoMap> {
     /**
      * create a weighted InfoMap algo instance
      */
-    public static InfoMap weighted(Graph graph, int prIterations, RelationshipWeights weights) {
-        final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - TAU, LongStream.empty())
+    public static InfoMap weighted(Graph graph, int prIterations, RelationshipWeights weights, double threshold, double tau) {
+        final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - tau, LongStream.empty())
                 .compute(prIterations)
                 .result();
-        return weighted(graph, pageRankResult::score, weights, THRESHOLD, TAU);
-    }
-
-    /**
-     * create a weighted InfoMap algo instance with pageRanks
-     */
-    public static InfoMap weighted(Graph graph, NodeWeights pageRanks, RelationshipWeights weights) {
-        return weighted(graph, pageRanks, weights, THRESHOLD, TAU);
+        return weighted(graph, pageRankResult::score, weights, threshold, tau);
     }
 
     /**
@@ -97,18 +90,11 @@ public class InfoMap extends Algorithm<InfoMap> {
     /**
      * create an unweighted InfoMap algo instance
      */
-    public static InfoMap unweighted(Graph graph, int prIterations) {
-        final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - TAU, LongStream.empty())
+    public static InfoMap unweighted(Graph graph, int prIterations, double threshold, double tau) {
+        final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - tau, LongStream.empty())
                 .compute(prIterations)
                 .result();
-        return unweighted(graph, pageRankResult::score, THRESHOLD, TAU);
-    }
-
-    /**
-     * create an unweighted InfoMap algo instance with precalcualted pageRanks
-     */
-    public static InfoMap unweighted(Graph graph, NodeWeights pageRanks) {
-        return unweighted(graph, pageRanks, THRESHOLD, TAU);
+        return unweighted(graph, pageRankResult::score, threshold, tau);
     }
 
     /**
