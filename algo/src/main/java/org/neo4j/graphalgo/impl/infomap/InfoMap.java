@@ -44,11 +44,11 @@ public class InfoMap extends Algorithm<InfoMap> {
     private final double tau;
     // absolute minimum difference in deltaL for merging 2 modules together
     private final double threshold;
-    // the graph
+    // an undirected graph
     private Graph graph;
     // page rank weights
-    private NodeWeights pageRanks;
-    // degree normalized relationship weights
+    private NodeWeights pageRank;
+    // normalized relationship weights
     private RelationshipWeights weights;
 
     // helper vars
@@ -125,14 +125,14 @@ public class InfoMap extends Algorithm<InfoMap> {
 
     /**
      * @param graph             graph
-     * @param pageRanks         page ranks
+     * @param pageRank         page ranks
      * @param normalizedWeights normalized weights (weights of a node must sum up to 1.0)
      * @param threshold         minimum delta L for optimization
      * @param tau               constant tau (usually 0.15)
      */
-    private InfoMap(Graph graph, NodeWeights pageRanks, RelationshipWeights normalizedWeights, double threshold, double tau) {
+    private InfoMap(Graph graph, NodeWeights pageRank, RelationshipWeights normalizedWeights, double threshold, double tau) {
         this.graph = graph;
-        this.pageRanks = pageRanks;
+        this.pageRank = pageRank;
         this.weights = normalizedWeights;
         this.nodeCount = Math.toIntExact(graph.nodeCount());
         this.tau = tau;
@@ -177,7 +177,7 @@ public class InfoMap extends Algorithm<InfoMap> {
     @Override
     public InfoMap release() {
         graph = null;
-        pageRanks = null;
+        pageRank = null;
         weights = null;
         modules = null;
         communities = null;
@@ -278,25 +278,25 @@ public class InfoMap extends Algorithm<InfoMap> {
     }
 
     /**
-     * calculate deltaL, the change in L if module a and b are joined together
+     * change in L if module j and k are merged
      *
-     * @param a module a
-     * @param b module b
+     * @param j module a
+     * @param k module b
      * @return delta L
      */
-    private double delta(Module a, Module b) {
-        double ni = a.nodes.size() + b.nodes.size();
-        double pi = a.p + b.p;
-        double wi = a.w + b.w - interModW(a, b);
+    private double delta(Module j, Module k) {
+        double ni = j.nodes.size() + k.nodes.size();
+        double pi = j.p + k.p;
+        double wi = j.w + k.w - interModW(j, k);
         double qi = tau * pi * (nodeCount - ni) / n1 + tau1 * wi;
-        return plogp(qi - a.q - b.q + sQi)
+        return plogp(qi - j.q - k.q + sQi)
                 - plogp(sQi)
                 - 2 * plogp(qi)
-                + 2 * plogp(a.q)
-                + 2 * plogp(b.q)
+                + 2 * plogp(j.q)
+                + 2 * plogp(k.q)
                 + plogp(pi + qi)
-                - plogp(a.p + a.q)
-                - plogp(b.p + b.q);
+                - plogp(j.p + j.q)
+                - plogp(k.p + k.q);
     }
 
     /**
@@ -312,7 +312,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         j.nodes.forEach((IntProcedure) c -> {
             graph.forEachOutgoing(c, (s, t, r) -> {
                 if (k.nodes.contains(t)) {
-                    w.v += (pageRanks.weightOf(s) * weights.weightOf(s, t)) + (pageRanks.weightOf(t) * weights.weightOf(t, s));
+                    w.v += (pageRank.weightOf(s) * weights.weightOf(s, t)) + (pageRank.weightOf(t) * weights.weightOf(t, s));
                 }
                 return true;
             });
@@ -347,7 +347,7 @@ public class InfoMap extends Algorithm<InfoMap> {
                 }
                 return true;
             });
-            p = pageRanks.weightOf(startNode);
+            p = pageRank.weightOf(startNode);
             w = p * sumW.v;
             q = tau * p + tau1 * w;
         }
