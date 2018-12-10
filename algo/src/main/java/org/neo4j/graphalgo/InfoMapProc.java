@@ -42,7 +42,7 @@ public class InfoMapProc {
     }
 
     @Procedure("algo.infoMap.stream")
-    @Description("...")
+    @Description("CALL algo.infoMap.stream('Label', 'REL', {<properties>}) YIELD nodeId, community")
     public Stream<Result> stream(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationshipType,
@@ -64,7 +64,6 @@ public class InfoMapProc {
 
         final Graph graph;
         final InfoMap infoMap;
-
 
         // number of iterations for the pageRank computation
         final int pageRankIterations = config.getNumber("iterations", 5).intValue();
@@ -147,7 +146,7 @@ public class InfoMapProc {
 
 
     @Procedure(value = "algo.infoMap", mode = Mode.WRITE)
-    @Description("...")
+    @Description("TODO")
     public Stream<InfoMapResult> writeBack(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationshipType,

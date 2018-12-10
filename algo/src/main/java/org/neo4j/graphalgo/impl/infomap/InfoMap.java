@@ -64,7 +64,6 @@ public class InfoMap extends Algorithm<InfoMap> {
     // sum of exit probs.
     private double sQi = 0.;
 
-
     /**
      * create a weighted InfoMap algo instance
      */
