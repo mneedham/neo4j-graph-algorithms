@@ -2,34 +2,31 @@ package org.neo4j.graphalgo;
 
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeProperties;
-import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
+import org.neo4j.graphalgo.core.utils.ProgressTimer;
+import org.neo4j.graphalgo.core.write.Exporter;
+import org.neo4j.graphalgo.core.write.Translators;
 import org.neo4j.graphalgo.impl.infomap.InfoMap;
+import org.neo4j.graphalgo.results.AbstractResultBuilder;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
-import org.neo4j.procedure.Context;
-import org.neo4j.procedure.Description;
-import org.neo4j.procedure.Name;
-import org.neo4j.procedure.Procedure;
-import org.slf4j.Logger;
+import org.neo4j.procedure.*;
 
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * @author mknblch
  */
 public class InfoMapProc {
 
-    public static final String PAGE_RANK_PROPERTY = "pageRankProperty";
+    private static final String PAGE_RANK_PROPERTY = "pageRankProperty";
+    private static final String DEFAULT_WRITE_PROPERTY_VALUE = "community";
 
     @Context
     public GraphDatabaseAPI db;
@@ -40,31 +37,8 @@ public class InfoMapProc {
     @Context
     public KernelTransaction transaction;
 
-
-    /*
-
-    1. infomap stream, unweighted, with ext. pageRanks
-    2. infomap stream, weighted, with ext. pageRanks
-    3. infomap stream, unweighted, calc pr
-    4. infomap stream, weighted, calc pr
-
-    1. infomap writeback, unweighted, with ext. pageRanks
-    2. infomap writeback, weighted, with ext. pageRanks
-    3. infomap writeback, unweighted, calc pr
-    4. infomap writeback, weighted, calc pr
-
-    Options:
-
-    - predefined weight-property name for pageRanks
-        + if given ext. pageRank should be used
-    - predefined weight-property for relationships
-        + if given weight property on relationships is used
-
-     */
-
-
     private enum Setup {
-        WEIGTED, WEIGHTED_EXT_PR, UNWEIGHTED, UNWEIGHTED_EXT_PR
+        WEIGHTED, WEIGHTED_EXT_PR, UNWEIGHTED, UNWEIGHTED_EXT_PR
     }
 
     @Procedure("algo.infoMap.stream")
@@ -82,7 +56,7 @@ public class InfoMapProc {
         final Setup setup;
         if (config.hasWeightProperty()) {
             if (config.containsKeys(PAGE_RANK_PROPERTY)) setup = Setup.WEIGHTED_EXT_PR;
-            else setup = Setup.WEIGTED;
+            else setup = Setup.WEIGHTED;
         } else {
             if (config.containsKeys(PAGE_RANK_PROPERTY)) setup = Setup.UNWEIGHTED_EXT_PR;
             else setup = Setup.UNWEIGHTED;
@@ -93,13 +67,13 @@ public class InfoMapProc {
 
 
         // number of iterations for the pageRank computation
-        final int pageRankIterations = config.getNumber("pr_iterations", 5).intValue();
+        final int pageRankIterations = config.getNumber("iterations", 5).intValue();
         // property name (node property) for predefined pageRanks
         final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, "pageRank");
 
         switch (setup) {
 
-            case WEIGTED:
+            case WEIGHTED:
 
                 log.info("initializing weighted InfoMap with internal PageRank computation");
                 graph = new GraphLoader(db, Pools.DEFAULT)
@@ -121,7 +95,7 @@ public class InfoMapProc {
                 graph = new GraphLoader(db, Pools.DEFAULT)
                         .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                         .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
-                        .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName,0.))
+                        .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
                         .asUndirected(true)
                         .load(HeavyGraphFactory.class); // NodeProperties iface on Huge?
                 infoMap = InfoMap.weighted(
@@ -166,8 +140,140 @@ public class InfoMapProc {
         }
 
         final int[] communities = infoMap.compute().getCommunities();
+
         return IntStream.range(0, Math.toIntExact(graph.nodeCount()))
                 .mapToObj(i -> new Result(graph.toOriginalNodeId(i), communities[i]));
+    }
+
+
+    @Procedure(value = "algo.infoMap", mode = Mode.WRITE)
+    @Description("...")
+    public Stream<InfoMapResult> writeBack(
+            @Name(value = "label", defaultValue = "") String label,
+            @Name(value = "relationship", defaultValue = "") String relationshipType,
+            @Name(value = "config", defaultValue = "{}") Map<String, Object> configuration) {
+
+        final ProcedureConfiguration config = ProcedureConfiguration.create(configuration)
+                .overrideNodeLabelOrQuery(label)
+                .overrideRelationshipTypeOrQuery(relationshipType);
+
+
+        final Setup setup;
+        if (config.hasWeightProperty()) {
+            if (config.containsKeys(PAGE_RANK_PROPERTY)) setup = Setup.WEIGHTED_EXT_PR;
+            else setup = Setup.WEIGHTED;
+        } else {
+            if (config.containsKeys(PAGE_RANK_PROPERTY)) setup = Setup.UNWEIGHTED_EXT_PR;
+            else setup = Setup.UNWEIGHTED;
+        }
+
+        final Graph graph;
+        final InfoMap infoMap;
+
+
+        // number of iterations for the pageRank computation
+        final int pageRankIterations = config.getNumber("iterations", 5).intValue();
+        // property name (node property) for predefined pageRanks
+        final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, "pageRank");
+
+        final InfoMapResultBuilder builder = InfoMapResult.builder();
+
+        switch (setup) {
+
+            case WEIGHTED:
+
+                log.info("initializing weighted InfoMap with internal PageRank computation");
+                try (ProgressTimer timer = builder.timeLoad()) {
+
+                    graph = new GraphLoader(db, Pools.DEFAULT)
+                            .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
+                            .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
+                            .asUndirected(true)
+                            .load(config.getGraphImpl());
+
+                    infoMap = InfoMap.weighted(
+                            graph,
+                            pageRankIterations,
+                            graph,
+                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                }
+                break;
+
+            case WEIGHTED_EXT_PR:
+
+                log.info("initializing weighted InfoMap with predefined PageRank");
+                try (ProgressTimer timer = builder.timeLoad()) {
+                    graph = new GraphLoader(db, Pools.DEFAULT)
+                            .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
+                            .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
+                            .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
+                            .asUndirected(true)
+                            .load(HeavyGraphFactory.class); // NodeProperties iface on Huge?
+                    infoMap = InfoMap.weighted(
+                            graph,
+                            ((NodeProperties) graph).nodeProperties("_pr")::get,
+                            graph,
+                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                }
+                break;
+
+            case UNWEIGHTED:
+
+                log.info("initializing unweighted InfoMap with internal PageRank computation");
+                try (ProgressTimer timer = builder.timeLoad()) {
+                    graph = new GraphLoader(db, Pools.DEFAULT)
+                            .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
+                            .asUndirected(true)
+                            .load(config.getGraphImpl());
+                    infoMap = InfoMap.unweighted(
+                            graph,
+                            pageRankIterations,
+                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                }
+                break;
+
+            case UNWEIGHTED_EXT_PR:
+
+                log.info("initializing unweighted InfoMap with predefined PageRank");
+                try (ProgressTimer timer = builder.timeLoad()) {
+                    graph = new GraphLoader(db, Pools.DEFAULT)
+                            .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
+                            .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
+                            .asUndirected(true)
+                            .load(HeavyGraphFactory.class); // NodeProperties iface on Huge?
+                    infoMap = InfoMap.unweighted(
+                            graph,
+                            ((NodeProperties) graph).nodeProperties("_pr")::get,
+                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                }
+                break;
+
+            default:
+                throw new IllegalArgumentException();
+        }
+
+        // eval
+        builder.timeEval(infoMap::compute);
+        // result
+        builder.withCommunityCount(infoMap.getCommunityCount());
+        builder.withNodeCount(graph.nodeCount());
+        builder.withIterations(infoMap.getIterations());
+
+        try (ProgressTimer timer = builder.timeWrite()) {
+            Exporter.of(db, graph)
+                    .withLog(log)
+                    .build()
+                    .write(config.getWriteProperty(DEFAULT_WRITE_PROPERTY_VALUE),
+                            infoMap.getCommunities(),
+                            Translators.INT_ARRAY_TRANSLATOR);
+        }
+
+        return Stream.of(builder.build());
+
     }
 
 
@@ -184,4 +290,54 @@ public class InfoMapProc {
             this.community = community;
         }
     }
+
+    public static class InfoMapResultBuilder extends AbstractResultBuilder<InfoMapResult> {
+
+        private long nodes = 0;
+        private long communityCount = 0;
+        private long iterations = 1;
+
+        public InfoMapResultBuilder withIterations(long iterations) {
+            this.iterations = iterations;
+            return this;
+        }
+
+        public InfoMapResultBuilder withCommunityCount(long setCount) {
+            this.communityCount = setCount;
+            return this;
+        }
+
+        public InfoMapResultBuilder withNodeCount(long nodes) {
+            this.nodes = nodes;
+            return this;
+        }
+
+        public InfoMapResult build() {
+            return new InfoMapResult(loadDuration, evalDuration, writeDuration, nodes, iterations, communityCount);
+        }
+    }
+
+    public static class InfoMapResult {
+
+        public final long loadMillis;
+        public final long computeMillis;
+        public final long writeMillis;
+        public final long nodes;
+        public final long iterations;
+        public final long communityCount;
+
+        private InfoMapResult(long loadMillis, long computeMillis, long writeMillis, long nodes, long iterations, long communityCount) {
+            this.loadMillis = loadMillis;
+            this.computeMillis = computeMillis;
+            this.writeMillis = writeMillis;
+            this.nodes = nodes;
+            this.iterations = iterations;
+            this.communityCount = communityCount;
+        }
+
+        public static InfoMapResultBuilder builder() {
+            return new InfoMapResultBuilder();
+        }
+    }
+
 }

@@ -82,11 +82,34 @@ public class InfoMapIntTest {
     }
 
     @Test
+    public void testUnweighted() throws Exception {
+
+        final CommunityConsumer consumer = mock(CommunityConsumer.class);
+
+        db.execute("CALL algo.infoMap('Node', 'TYPE', {iterations:15, writeProperty:'c'})").close();
+
+        db.execute("MATCH (n) RETURN n").accept(row -> {
+            final Node node = row.getNode("n");
+            consumer.test(
+                    (String) node.getProperty("name"),
+                    (int) node.getProperty("c"));
+
+            return true;
+        });
+
+        verify(consumer, times(3)).test(anyString(), eq(0));
+        verify(consumer, times(3)).test(anyString(), eq(3));
+        verify(consumer, times(1)).test(anyString(), eq(6));
+
+    }
+
+
+    @Test
     public void testUnweightedStream() throws Exception {
 
         final CommunityConsumer consumer = mock(CommunityConsumer.class);
 
-        db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {pr_iterations:15}) YIELD nodeId, community")
+        db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {iterations:15}) YIELD nodeId, community")
                 .accept(row -> {
                     consumer.test(
                             db.getNodeById(row.getNumber("nodeId").longValue())
@@ -102,11 +125,33 @@ public class InfoMapIntTest {
 
 
     @Test
+    public void testWeighted() throws Exception {
+
+        final CommunityConsumer consumer = mock(CommunityConsumer.class);
+
+        db.execute("CALL algo.infoMap('Node', 'TYPE', {iterations:15, weightProperty:'v', writeProperty:'c'})").close();
+
+        db.execute("MATCH (n) RETURN n").accept(row -> {
+            final Node node = row.getNode("n");
+            consumer.test(
+                    (String) node.getProperty("name"),
+                    (int) node.getProperty("c"));
+
+            return true;
+        });
+
+        verify(consumer, times(2)).test(anyString(), eq(0));
+        verify(consumer, times(4)).test(anyString(), eq(2));
+        verify(consumer, times(1)).test(anyString(), eq(6));
+    }
+
+
+    @Test
     public void testWeightedStream() throws Exception {
 
         final CommunityConsumer consumer = mock(CommunityConsumer.class);
 
-        db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {pr_iterations:15, weightProperty:'v'}) YIELD nodeId, community")
+        db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {iterations:15, weightProperty:'v'}) YIELD nodeId, community")
                 .accept(row -> {
                     consumer.test(
                             db.getNodeById(row.getNumber("nodeId").longValue())
@@ -121,7 +166,7 @@ public class InfoMapIntTest {
     }
 
     @Test
-    public void testPredefinedPageRank() throws Exception {
+    public void testPredefinedPageRankStream() throws Exception {
 
         final CommunityConsumer consumer = mock(CommunityConsumer.class);
 
