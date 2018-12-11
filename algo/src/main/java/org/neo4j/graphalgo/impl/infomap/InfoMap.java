@@ -206,7 +206,7 @@ public class InfoMap extends Algorithm<InfoMap> {
      * @return true if a merge occurred, false otherwise
      */
     private boolean optimize() {
-        final Pointer.DoublePointer m = Pointer.wrap(-threshold);
+        final Pointer.DoublePointer m = Pointer.wrap(-1 * threshold);
         final int[] best = {-1, -1};
         for (IntObjectCursor<Module> cursor : modules) {
             final Module module = cursor.value;
@@ -244,7 +244,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         m.nodes.forEach((IntProcedure) node -> {
             final int cs = communities[node];
             // for each connected node t to this module
-            graph.forEachOutgoing(node, (s, t, r) -> {
+            graph.forEachRelationship(node, D, (s, t, r) -> {
                 final int community = communities[t];
                 // same community
                 if (cs == community) {
