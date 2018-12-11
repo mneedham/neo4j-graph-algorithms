@@ -338,6 +338,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
 
         public void merge(Module other) {
+            System.out.println("merge " + this.index + " + " + other.index);
             final int ni = nodes.size() + other.nodes.size();
             p += other.p;
             w += other.w - interModW(this, other);

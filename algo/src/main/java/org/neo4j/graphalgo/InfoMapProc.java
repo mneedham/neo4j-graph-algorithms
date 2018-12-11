@@ -52,7 +52,6 @@ public class InfoMapProc {
                 .overrideNodeLabelOrQuery(label)
                 .overrideRelationshipTypeOrQuery(relationshipType);
 
-
         final Setup setup;
         if (config.hasWeightProperty()) {
             if (config.containsKeys(PAGE_RANK_PROPERTY)) setup = Setup.WEIGHTED_EXT_PR;
@@ -66,7 +65,7 @@ public class InfoMapProc {
         final InfoMap infoMap;
 
         // number of iterations for the pageRank computation
-        final int pageRankIterations = config.getNumber("iterations", 5).intValue();
+        final int pageRankIterations = config.getNumber("iterations", 10).intValue();
         // property name (node property) for predefined pageRanks
         final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, "pageRank");
 
@@ -169,9 +168,8 @@ public class InfoMapProc {
         final Graph graph;
         final InfoMap infoMap;
 
-
         // number of iterations for the pageRank computation
-        final int pageRankIterations = config.getNumber("iterations", 5).intValue();
+        final int pageRankIterations = config.getNumber("iterations", 10).intValue();
         // property name (node property) for predefined pageRanks
         final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, "pageRank");
 
