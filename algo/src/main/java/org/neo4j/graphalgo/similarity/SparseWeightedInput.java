@@ -7,14 +7,12 @@ class SparseWeightedInput implements WeightedInput {
     private long id;
     double[] weights;
     private int count;
-    private RleDecoder rleDecoder;
 
     public SparseWeightedInput(long id, double[] weights, int initialSize, int nonSkipSize) {
         this.initialSize = initialSize;
         this.id = id;
         this.weights = weights;
         this.count = nonSkipSize;
-        rleDecoder = new RleDecoder(initialSize);
     }
 
     public int compareTo(WeightedInput o) {
@@ -47,11 +45,11 @@ class SparseWeightedInput implements WeightedInput {
         return new SimilarityResult(id(), other.id(), count(), other.count(), intersection, sumSquareDelta);
     }
 
-    public SimilarityResult cosineSquaresSkip(double similarityCutoff, WeightedInput other, double skipValue) {
-        rleDecoder.reset(this.weights(), other.weights());
+    public SimilarityResult cosineSquaresSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, double skipValue) {
+        decoder.reset(this.weights(), other.weights());
 
-        double[] thisWeights = rleDecoder.item1();
-        double[] otherWeights = rleDecoder.item2();
+        double[] thisWeights = decoder.item1();
+        double[] otherWeights = decoder.item2();
 
         int len = Math.min(thisWeights.length, otherWeights.length);
         double cosineSquares = Intersections.cosineSquareSkip(thisWeights, otherWeights, len, skipValue);
@@ -65,9 +63,11 @@ class SparseWeightedInput implements WeightedInput {
         return new SimilarityResult(id(), other.id(), count(), other.count(), intersection, cosineSquares);
     }
 
-    public SimilarityResult cosineSquares(double similarityCutoff, WeightedInput other) {
-        double[] thisWeights = RleTransformer.decode(weights(), initialSize);
-        double[] otherWeights = RleTransformer.decode(other.weights(), initialSize);
+    public SimilarityResult cosineSquares(RleDecoder decoder, double similarityCutoff, WeightedInput other) {
+        decoder.reset(this.weights(), other.weights());
+
+        double[] thisWeights = decoder.item1();
+        double[] otherWeights = decoder.item2();
 
         int len = Math.min(thisWeights.length, otherWeights.length);
         double cosineSquares = Intersections.cosineSquare(thisWeights, otherWeights, len);
@@ -94,5 +94,10 @@ class SparseWeightedInput implements WeightedInput {
     @Override
     public int count() {
         return count;
+    }
+
+    @Override
+    public int initialSize() {
+        return initialSize;
     }
 }

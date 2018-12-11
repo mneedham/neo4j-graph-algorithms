@@ -54,7 +54,7 @@ class DenseWeightedInput implements WeightedInput {
         return new SimilarityResult(id, other.id(), count, other.count(), intersection, sumSquareDelta);
     }
 
-    public SimilarityResult cosineSquaresSkip(double similarityCutoff, WeightedInput other, double skipValue) {
+    public SimilarityResult cosineSquaresSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, double skipValue) {
         int len = Math.min(weights.length, other.weights().length);
         double cosineSquares = Intersections.cosineSquareSkip(weights, other.weights(), len, skipValue);
         long intersection = 0;
@@ -67,7 +67,7 @@ class DenseWeightedInput implements WeightedInput {
         return new SimilarityResult(id, other.id(), count, other.count(), intersection, cosineSquares);
     }
 
-    public SimilarityResult cosineSquares(double similarityCutoff, WeightedInput other) {
+    public SimilarityResult cosineSquares(RleDecoder decoder, double similarityCutoff, WeightedInput other) {
         int len = Math.min(weights.length, other.weights().length);
         double cosineSquares = Intersections.cosineSquare(weights, other.weights(), len);
         long intersection = 0;
@@ -93,5 +93,10 @@ class DenseWeightedInput implements WeightedInput {
     @Override
     public int count() {
         return count;
+    }
+
+    @Override
+    public int initialSize() {
+        return weights.length;
     }
 }

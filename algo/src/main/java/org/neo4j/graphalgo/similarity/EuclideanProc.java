@@ -26,6 +26,7 @@ import org.neo4j.procedure.Procedure;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class EuclideanProc extends SimilarityProc {
@@ -40,8 +41,8 @@ public class EuclideanProc extends SimilarityProc {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
         SimilarityComputer<DenseWeightedInput> computer = skipValue == null ?
-                (s,t,cutoff) -> s.sumSquareDelta(cutoff, t) :
-                (s,t,cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
+                (decoder, s, t, cutoff) -> s.sumSquareDelta(cutoff, t) :
+                (decoder, s, t, cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
 
         DenseWeightedInput[] inputs = preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
 
@@ -52,7 +53,11 @@ public class EuclideanProc extends SimilarityProc {
         int topN = -getTopN(configuration);
         int topK = -getTopK(configuration);
 
-        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN);
+        int size = inputs[0].initialSize();
+        Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration.getGraphName("dense"), size);
+
+        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, () -> null, similarityCutoff, topK), topN)
+                .map(SimilarityResult::squareRooted);
 
         return stream.map(SimilarityResult::squareRooted);
     }
@@ -66,8 +71,8 @@ public class EuclideanProc extends SimilarityProc {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
         SimilarityComputer<DenseWeightedInput> computer = skipValue == null ?
-                (s,t,cutoff) -> s.sumSquareDelta(cutoff, t) :
-                (s,t,cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
+                (decoder, s, t, cutoff) -> s.sumSquareDelta(cutoff, t) :
+                (decoder, s, t, cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
 
         DenseWeightedInput[] inputs = preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
 
@@ -78,7 +83,8 @@ public class EuclideanProc extends SimilarityProc {
         int topN = -getTopN(configuration);
         int topK = -getTopK(configuration);
 
-        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN)
+
+        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, () -> null, similarityCutoff, topK), topN)
                 .map(SimilarityResult::squareRooted);
 
         boolean write = configuration.isWriteFlag(false); //  && similarityCutoff != 0.0;

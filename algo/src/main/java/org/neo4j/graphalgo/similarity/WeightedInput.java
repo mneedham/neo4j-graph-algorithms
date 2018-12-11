@@ -5,13 +5,15 @@ public interface WeightedInput extends Comparable<WeightedInput> {
 
     SimilarityResult sumSquareDelta(double similarityCutoff, WeightedInput other);
 
-    SimilarityResult cosineSquaresSkip(double similarityCutoff, WeightedInput other, double skipValue);
+    SimilarityResult cosineSquaresSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, double skipValue);
 
-    SimilarityResult cosineSquares(double similarityCutoff, WeightedInput other);
+    SimilarityResult cosineSquares(RleDecoder decoder, double similarityCutoff, WeightedInput other);
 
     long id();
 
     double[] weights();
 
     int count();
+
+    int initialSize();
 }

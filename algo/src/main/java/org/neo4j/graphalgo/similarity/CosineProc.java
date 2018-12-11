@@ -19,12 +19,14 @@
 package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
+import org.neo4j.graphalgo.core.ProcedureConstants;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class CosineProc extends SimilarityProc {
@@ -74,14 +76,18 @@ public class CosineProc extends SimilarityProc {
     private Stream<SimilarityResult> generateStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
                                                     double similarityCutoff, int topN, int topK,
                                                     SimilarityComputer<WeightedInput> computer) {
-        return topN(similarityStream(inputs, computer, configuration, similarityCutoff, topK), topN)
+        int size = inputs[0].initialSize();
+
+        Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration.getGraphName("dense"), size);
+
+        return topN(similarityStream(inputs, computer, configuration, decoderFactory, similarityCutoff, topK), topN)
                 .map(SimilarityResult::squareRooted);
     }
 
     private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
         return skipValue == null ?
-                (s, t, cutoff) -> s.cosineSquares(cutoff, t) :
-                (s, t, cutoff) -> s.cosineSquaresSkip(cutoff, t, skipValue);
+                (decoder, s, t, cutoff) -> s.cosineSquares(decoder, cutoff, t) :
+                (decoder, s, t, cutoff) -> s.cosineSquaresSkip(decoder, cutoff, t, skipValue);
     }
 
     private double similarityCutoff(ProcedureConfiguration configuration) {

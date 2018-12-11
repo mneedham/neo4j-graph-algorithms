@@ -233,7 +233,7 @@ public class CosineTest {
 
     @Test
     public void cosineCypherLoadingStreamTest() {
-        String query = "MATCH (p:Person)-[r:LIKES]->(i) RETURN id(p) AS item, id(i) AS id, r.stars AS weight";
+        String query = "MATCH (p:Person)-[r:LIKES]->(i) RETURN id(p) AS item, id(i) AS category, r.stars AS weight";
         Result results = db.execute(STATEMENT_CYPHER_STREAM, map("config", map("concurrency", 1, "graph", "cypher", "skipValue", 0.0), "query", query));
 
         assertTrue(results.hasNext());
