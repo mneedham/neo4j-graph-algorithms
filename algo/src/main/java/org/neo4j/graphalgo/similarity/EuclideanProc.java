@@ -36,20 +36,15 @@ public class EuclideanProc extends SimilarityProc {
             "YIELD item1, item2, count1, count2, intersection, similarity - computes euclidean distance")
     // todo count1,count2 = could be the non-null values, intersection the values where both are non-null?
     public Stream<SimilarityResult> euclideanStream(
-            @Name(value = "data", defaultValue = "null") List<Map<String,Object>> data,
-            @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
+            @Name(value = "data", defaultValue = "null") Object rawData,
+            @Name(value = "config", defaultValue = "{}") Map<String, Object> config) throws Exception {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
-        SimilarityComputer<WeightedInput> computer = skipValue == null ?
-                (decoder, s, t, cutoff) -> s.sumSquareDelta(cutoff, t) :
-                (decoder, s, t, cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
+        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
 
-        WeightedInput[] inputs = preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
+        WeightedInput[] inputs = prepareWeights(rawData, configuration, skipValue);
 
-        double similarityCutoff = getSimilarityCutoff(configuration);
-        // as we don't compute the sqrt until the end
-        if (similarityCutoff > 0d) similarityCutoff *= similarityCutoff;
-
+        double similarityCutoff = similarityCutoff(configuration);
         int topN = -getTopN(configuration);
         int topK = -getTopK(configuration);
 
@@ -61,29 +56,36 @@ public class EuclideanProc extends SimilarityProc {
     @Description("CALL algo.similarity.euclidean([{item:id, weights:[weights]}], {similarityCutoff:-1,degreeCutoff:0}) " +
             "YIELD p50, p75, p90, p99, p999, p100 - computes euclidean similarities")
     public Stream<SimilaritySummaryResult> euclidean(
-            @Name(value = "data", defaultValue = "null") List<Map<String, Object>> data,
-            @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
+            @Name(value = "data", defaultValue = "null") Object rawData,
+            @Name(value = "config", defaultValue = "{}") Map<String, Object> config) throws Exception {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         Double skipValue = configuration.get("skipValue", null);
-        SimilarityComputer<WeightedInput> computer = skipValue == null ?
-                (decoder, s, t, cutoff) -> s.sumSquareDelta(cutoff, t) :
-                (decoder, s, t, cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
+        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
 
-        WeightedInput[] inputs = preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
+        WeightedInput[] inputs = prepareWeights(rawData, configuration, skipValue);
 
-        double similarityCutoff = getSimilarityCutoff(configuration);
-        // as we don't compute the sqrt until the end
-        if (similarityCutoff > 0d) similarityCutoff *= similarityCutoff;
-
+        double similarityCutoff = similarityCutoff(configuration);
         int topN = -getTopN(configuration);
         int topK = -getTopK(configuration);
-
 
         Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, () -> null, similarityCutoff, topK), topN)
                 .map(SimilarityResult::squareRooted);
 
         boolean write = configuration.isWriteFlag(false); //  && similarityCutoff != 0.0;
         return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");
+    }
+
+    private double similarityCutoff(ProcedureConfiguration configuration) {
+        double similarityCutoff = getSimilarityCutoff(configuration);
+        // as we don't compute the sqrt until the end
+        if (similarityCutoff > 0d) similarityCutoff *= similarityCutoff;
+        return similarityCutoff;
+    }
+
+    private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
+        return skipValue == null ?
+                (decoder, s, t, cutoff) -> s.sumSquareDelta(cutoff, t) :
+                (decoder, s, t, cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
     }
 
 
