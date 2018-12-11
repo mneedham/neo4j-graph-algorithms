@@ -47,7 +47,7 @@ public class CosineProc extends SimilarityProc {
         int topK = getTopK(configuration);
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
 
-        return generateStream(configuration, inputs, similarityCutoff, topN, topK, computer);
+        return generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, computer);
     }
 
     @Procedure(name = "algo.similarity.cosine", mode = Mode.WRITE)
@@ -66,21 +66,10 @@ public class CosineProc extends SimilarityProc {
         int topN = getTopN(configuration);
         int topK = getTopK(configuration);
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
-        Stream<SimilarityResult> stream = generateStream(configuration, inputs, similarityCutoff, topN, topK, computer);
+        Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, computer);
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
         return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");
-    }
-
-    private Stream<SimilarityResult> generateStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
-                                                    double similarityCutoff, int topN, int topK,
-                                                    SimilarityComputer<WeightedInput> computer) {
-        int size = inputs[0].initialSize;
-
-        Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration.getGraphName("dense"), size);
-
-        return topN(similarityStream(inputs, computer, configuration, decoderFactory, similarityCutoff, topK), topN)
-                .map(SimilarityResult::squareRooted);
     }
 
     private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
