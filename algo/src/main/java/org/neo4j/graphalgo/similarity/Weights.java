@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Weights {
+    public static final long REPEAT_CUTOFF = 3L;
+
     public static double[] buildWeights(List<Number> weightList) {
         double[] weights = new double[weightList.size()];
         int i = 0;
