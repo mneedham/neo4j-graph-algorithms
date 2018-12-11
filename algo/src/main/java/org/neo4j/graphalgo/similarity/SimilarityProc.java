@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.neo4j.graphalgo.impl.util.TopKConsumer.topK;
-import static org.neo4j.graphalgo.similarity.RleTransformer.REPEAT_CUTOFF;
+import static org.neo4j.graphalgo.similarity.Weights.REPEAT_CUTOFF;
 import static org.neo4j.helpers.collection.MapUtil.map;
 
 public class SimilarityProc {
@@ -226,7 +226,7 @@ public class SimilarityProc {
                 throw new IllegalArgumentException("Must specify 'skipValue' when using {graph: 'cypher'}");
             }
 
-            return prepareSparseWeights(api, (String) rawData, configuration.getParams(), getDegreeCutoff(configuration), skipValue);
+            return prepareSparseWeights(api, (String) rawData,  skipValue, configuration);
         } else {
             List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
             return preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
@@ -251,7 +251,11 @@ public class SimilarityProc {
         return inputs;
     }
 
-    WeightedInput[] prepareSparseWeights(GraphDatabaseAPI api, String query, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
+    WeightedInput[] prepareSparseWeights(GraphDatabaseAPI api, String query, Double skipValue, ProcedureConfiguration configuration) throws Exception {
+        Map<String, Object> params = configuration.getParams();
+        Long degreeCutoff = getDegreeCutoff(configuration);
+        int repeatCutoff = configuration.get("rleRepeatCutoff", REPEAT_CUTOFF).intValue();
+
         Result result = api.execute(query, params);
 
         Map<Long, LongDoubleMap> map = new HashMap<>();
@@ -284,7 +288,7 @@ public class SimilarityProc {
                 }
                 int size = weightsList.size();
                 int nonSkipSize = sparseWeights.size();
-                double[] weights = Weights.buildRleWeights(weightsList, REPEAT_CUTOFF);
+                double[] weights = Weights.buildRleWeights(weightsList, repeatCutoff);
 
                 inputs[idx++] = WeightedInput.sparse(item, weights, size, nonSkipSize);
             }
