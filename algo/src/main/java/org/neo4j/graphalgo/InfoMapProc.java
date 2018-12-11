@@ -95,7 +95,7 @@ public class InfoMapProc {
                         .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
                         .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
                         .asUndirected(true)
-                        .load(HeavyGraphFactory.class); // NodeProperties iface on Huge?
+                        .load(config.getGraphImpl());
                 infoMap = InfoMap.weighted(
                         graph,
                         ((NodeProperties) graph).nodeProperties("_pr")::get,
@@ -125,7 +125,7 @@ public class InfoMapProc {
                         .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                         .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
                         .asUndirected(true)
-                        .load(HeavyGraphFactory.class); // NodeProperties iface on Huge?
+                        .load(config.getGraphImpl());
                 infoMap = InfoMap.unweighted(
                         graph,
                         ((NodeProperties) graph).nodeProperties("_pr")::get,
@@ -206,7 +206,7 @@ public class InfoMapProc {
                             .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
                             .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
                             .asUndirected(true)
-                            .load(HeavyGraphFactory.class); // NodeProperties iface on Huge?
+                            .load(config.getGraphImpl());
                     infoMap = InfoMap.weighted(
                             graph,
                             ((NodeProperties) graph).nodeProperties("_pr")::get,
@@ -240,7 +240,7 @@ public class InfoMapProc {
                             .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                             .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
                             .asUndirected(true)
-                            .load(HeavyGraphFactory.class); // NodeProperties iface on Huge?
+                            .load(config.getGraphImpl());
                     infoMap = InfoMap.unweighted(
                             graph,
                             ((NodeProperties) graph).nodeProperties("_pr")::get,

@@ -86,7 +86,8 @@ public class InfoMapYelpTest {
         db.execute("CALL algo.infoMap('MATCH (c:Category) RETURN id(c) AS id',\n" +
                 "  'MATCH (c1:Category)<-[:IN_CATEGORY]-()-[:IN_CATEGORY]->(c2:Category)\n" +
                 "   WHERE id(c1) < id(c2)\n" +
-                "   RETURN id(c1) AS source, id(c2) AS target, count(*) AS weight', {iterations:15, writeProperty:'c', threshold:0.1})").accept(row -> {
+                "   RETURN id(c1) AS source, id(c2) AS target, count(*) AS weight', " +
+                " {graph: 'cypher', iterations:15, writeProperty:'c', threshold:0.1})").accept(row -> {
 
             System.out.println(row.get("iterations"));
 

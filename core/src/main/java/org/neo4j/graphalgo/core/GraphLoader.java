@@ -569,7 +569,8 @@ public class GraphLoader {
     public GraphLoader init(Log log, String label, String relationship, ProcedureConfiguration config) {
         return withLog(log)
                 .withName(config.getGraphName(null))
-                .withOptionalLabel(label).withOptionalRelationshipType(relationship)
+                .withOptionalLabel(label)
+                .withOptionalRelationshipType(relationship)
                 .withConcurrency(config.getConcurrency())
                 .withBatchSize(config.getBatchSize())
                 .withParams(config.getParams());

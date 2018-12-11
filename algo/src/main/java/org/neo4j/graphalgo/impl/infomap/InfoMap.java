@@ -12,6 +12,7 @@ import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
 import org.neo4j.graphalgo.core.utils.NormalizedRelationshipWeights;
 import org.neo4j.graphalgo.core.utils.Pointer;
+import org.neo4j.graphalgo.core.utils.dss.DisjointSetStruct;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
@@ -128,7 +129,6 @@ public class InfoMap extends Algorithm<InfoMap> {
         this.n1 = nodeCount - 1.;
         Arrays.setAll(communities, i -> i);
         final double[] d = {0.};
-
         graph.forEachNode(node -> {
             final Module module = new Module(node);
             modules.put(node, module);
@@ -136,6 +136,7 @@ public class InfoMap extends Algorithm<InfoMap> {
             return true;
         });
         this.sQi = d[0];
+
     }
 
     /**
@@ -296,7 +297,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         final Pointer.DoublePointer w = Pointer.wrap(.0);
         j.nodes.forEach((IntProcedure) c -> {
             graph.forEachOutgoing(c, (s, t, r) -> {
-                if (k.nodes.contains(t)) {
+                if (k.index == communities[t]) {
                     w.v += (pageRank.weightOf(s) * weights.weightOf(s, t)) + (pageRank.weightOf(t) * weights.weightOf(t, s));
                 }
                 return true;
@@ -338,7 +339,6 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
 
         public void merge(Module other) {
-            System.out.println("merge " + this.index + " + " + other.index);
             final int ni = nodes.size() + other.nodes.size();
             p += other.p;
             w += other.w - interModW(this, other);
