@@ -20,6 +20,7 @@ package org.neo4j.graphalgo.algo;
 
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.graphalgo.GetNodeFunc;
 import org.neo4j.graphalgo.InfoMapProc;
@@ -44,20 +45,17 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Graph:
- *
- *        (b)        (e)
- *       /  \       /  \     (x)
- *     (a)--(c)---(d)--(f)
  *
  * @author mknblch
  */
+@Ignore("local test data")
 public class InfoMapYelpTest {
 
     private static GraphDatabaseService db;
 
     private static File storeDir = Paths.get(
-            "/Users/mknobloch/data/neo4j/yelp.photo.db"
+            "/Users/mknobloch/data/neo4j",
+            "yelp.photo.db"
     ).toFile();
 
 
@@ -87,7 +85,7 @@ public class InfoMapYelpTest {
                 "  'MATCH (c1:Category)<-[:IN_CATEGORY]-()-[:IN_CATEGORY]->(c2:Category)\n" +
                 "   WHERE id(c1) < id(c2)\n" +
                 "   RETURN id(c1) AS source, id(c2) AS target, count(*) AS weight', " +
-                " {graph: 'cypher', iterations:15, writeProperty:'c', threshold:0.1})").accept(row -> {
+                " {graph: 'cypher', iterations:15, writeProperty:'c'})").accept(row -> {
 
             System.out.println(row.get("iterations"));
 
