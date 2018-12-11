@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.neo4j</groupId>
         <artifactId>graph-algorithms-parent</artifactId>
-        <version>3.4.8.1</version>
+        <version>3.4.9.0</version>
     </parent>
 
     <artifactId>graph-algorithms-benchmark</artifactId>
@@ -78,7 +78,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.13</version>
+            <version>1.18</version>
         </dependency>
 
     </dependencies>
