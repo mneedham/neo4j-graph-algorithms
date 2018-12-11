@@ -53,13 +53,8 @@ public class EuclideanProc extends SimilarityProc {
         int topN = -getTopN(configuration);
         int topK = -getTopK(configuration);
 
-        int size = inputs[0].initialSize();
-        Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration.getGraphName("dense"), size);
-
-        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, () -> null, similarityCutoff, topK), topN)
+        return topN(similarityStream(inputs, computer, configuration, () -> null, similarityCutoff, topK), topN)
                 .map(SimilarityResult::squareRooted);
-
-        return stream.map(SimilarityResult::squareRooted);
     }
 
     @Procedure(name = "algo.similarity.euclidean", mode = Mode.WRITE)
