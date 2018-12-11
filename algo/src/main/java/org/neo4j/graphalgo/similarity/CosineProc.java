@@ -75,7 +75,7 @@ public class CosineProc extends SimilarityProc {
     private Stream<SimilarityResult> generateStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
                                                     double similarityCutoff, int topN, int topK,
                                                     SimilarityComputer<WeightedInput> computer) {
-        int size = inputs[0].initialSize();
+        int size = inputs[0].initialSize;
 
         Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration.getGraphName("dense"), size);
 
