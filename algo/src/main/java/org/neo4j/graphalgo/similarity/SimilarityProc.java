@@ -233,8 +233,8 @@ public class SimilarityProc {
         }
     }
 
-    DenseWeightedInput[] preparseDenseWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
-        DenseWeightedInput[] inputs = new DenseWeightedInput[data.size()];
+    WeightedInput[] preparseDenseWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
+        WeightedInput[] inputs = new WeightedInput[data.size()];
         int idx = 0;
         for (Map<String, Object> row : data) {
 
@@ -243,7 +243,7 @@ public class SimilarityProc {
             int size = weightList.size();
             if (size > degreeCutoff) {
                 double[] weights = Weights.buildWeights(weightList);
-                inputs[idx++] = skipValue == null ? new DenseWeightedInput((Long) row.get("item"), weights) : new DenseWeightedInput((Long) row.get("item"), weights, skipValue);
+                inputs[idx++] = skipValue == null ? WeightedInput.dense((Long) row.get("item"), weights) : WeightedInput.dense((Long) row.get("item"), weights, skipValue);
             }
         }
         if (idx != inputs.length) inputs = Arrays.copyOf(inputs, idx);
@@ -251,7 +251,7 @@ public class SimilarityProc {
         return inputs;
     }
 
-    SparseWeightedInput[] prepareSparseWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
+    WeightedInput[] prepareSparseWeights(GraphDatabaseAPI api, String rawData, Map<String, Object> params, long degreeCutoff, Double skipValue) throws Exception {
         Result result = api.execute(rawData, params);
 
         Map<Long, LongDoubleMap> map = new HashMap<>();
@@ -269,7 +269,7 @@ public class SimilarityProc {
             return true;
         });
 
-        SparseWeightedInput[] inputs = new SparseWeightedInput[map.size()];
+        WeightedInput[] inputs = new WeightedInput[map.size()];
         int idx = 0;
 
         long[] idsArray = ids.toArray();
@@ -286,7 +286,7 @@ public class SimilarityProc {
                 int nonSkipSize = sparseWeights.size();
                 double[] weights = Weights.buildRleWeights(weightsList, REPEAT_CUTOFF);
 
-                inputs[idx++] = new SparseWeightedInput(item, weights, size, nonSkipSize);
+                inputs[idx++] = WeightedInput.sparse(item, weights, size, nonSkipSize);
             }
         }
 
