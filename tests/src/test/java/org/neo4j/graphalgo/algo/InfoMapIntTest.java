@@ -22,8 +22,12 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.graphalgo.InfoMapProc;
+import org.neo4j.graphalgo.PageRankProc;
 import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.impl.pagerank.PageRank;
+import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
@@ -59,13 +63,13 @@ public class InfoMapIntTest {
     public static void setupGraph() throws KernelException {
 
         final String cypher =
-                "CREATE (a:Node {name:'a', pr:1.0} )\n" +
-                "CREATE (b:Node {name:'b', pr:1.0} )\n" +
-                "CREATE (c:Node {name:'c', pr:2.0} )\n" +
-                "CREATE (d:Node {name:'d', pr:0.0} )\n" +
-                "CREATE (e:Node {name:'e', pr:0.0} )\n" +
-                "CREATE (f:Node {name:'f', pr:0.0} )\n" +
-                "CREATE (x:Node {name:'x', pr:1.0} )\n" +
+                "CREATE (a:Node {name:'a'} )\n" +
+                "CREATE (b:Node {name:'b'} )\n" +
+                "CREATE (c:Node {name:'c'} )\n" +
+                "CREATE (d:Node {name:'d'} )\n" +
+                "CREATE (e:Node {name:'e'} )\n" +
+                "CREATE (f:Node {name:'f'} )\n" +
+                "CREATE (x:Node {name:'x'} )\n" +
                         "CREATE" +
                         " (b)-[:TYPE {v:1.0}]->(a),\n" +
                         " (a)-[:TYPE {v:1.0}]->(c),\n" +
@@ -79,6 +83,7 @@ public class InfoMapIntTest {
 
         db.execute(cypher);
         db.resolveDependency(Procedures.class).registerProcedure(InfoMapProc.class);
+        db.resolveDependency(Procedures.class).registerProcedure(PageRankProc.class);
     }
 
     @Test
@@ -90,6 +95,9 @@ public class InfoMapIntTest {
 
         db.execute("MATCH (n) RETURN n").accept(row -> {
             final Node node = row.getNode("n");
+            System.out.printf("%s: %d%n",
+                    (String) node.getProperty("name"),
+                    (int) node.getProperty("c"));
             consumer.test(
                     (String) node.getProperty("name"),
                     (int) node.getProperty("c"));
@@ -129,7 +137,7 @@ public class InfoMapIntTest {
 
         final CommunityConsumer consumer = mock(CommunityConsumer.class);
 
-        db.execute("CALL algo.infoMap('Node', 'TYPE', {iterations:15, weightProperty:'v', writeProperty:'c'})").close();
+        db.execute("CALL algo.infoMap('Node', 'TYPE', {weightProperty:'v', writeProperty:'c'})").close();
 
         db.execute("MATCH (n) RETURN n").accept(row -> {
             final Node node = row.getNode("n");
@@ -168,9 +176,12 @@ public class InfoMapIntTest {
     @Test
     public void testPredefinedPageRankStream() throws Exception {
 
+
+        db.execute("CALL algo.pageRank('Node', 'TYPE', {writeProperty:'p', iterations:1}) YIELD nodes").close();
+
         final CommunityConsumer consumer = mock(CommunityConsumer.class);
 
-        db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {pageRankProperty:'pr'}) YIELD nodeId, community")
+        db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {pageRankProperty:'p'}) YIELD nodeId, community")
                 .accept(row -> {
                     consumer.test(
                             db.getNodeById(row.getNumber("nodeId").longValue())
@@ -179,9 +190,9 @@ public class InfoMapIntTest {
                     return true;
                 });
 
-        verify(consumer, times(4)).test(anyString(), eq(0));
-        verify(consumer, times(1)).test(anyString(), eq(4));
-        verify(consumer, times(1)).test(anyString(), eq(5));
+
+        verify(consumer, times(3)).test(anyString(), eq(0));
+        verify(consumer, times(3)).test(anyString(), eq(3));
         verify(consumer, times(1)).test(anyString(), eq(6));
     }
 

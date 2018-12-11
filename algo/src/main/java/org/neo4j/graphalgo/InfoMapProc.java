@@ -11,6 +11,7 @@ import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.core.write.Translators;
 import org.neo4j.graphalgo.impl.infomap.InfoMap;
 import org.neo4j.graphalgo.results.AbstractResultBuilder;
+import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
@@ -83,8 +84,9 @@ public class InfoMapProc {
                         graph,
                         pageRankIterations,
                         graph,
-                        config.getNumber("tau", InfoMap.TAU).doubleValue(),
-                        config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                        config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
+                        config.getNumber("tau", InfoMap.TAU).doubleValue()
+                );
                 break;
 
             case WEIGHTED_EXT_PR:
@@ -100,8 +102,9 @@ public class InfoMapProc {
                         graph,
                         ((NodeProperties) graph).nodeProperties("_pr")::get,
                         graph,
-                        config.getNumber("tau", InfoMap.TAU).doubleValue(),
-                        config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                        config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
+                        config.getNumber("tau", InfoMap.TAU).doubleValue()
+                );
                 break;
 
             case UNWEIGHTED:
@@ -114,8 +117,9 @@ public class InfoMapProc {
                 infoMap = InfoMap.unweighted(
                         graph,
                         pageRankIterations,
-                        config.getNumber("tau", InfoMap.TAU).doubleValue(),
-                        config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                        config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
+                        config.getNumber("tau", InfoMap.TAU).doubleValue()
+                );
                 break;
 
             case UNWEIGHTED_EXT_PR:
@@ -129,8 +133,9 @@ public class InfoMapProc {
                 infoMap = InfoMap.unweighted(
                         graph,
                         ((NodeProperties) graph).nodeProperties("_pr")::get,
-                        config.getNumber("tau", InfoMap.TAU).doubleValue(),
-                        config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                        config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
+                        config.getNumber("tau", InfoMap.TAU).doubleValue()
+                );
                 break;
 
             default:
@@ -185,6 +190,7 @@ public class InfoMapProc {
                     graph = new GraphLoader(db, Pools.DEFAULT)
                             .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                             .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
+//                            .withDirection(Direction.OUTGOING)
                             .asUndirected(true)
                             .load(config.getGraphImpl());
 
@@ -192,8 +198,9 @@ public class InfoMapProc {
                             graph,
                             pageRankIterations,
                             graph,
-                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
-                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
+                            config.getNumber("tau", InfoMap.TAU).doubleValue()
+                    );
                 }
                 break;
 
@@ -211,8 +218,9 @@ public class InfoMapProc {
                             graph,
                             ((NodeProperties) graph).nodeProperties("_pr")::get,
                             graph,
-                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
-                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
+                            config.getNumber("tau", InfoMap.TAU).doubleValue()
+                    );
                 }
                 break;
 
@@ -227,8 +235,9 @@ public class InfoMapProc {
                     infoMap = InfoMap.unweighted(
                             graph,
                             pageRankIterations,
-                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
-                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
+                            config.getNumber("tau", InfoMap.TAU).doubleValue()
+                    );
                 }
                 break;
 
@@ -244,8 +253,9 @@ public class InfoMapProc {
                     infoMap = InfoMap.unweighted(
                             graph,
                             ((NodeProperties) graph).nodeProperties("_pr")::get,
-                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
-                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue());
+                            config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
+                            config.getNumber("tau", InfoMap.TAU).doubleValue()
+                    );
                 }
                 break;
 
