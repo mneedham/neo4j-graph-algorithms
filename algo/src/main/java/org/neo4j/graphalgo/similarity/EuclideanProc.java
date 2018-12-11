@@ -48,8 +48,7 @@ public class EuclideanProc extends SimilarityProc {
         int topN = -getTopN(configuration);
         int topK = -getTopK(configuration);
 
-        return topN(similarityStream(inputs, computer, configuration, () -> null, similarityCutoff, topK), topN)
-                .map(SimilarityResult::squareRooted);
+        return generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, computer);
     }
 
     @Procedure(name = "algo.similarity.euclidean", mode = Mode.WRITE)
@@ -68,8 +67,7 @@ public class EuclideanProc extends SimilarityProc {
         int topN = -getTopN(configuration);
         int topK = -getTopK(configuration);
 
-        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, () -> null, similarityCutoff, topK), topN)
-                .map(SimilarityResult::squareRooted);
+        Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, computer);
 
         boolean write = configuration.isWriteFlag(false); //  && similarityCutoff != 0.0;
         return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");

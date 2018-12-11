@@ -254,7 +254,7 @@ public class SimilarityProc {
     WeightedInput[] prepareSparseWeights(GraphDatabaseAPI api, String query, Double skipValue, ProcedureConfiguration configuration) throws Exception {
         Map<String, Object> params = configuration.getParams();
         Long degreeCutoff = getDegreeCutoff(configuration);
-        int repeatCutoff = configuration.get("rleRepeatCutoff", REPEAT_CUTOFF).intValue();
+        int repeatCutoff = configuration.get("sparseVectorRepeatCutoff", REPEAT_CUTOFF).intValue();
 
         Result result = api.execute(query, params);
 
@@ -321,20 +321,33 @@ public class SimilarityProc {
         return valueList;
     }
 
-    protected int getTopK(ProcedureConfiguration configuration) {
+    int getTopK(ProcedureConfiguration configuration) {
         return configuration.getInt("topK", 0);
     }
 
-    protected int getTopN(ProcedureConfiguration configuration) {
+    int getTopN(ProcedureConfiguration configuration) {
         return configuration.getInt("top", 0);
     }
 
-    protected Supplier<RleDecoder> createDecoderFactory(String graphType, int size) {
+    private Supplier<RleDecoder> createDecoderFactory(String graphType, int size) {
         if(ProcedureConstants.CYPHER_QUERY.equals(graphType)) {
             return () -> new RleDecoder(size);
         }
 
         return () -> null;
+    }
+
+    Stream<SimilarityResult> generateWeightedStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
+                                                    double similarityCutoff, int topN, int topK,
+                                                    SimilarityComputer<WeightedInput> computer) {
+        Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration, inputs[0]);
+        return topN(similarityStream(inputs, computer, configuration, decoderFactory, similarityCutoff, topK), topN)
+                .map(SimilarityResult::squareRooted);
+    }
+
+    Supplier<RleDecoder> createDecoderFactory(ProcedureConfiguration configuration, WeightedInput input) {
+        int size = input.initialSize;
+        return createDecoderFactory(configuration.getGraphName("dense"), size);
     }
 
     interface SimilarityComputer<T> {
