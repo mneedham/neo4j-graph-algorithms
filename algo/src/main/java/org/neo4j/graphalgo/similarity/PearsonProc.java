@@ -26,6 +26,7 @@ import org.neo4j.procedure.Procedure;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class PearsonProc extends SimilarityProc {
@@ -48,9 +49,7 @@ public class PearsonProc extends SimilarityProc {
         int topN = getTopN(configuration);
         int topK = getTopK(configuration);
 
-        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, () -> null, similarityCutoff, topK), topN);
-
-        return stream.map(SimilarityResult::squareRooted);
+        return generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, computer);
     }
 
     @Procedure(name = "algo.similarity.pearson", mode = Mode.WRITE)
@@ -69,8 +68,7 @@ public class PearsonProc extends SimilarityProc {
         int topN = getTopN(configuration);
         int topK = getTopK(configuration);
 
-        Stream<SimilarityResult> stream = topN(similarityStream(inputs, computer, configuration, () -> null, similarityCutoff, topK), topN)
-                .map(SimilarityResult::squareRooted);
+        Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, computer);
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
         return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");
@@ -87,6 +85,13 @@ public class PearsonProc extends SimilarityProc {
         // as we don't compute the sqrt until the end
         if (similarityCutoff > 0d) similarityCutoff *= similarityCutoff;
         return similarityCutoff;
+    }
+
+    Stream<SimilarityResult> generateWeightedStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
+                                                    double similarityCutoff, int topN, int topK,
+                                                    SimilarityComputer<WeightedInput> computer) {
+        Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration, inputs[0]);
+        return topN(similarityStream(inputs, computer, configuration, decoderFactory, similarityCutoff, topK), topN);
     }
 
 

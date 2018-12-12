@@ -337,13 +337,6 @@ public class SimilarityProc {
         return () -> null;
     }
 
-    Stream<SimilarityResult> generateWeightedStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
-                                                    double similarityCutoff, int topN, int topK,
-                                                    SimilarityComputer<WeightedInput> computer) {
-        Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration, inputs[0]);
-        return topN(similarityStream(inputs, computer, configuration, decoderFactory, similarityCutoff, topK), topN)
-                .map(SimilarityResult::squareRooted);
-    }
 
     Supplier<RleDecoder> createDecoderFactory(ProcedureConfiguration configuration, WeightedInput input) {
         int size = input.initialSize;

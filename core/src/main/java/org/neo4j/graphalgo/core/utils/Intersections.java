@@ -200,7 +200,7 @@ public class Intersections {
             yLength += vector2Delta * vector2Delta;
         }
 
-        return dotProductMinusMean * dotProductMinusMean / xLength * yLength;
+        return dotProductMinusMean / Math.sqrt(xLength * yLength);
     }
 
     public static double pearsonSquareSkip(double[] vector1, double[] vector2, int len, double skipValue) {
@@ -208,18 +208,21 @@ public class Intersections {
 
         double vector1Sum = 0.0;
         double vector2Sum = 0.0;
+        int count =0;
         for (int i = 0; i < len; i++) {
             double weight1 = vector1[i];
-            if (weight1 == skipValue || (skipNan && Double.isNaN(weight1)))
-            vector1Sum += weight1;
-
             double weight2 = vector2[i];
+
+            if (weight1 == skipValue || (skipNan && Double.isNaN(weight1))) continue;
             if (weight2 == skipValue || (skipNan && Double.isNaN(weight2))) continue;
+
+            vector1Sum += weight1;
             vector2Sum += weight2;
+            count++;
         }
 
-        double vector1Mean = vector1Sum / len;
-        double vector2Mean = vector2Sum / len;
+        double vector1Mean = vector1Sum / count;
+        double vector2Mean = vector2Sum / count;
 
         double dotProductMinusMean = 0d;
         double xLength = 0d;
@@ -239,7 +242,7 @@ public class Intersections {
             yLength += vector2Delta * vector2Delta;
         }
 
-        return dotProductMinusMean * dotProductMinusMean / xLength * yLength;
+        return dotProductMinusMean / Math.sqrt(xLength * yLength);
     }
 
     public static double cosine(double[] vector1, double[] vector2, int len) {

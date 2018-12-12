@@ -103,6 +103,11 @@ class WeightedInput implements Comparable<WeightedInput> {
     public SimilarityResult pearsonSquares(double similarityCutoff, WeightedInput other) {
         int len = Math.min(weights.length, other.weights.length);
         double pearsonSquares = Intersections.pearsonSquare(weights, other.weights, len);
+
+        if(Double.isNaN(pearsonSquares)) {
+            return null;
+        }
+
         long intersection = 0;
         if (similarityCutoff >= 0d && (pearsonSquares == 0 || pearsonSquares < similarityCutoff)) return null;
         return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, pearsonSquares);
@@ -110,9 +115,14 @@ class WeightedInput implements Comparable<WeightedInput> {
 
     public SimilarityResult pearsonSquaresSkip(double similarityCutoff, WeightedInput other, Double skipValue) {
         int len = Math.min(weights.length, other.weights.length);
-        double cosineSquares = Intersections.pearsonSquareSkip(weights, other.weights, len, skipValue);
+        double pearsonSquares = Intersections.pearsonSquareSkip(weights, other.weights, len, skipValue);
+
+        if(Double.isNaN(pearsonSquares)) {
+            return null;
+        }
+
         long intersection = 0;
-        if (similarityCutoff >= 0d && (cosineSquares == 0 || cosineSquares < similarityCutoff)) return null;
-        return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, cosineSquares);
+        if (similarityCutoff >= 0d && (pearsonSquares == 0 || pearsonSquares < similarityCutoff)) return null;
+        return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, pearsonSquares);
     }
 }
