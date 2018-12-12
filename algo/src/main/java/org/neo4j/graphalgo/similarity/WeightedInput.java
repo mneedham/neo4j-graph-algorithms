@@ -126,7 +126,7 @@ class WeightedInput implements Comparable<WeightedInput> {
         }
 
         int len = Math.min(thisWeights.length, otherWeights.length);
-        double pearsonSquares = Intersections.pearsonSquare(thisWeights, otherWeights, len);
+        double pearsonSquares = Intersections.pearson(thisWeights, otherWeights, len);
 
         if(Double.isNaN(pearsonSquares)) {
             return null;
@@ -147,7 +147,7 @@ class WeightedInput implements Comparable<WeightedInput> {
         }
 
         int len = Math.min(thisWeights.length, otherWeights.length);
-        double pearsonSquares = Intersections.pearsonSquareSkip(thisWeights, otherWeights, len, skipValue);
+        double pearsonSquares = Intersections.pearsonSkip(thisWeights, otherWeights, len, skipValue);
 
         if(Double.isNaN(pearsonSquares)) {
             return null;

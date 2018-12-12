@@ -177,7 +177,7 @@ public class Intersections {
         return dotProduct * dotProduct / xLength / yLength;
     }
 
-    public static double pearsonSquare(double[] vector1, double[] vector2, int len) {
+    public static double pearson(double[] vector1, double[] vector2, int len) {
         double vector1Sum = 0.0;
         double vector2Sum = 0.0;
         for (int i = 0; i < len; i++) {
@@ -203,7 +203,7 @@ public class Intersections {
         return dotProductMinusMean / Math.sqrt(xLength * yLength);
     }
 
-    public static double pearsonSquareSkip(double[] vector1, double[] vector2, int len, double skipValue) {
+    public static double pearsonSkip(double[] vector1, double[] vector2, int len, double skipValue) {
         boolean skipNan = Double.isNaN(skipValue);
 
         double vector1Sum = 0.0;
