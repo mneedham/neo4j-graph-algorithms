@@ -50,6 +50,39 @@ public class TopKConsumerTest {
         }
     }
 
+    static class DoubleItem implements Comparable<DoubleItem> {
+        String name;
+        double value;
+
+        DoubleItem(String name, double value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(value);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            return value == ((Item) o).value;
+
+        }
+
+        @Override
+        public int hashCode() {
+            return (int) value;
+        }
+
+        @Override
+        public int compareTo(DoubleItem o) {
+            return Double.compare(o.value,value);
+        }
+    }
+
     private static final int RUNS = 10000;
     private static final int COUNT = 50000;
     public static final int WINDOW_SIZE = 20;

@@ -73,6 +73,14 @@ public class EuclideanProc extends SimilarityProc {
         return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");
     }
 
+    Stream<SimilarityResult> generateWeightedStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
+                                                    double similarityCutoff, int topN, int topK,
+                                                    SimilarityComputer<WeightedInput> computer) {
+        Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration, inputs[0]);
+        return topN(similarityStream(inputs, computer, configuration, decoderFactory, similarityCutoff, topK), topN)
+                .map(SimilarityResult::squareRooted);
+    }
+
     private double similarityCutoff(ProcedureConfiguration configuration) {
         double similarityCutoff = getSimilarityCutoff(configuration);
         // as we don't compute the sqrt until the end
