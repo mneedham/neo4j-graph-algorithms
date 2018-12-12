@@ -104,10 +104,7 @@ class WeightedInput implements Comparable<WeightedInput> {
 
     public SimilarityResult pearsonSquares(double similarityCutoff, WeightedInput other) {
         int len = Math.min(weights.length, other.weights.length);
-
-
         double pearsonSquares = Intersections.pearsonSquare(weights, other.weights, len);
-        System.out.println(id + ", " + other.id + " | " + Arrays.toString(this.weights) + ", " + Arrays.toString(other.weights) + " -> " + pearsonSquares);
 
         if(Double.isNaN(pearsonSquares)) {
             return null;

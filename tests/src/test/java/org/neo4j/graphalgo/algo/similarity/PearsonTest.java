@@ -40,8 +40,9 @@ public class PearsonTest {
     private static GraphDatabaseAPI db;
     private Transaction tx;
     public static final String STATEMENT_STREAM = "MATCH (i:Item) WITH i ORDER BY i MATCH (p:Person) OPTIONAL MATCH (p)-[r:LIKES]->(i)\n" +
-            "WITH p, i, coalesce(r.stars,$missingValue) AS stars ORDER BY p, i " +
-            "WITH {item:id(p), weights: collect(stars)} as userData\n" +
+            "WITH p, i, r " +
+            "ORDER BY id(p), id(i) " +
+            "WITH {item:id(p), weights: collect(coalesce(r.stars,$missingValue))} as userData\n" +
             "WITH collect(userData) as data\n" +
             "call algo.similarity.pearson.stream(data,$config) " +
             "yield item1, item2, count1, count2, intersection, similarity " +
@@ -104,7 +105,7 @@ public class PearsonTest {
                 "MATCH (i:Item) WITH people, collect(i) as items " +
                 "UNWIND range(1,$size) as _ " +
                 "WITH people[toInteger(rand()*size(people))] as p, items[toInteger(rand()*size(items))] as i " +
-                "MERGE (p)-[:LIKES {stars: toInteger(rand()*$size)}]->(i) RETURN count(*) ";
+                "MERGE (p)-[likes:LIKES]->(i) SET likes.stars = toInteger(rand()*$size)  RETURN count(*) ";
         db.execute(statement,singletonMap("size",size)).close();
     }
     private static String buildDatabaseQuery() {
