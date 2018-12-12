@@ -24,7 +24,6 @@ import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -76,15 +75,12 @@ public class PearsonProc extends SimilarityProc {
 
     private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
         return skipValue == null ?
-                (decoder, s, t, cutoff) -> s.pearsonSquares(cutoff, t) :
-                (decoder, s, t, cutoff) -> s.pearsonSquaresSkip(cutoff, t, skipValue);
+                (decoder, s, t, cutoff) -> s.pearson(decoder, cutoff, t) :
+                (decoder, s, t, cutoff) -> s.pearsonSkip(decoder, cutoff, t, skipValue);
     }
 
     private double similarityCutoff(ProcedureConfiguration configuration) {
-        double similarityCutoff = getSimilarityCutoff(configuration);
-        // as we don't compute the sqrt until the end
-        if (similarityCutoff > 0d) similarityCutoff *= similarityCutoff;
-        return similarityCutoff;
+        return getSimilarityCutoff(configuration);
     }
 
     Stream<SimilarityResult> generateWeightedStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
