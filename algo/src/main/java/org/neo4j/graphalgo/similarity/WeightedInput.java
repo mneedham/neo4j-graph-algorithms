@@ -2,8 +2,6 @@ package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.utils.Intersections;
 
-import java.util.Arrays;
-
 class WeightedInput implements Comparable<WeightedInput> {
     private final long id;
     private int itemCount;
@@ -50,18 +48,34 @@ class WeightedInput implements Comparable<WeightedInput> {
         return Long.compare(id, o.id);
     }
 
-    public SimilarityResult sumSquareDeltaSkip(double similarityCutoff, WeightedInput other, double skipValue) {
-        int len = Math.min(weights.length, other.weights.length);
-        double sumSquareDelta = Intersections.sumSquareDeltaSkip(weights, other.weights, len, skipValue);
+    public SimilarityResult sumSquareDeltaSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, double skipValue) {
+        double[] thisWeights = weights;
+        double[] otherWeights = other.weights;
+        if(decoder != null) {
+            decoder.reset(weights, other.weights);
+            thisWeights = decoder.item1();
+            otherWeights = decoder.item2();
+        }
+
+        int len = Math.min(thisWeights.length, otherWeights.length);
+        double sumSquareDelta = Intersections.sumSquareDeltaSkip(thisWeights, otherWeights, len, skipValue);
         long intersection = 0;
 
         if (similarityCutoff >= 0d && sumSquareDelta > similarityCutoff) return null;
         return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, sumSquareDelta);
     }
 
-    public SimilarityResult sumSquareDelta(double similarityCutoff, WeightedInput other) {
-        int len = Math.min(weights.length, other.weights.length);
-        double sumSquareDelta = Intersections.sumSquareDelta(weights, other.weights, len);
+    public SimilarityResult sumSquareDelta(RleDecoder decoder, double similarityCutoff, WeightedInput other) {
+        double[] thisWeights = weights;
+        double[] otherWeights = other.weights;
+        if(decoder != null) {
+            decoder.reset(weights, other.weights);
+            thisWeights = decoder.item1();
+            otherWeights = decoder.item2();
+        }
+
+        int len = Math.min(thisWeights.length, otherWeights.length);
+        double sumSquareDelta = Intersections.sumSquareDelta(thisWeights, otherWeights, len);
         long intersection = 0;
 
         if (similarityCutoff >= 0d && sumSquareDelta > similarityCutoff) return null;
@@ -102,9 +116,17 @@ class WeightedInput implements Comparable<WeightedInput> {
         return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, cosineSquares);
     }
 
-    public SimilarityResult pearsonSquares(double similarityCutoff, WeightedInput other) {
-        int len = Math.min(weights.length, other.weights.length);
-        double pearsonSquares = Intersections.pearsonSquare(weights, other.weights, len);
+    public SimilarityResult pearson(RleDecoder decoder, double similarityCutoff, WeightedInput other) {
+        double[] thisWeights = weights;
+        double[] otherWeights = other.weights;
+        if(decoder != null) {
+            decoder.reset(weights, other.weights);
+            thisWeights = decoder.item1();
+            otherWeights = decoder.item2();
+        }
+
+        int len = Math.min(thisWeights.length, otherWeights.length);
+        double pearsonSquares = Intersections.pearsonSquare(thisWeights, otherWeights, len);
 
         if(Double.isNaN(pearsonSquares)) {
             return null;
@@ -115,9 +137,17 @@ class WeightedInput implements Comparable<WeightedInput> {
         return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, pearsonSquares);
     }
 
-    public SimilarityResult pearsonSquaresSkip(double similarityCutoff, WeightedInput other, Double skipValue) {
-        int len = Math.min(weights.length, other.weights.length);
-        double pearsonSquares = Intersections.pearsonSquareSkip(weights, other.weights, len, skipValue);
+    public SimilarityResult pearsonSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, Double skipValue) {
+        double[] thisWeights = weights;
+        double[] otherWeights = other.weights;
+        if(decoder != null) {
+            decoder.reset(weights, other.weights);
+            thisWeights = decoder.item1();
+            otherWeights = decoder.item2();
+        }
+
+        int len = Math.min(thisWeights.length, otherWeights.length);
+        double pearsonSquares = Intersections.pearsonSquareSkip(thisWeights, otherWeights, len, skipValue);
 
         if(Double.isNaN(pearsonSquares)) {
             return null;

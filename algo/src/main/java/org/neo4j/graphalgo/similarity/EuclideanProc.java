@@ -24,7 +24,6 @@ import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -90,8 +89,8 @@ public class EuclideanProc extends SimilarityProc {
 
     private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
         return skipValue == null ?
-                (decoder, s, t, cutoff) -> s.sumSquareDelta(cutoff, t) :
-                (decoder, s, t, cutoff) -> s.sumSquareDeltaSkip(cutoff, t, skipValue);
+                (decoder, s, t, cutoff) -> s.sumSquareDelta(decoder, cutoff, t) :
+                (decoder, s, t, cutoff) -> s.sumSquareDeltaSkip(decoder, cutoff, t, skipValue);
     }
 
 
