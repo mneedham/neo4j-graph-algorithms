@@ -47,7 +47,6 @@ public class InfoMap extends Algorithm<InfoMap> {
     private NodeWeights pageRank;
     // normalized relationship weights
     private RelationshipWeights weights;
-
     // helper vars
     private final double tau1, n1;
 
@@ -161,7 +160,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         pageRank = null;
         weights = null;
         modules = null;
-//        communities = null;
+        communities = null;
         return this;
     }
 
@@ -233,10 +232,8 @@ public class InfoMap extends Algorithm<InfoMap> {
      * @param consumer module consumer
      */
     private void forEachNeighboringModule(Module m, Consumer<Module> consumer) {
-
         final BitSet bitSet = new BitSet(nodeCount);
-
-        m.wil.keys().forEach((IntProcedure) node -> {
+        m.wi.keys().forEach((IntProcedure) node -> {
             final int c = communities[node];
             if (c == m.index) {
                 return;
@@ -249,7 +246,6 @@ public class InfoMap extends Algorithm<InfoMap> {
             bitSet.set(c);
             consumer.accept(modules.get(c));
         });
-
     }
 
     /**
@@ -260,10 +256,8 @@ public class InfoMap extends Algorithm<InfoMap> {
      * @return delta L
      */
     private double delta(Module j, Module k) {
-        double ni = j.n + k.n;
         double pi = j.p + k.p;
-        double wi = j.w + k.w - j.delta(k); //interModW(j, k);
-        double qi = tau * pi * (nodeCount - ni) / n1 + tau1 * wi;
+        double qi = tau * pi * (nodeCount - ((double) (j.n + k.n))) / n1 + tau1 * (j.w + k.w - j.delta(k));
         return plogp(qi - j.q - k.q + sQi)
                 - plogp(sQi)
                 - 2 * plogp(qi)
@@ -274,48 +268,45 @@ public class InfoMap extends Algorithm<InfoMap> {
                 - plogp(k.p + k.q);
     }
 
-
     /**
      * a module represents a community
      */
     private class Module {
-        // module id
+        // module id (first node in the set)
         final int index;
-        // set size (number of nodes)
-        int n = 1;
         // nodes
         BitSet nodes;
+        // set size (number of nodes)
+        int n = 1;
         // ergodic frequency
         double p;
         // exit probability without teleport
-        double w;
+        double w = .0;
         // exit probability with teleport
         double q;
-        // precalculated in and out weights
-        IntDoubleMap wil = new IntDoubleScatterMap();
+        // precalculated in and out weights multiplied by pageRank
+        IntDoubleMap wi = new IntDoubleScatterMap();
 
         public Module(int startNode) {
-            nodes = new BitSet(nodeCount);
+            this.nodes = new BitSet(nodeCount);
             this.index = startNode;
-            nodes.set(startNode);
-            final Pointer.DoublePointer sumW = Pointer.wrap(.0);
-            // sum of all weights
+            this.nodes.set(startNode);
             graph.forEachRelationship(startNode, D, (s, t, r) -> {
                 if (s != t) {
                     final double v = weights.weightOf(s, t);
-                    sumW.v += v;
-                    wil.put(t, v * pageRank.weightOf(s) + weights.weightOf(t, s) * pageRank.weightOf(t));
+                    w += v;
+                    wi.put(t, v * pageRank.weightOf(s) + weights.weightOf(t, s) * pageRank.weightOf(t));
                 }
                 return true;
             });
             p = pageRank.weightOf(startNode);
-            w = p * sumW.v;
+            w *= p;
             q = tau * p + tau1 * w;
         }
 
         public double delta(Module other) {
             final Pointer.DoublePointer wi = Pointer.wrap(0.);
-            wil.forEach((IntDoubleProcedure) (key, value) -> {
+            this.wi.forEach((IntDoubleProcedure) (key, value) -> {
                 if (communities[key] == other.index) {
                     wi.v += value ;
                 }
@@ -327,8 +318,8 @@ public class InfoMap extends Algorithm<InfoMap> {
             nodes.or(other.nodes);
             n += other.n;
             p += other.p;
-            wil.putAll(other.wil);
-            w += other.w - delta(other); //interModW(this, other);
+            w += other.w - delta(other);
+            wi.putAll(other.wi);
             sQi -= q + other.q;
             q = tau * p * (nodeCount - n) / n1 + tau1 * w;
             sQi += q;

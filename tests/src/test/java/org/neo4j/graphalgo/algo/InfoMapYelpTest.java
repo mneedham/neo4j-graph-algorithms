@@ -59,11 +59,6 @@ public class InfoMapYelpTest {
     ).toFile();
 
 
-    interface CommunityConsumer {
-
-        void test(String node, int community);
-    }
-
 
     private static Graph graph;
 
@@ -79,21 +74,18 @@ public class InfoMapYelpTest {
     @Test
     public void testUnweighted() throws Exception {
 
-        final CommunityConsumer consumer = (n, c) -> System.out.println(n + ":" + c);
 
         db.execute("CALL algo.infoMap('MATCH (c:Category) RETURN id(c) AS id',\n" +
                 "  'MATCH (c1:Category)<-[:IN_CATEGORY]-()-[:IN_CATEGORY]->(c2:Category)\n" +
                 "   WHERE id(c1) < id(c2)\n" +
                 "   RETURN id(c1) AS source, id(c2) AS target, count(*) AS weight', " +
-                " {graph: 'cypher', iterations:1, writeProperty:'c', threshold:0.0001})").accept(row -> {
+                " {graph: 'cypher', iterations:1, writeProperty:'c', threshold:0.01, tau:0.2})").accept(row -> {
 
             System.out.println("iterations = " + row.get("iterations"));
             System.out.println("communityCount = " + row.get("communityCount"));
 
             return true;
         });
-
-
     }
 
 }
