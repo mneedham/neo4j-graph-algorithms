@@ -10,14 +10,12 @@ import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
 import org.neo4j.graphalgo.core.utils.NormalizedRelationshipWeights;
 import org.neo4j.graphalgo.core.utils.Pointer;
-import org.neo4j.graphalgo.core.utils.dss.DisjointSetStruct;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
 import org.neo4j.graphdb.Direction;
 
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.function.Consumer;
 import java.util.stream.LongStream;
 
@@ -163,7 +161,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         pageRank = null;
         weights = null;
         modules = null;
-        communities = null;
+//        communities = null;
         return this;
     }
 
@@ -238,24 +236,18 @@ public class InfoMap extends Algorithm<InfoMap> {
 
         final BitSet bitSet = new BitSet(nodeCount);
 
-        m.nodes.forEach((IntProcedure) node -> {
-            final int cs = communities[node];
-            // for each connected node t to this module
-            graph.forEachRelationship(node, D, (s, t, r) -> {
-                final int community = communities[t];
-                // same community
-                if (cs == community) {
-                    return true;
-                }
-                // already visited
-                if (bitSet.get(community)) {
-                    return true;
-                }
-                // do visit
-                bitSet.set(community);
-                consumer.accept(modules.get(community));
-                return true;
-            });
+        m.wil.keys().forEach((IntProcedure) node -> {
+            final int c = communities[node];
+            if (c == m.index) {
+                return;
+            }
+            // already visited
+            if (bitSet.get(c)) {
+                return;
+            }
+            // do visit
+            bitSet.set(c);
+            consumer.accept(modules.get(c));
         });
 
     }
@@ -268,7 +260,7 @@ public class InfoMap extends Algorithm<InfoMap> {
      * @return delta L
      */
     private double delta(Module j, Module k) {
-        double ni = j.nodes.size() + k.nodes.size();
+        double ni = j.n + k.n;
         double pi = j.p + k.p;
         double wi = j.w + k.w - j.delta(k); //interModW(j, k);
         double qi = tau * pi * (nodeCount - ni) / n1 + tau1 * wi;
@@ -282,26 +274,6 @@ public class InfoMap extends Algorithm<InfoMap> {
                 - plogp(k.p + k.q);
     }
 
-    /**
-     * sum of weights between 2 modules multiplied
-     * by the pageRanks of their source nodes
-     *
-     * @param j module j
-     * @param k module k
-     * @return sum of shared weights from both ends
-     */
-    private double interModW(Module j, Module k) {
-        final Pointer.DoublePointer w = Pointer.wrap(.0);
-        j.nodes.forEach((IntProcedure) c -> {
-            graph.forEachOutgoing(c, (s, t, r) -> {
-                if (k.index == communities[t]) {
-                    w.v += (pageRank.weightOf(s) * weights.weightOf(s, t)) + (pageRank.weightOf(t) * weights.weightOf(t, s));
-                }
-                return true;
-            });
-        });
-        return w.v;
-    }
 
     /**
      * a module represents a community
@@ -309,21 +281,23 @@ public class InfoMap extends Algorithm<InfoMap> {
     private class Module {
         // module id
         final int index;
+        // set size (number of nodes)
+        int n = 1;
         // nodes
-        IntSet nodes;
+        BitSet nodes;
         // ergodic frequency
         double p;
         // exit probability without teleport
         double w;
         // exit probability with teleport
         double q;
-
+        // precalculated in and out weights
         IntDoubleMap wil = new IntDoubleScatterMap();
 
         public Module(int startNode) {
+            nodes = new BitSet(nodeCount);
             this.index = startNode;
-            nodes = new IntScatterSet();
-            nodes.add(startNode);
+            nodes.set(startNode);
             final Pointer.DoublePointer sumW = Pointer.wrap(.0);
             // sum of all weights
             graph.forEachRelationship(startNode, D, (s, t, r) -> {
@@ -350,28 +324,15 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
 
         public void merge(Module other) {
-            final int ni = nodes.size() + other.nodes.size();
+            nodes.or(other.nodes);
+            n += other.n;
             p += other.p;
             wil.putAll(other.wil);
-//
-//            final Pointer.DoublePointer wi = Pointer.wrap(0.);
-//            wil.forEach((IntDoubleProcedure) (key, value) -> {
-//                if (communities[key] == other.index) {
-//                    wi.v += value ;
-//                }
-//            });
-//            System.out.println("wi = " + wi.v);
-//            System.out.println("interModW(this, other) = " + interModW(this, other));
-
-//            w += other.w - wil;
             w += other.w - delta(other); //interModW(this, other);
             sQi -= q + other.q;
-            q = tau * p * (nodeCount - ni) / n1 + tau1 * w;
+            q = tau * p * (nodeCount - n) / n1 + tau1 * w;
             sQi += q;
-            other.nodes.forEach((IntProcedure) node -> {
-                this.nodes.add(node);
-                communities[node] = index;
-            });
+            other.nodes.asIntLookupContainer().forEach((IntProcedure) n -> communities[n] = index);
         }
     }
 
