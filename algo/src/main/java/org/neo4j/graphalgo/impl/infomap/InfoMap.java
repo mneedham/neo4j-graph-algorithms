@@ -159,6 +159,9 @@ public class InfoMap extends Algorithm<InfoMap> {
         graph = null;
         pageRank = null;
         weights = null;
+        for (IntObjectCursor<Module> cursor : modules) {
+            cursor.value.release();
+        }
         modules = null;
         communities = null;
         return this;
@@ -251,13 +254,11 @@ public class InfoMap extends Algorithm<InfoMap> {
     /**
      * change in L if module j and k are merged
      *
-     * @param j module a
-     * @param k module b
      * @return delta L
      */
     private double delta(Module j, Module k) {
         double pi = j.p + k.p;
-        double qi = tau * pi * (nodeCount - ((double) (j.n + k.n))) / n1 + tau1 * (j.w + k.w - j.delta(k));
+        double qi = tau * pi * (nodeCount - ((double) (j.n + k.n))) / n1 + tau1 * (j.w + k.w - j.wil(k));
         return plogp(qi - j.q - k.q + sQi)
                 - plogp(sQi)
                 - 2 * plogp(qi)
@@ -285,12 +286,13 @@ public class InfoMap extends Algorithm<InfoMap> {
         // exit probability with teleport
         double q;
         // precalculated in and out weights multiplied by pageRank
-        IntDoubleMap wi = new IntDoubleScatterMap();
+        IntDoubleMap wi;
 
-        public Module(int startNode) {
+        Module(int startNode) {
             this.nodes = new BitSet(nodeCount);
             this.index = startNode;
             this.nodes.set(startNode);
+            this.wi = new IntDoubleScatterMap();
             graph.forEachRelationship(startNode, D, (s, t, r) -> {
                 if (s != t) {
                     final double v = weights.weightOf(s, t);
@@ -304,7 +306,7 @@ public class InfoMap extends Algorithm<InfoMap> {
             q = tau * p + tau1 * w;
         }
 
-        public double delta(Module other) {
+        double wil(Module other) {
             final Pointer.DoublePointer wi = Pointer.wrap(0.);
             this.wi.forEach((IntDoubleProcedure) (key, value) -> {
                 if (communities[key] == other.index) {
@@ -314,16 +316,22 @@ public class InfoMap extends Algorithm<InfoMap> {
             return wi.v;
         }
 
-        public void merge(Module other) {
+        void merge(Module other) {
             nodes.or(other.nodes);
             n += other.n;
             p += other.p;
-            w += other.w - delta(other);
+            w += other.w - wil(other);
             wi.putAll(other.wi);
             sQi -= q + other.q;
             q = tau * p * (nodeCount - n) / n1 + tau1 * w;
             sQi += q;
             other.nodes.asIntLookupContainer().forEach((IntProcedure) n -> communities[n] = index);
+            other.release();
+        }
+
+        void release() {
+            nodes = null;
+            wi = null;
         }
     }
 
