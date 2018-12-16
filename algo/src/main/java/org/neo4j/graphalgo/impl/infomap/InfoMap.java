@@ -286,7 +286,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         double w = .0;
         // exit probability with teleport
         double q;
-        // precalculated in and out weights multiplied by pageRank
+        // precalculated weights into other communities
         IntDoubleMap wi;
 
         Module(int startNode) {
