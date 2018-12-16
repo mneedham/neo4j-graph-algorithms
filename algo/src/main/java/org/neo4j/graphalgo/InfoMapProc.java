@@ -4,14 +4,12 @@ import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeProperties;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.core.write.Translators;
 import org.neo4j.graphalgo.impl.infomap.InfoMap;
 import org.neo4j.graphalgo.results.AbstractResultBuilder;
-import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
@@ -300,7 +298,7 @@ public class InfoMapProc {
 
     public static class InfoMapResultBuilder extends AbstractResultBuilder<InfoMapResult> {
 
-        private long nodes = 0;
+        private long nodeCount = 0;
         private long communityCount = 0;
         private long iterations = 1;
 
@@ -315,12 +313,12 @@ public class InfoMapProc {
         }
 
         public InfoMapResultBuilder withNodeCount(long nodes) {
-            this.nodes = nodes;
+            this.nodeCount = nodes;
             return this;
         }
 
         public InfoMapResult build() {
-            return new InfoMapResult(loadDuration, evalDuration, writeDuration, nodes, iterations, communityCount);
+            return new InfoMapResult(loadDuration, evalDuration, writeDuration, nodeCount, iterations, communityCount);
         }
     }
 
@@ -329,15 +327,15 @@ public class InfoMapProc {
         public final long loadMillis;
         public final long computeMillis;
         public final long writeMillis;
-        public final long nodes;
+        public final long nodeCount;
         public final long iterations;
         public final long communityCount;
 
-        private InfoMapResult(long loadMillis, long computeMillis, long writeMillis, long nodes, long iterations, long communityCount) {
+        private InfoMapResult(long loadMillis, long computeMillis, long writeMillis, long nodeCount, long iterations, long communityCount) {
             this.loadMillis = loadMillis;
             this.computeMillis = computeMillis;
             this.writeMillis = writeMillis;
-            this.nodes = nodes;
+            this.nodeCount = nodeCount;
             this.iterations = iterations;
             this.communityCount = communityCount;
         }

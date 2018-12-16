@@ -58,8 +58,6 @@ public class InfoMapYelpTest {
             "yelp.photo.db"
     ).toFile();
 
-
-
     private static Graph graph;
 
     @BeforeClass
@@ -72,15 +70,17 @@ public class InfoMapYelpTest {
     }
 
     @Test
-    public void testUnweighted() throws Exception {
+    public void testWeighted() throws Exception {
 
 
         db.execute("CALL algo.infoMap('MATCH (c:Category) RETURN id(c) AS id',\n" +
                 "  'MATCH (c1:Category)<-[:IN_CATEGORY]-()-[:IN_CATEGORY]->(c2:Category)\n" +
                 "   WHERE id(c1) < id(c2)\n" +
-                "   RETURN id(c1) AS source, id(c2) AS target, count(*) AS weight', " +
-                " {graph: 'cypher', iterations:1, writeProperty:'c', threshold:0.01, tau:0.2})").accept(row -> {
+                "   RETURN id(c1) AS source, id(c2) AS target, count(*) AS w', " +
+                " {graph: 'cypher', iterations:15, writeProperty:'c', threshold:0.01, tau:0.3, weightProperty:'w'})").accept(row -> {
 
+            System.out.println("computeMillis = " + row.get("computeMillis"));
+            System.out.println("nodeCount = " + row.get("nodeCount"));
             System.out.println("iterations = " + row.get("iterations"));
             System.out.println("communityCount = " + row.get("communityCount"));
 
@@ -88,4 +88,21 @@ public class InfoMapYelpTest {
         });
     }
 
+    @Test
+    public void testUnweighted() throws Exception {
+
+
+        db.execute("CALL algo.infoMap('MATCH (c:Category) RETURN id(c) AS id',\n" +
+                "  'MATCH (c1:Category)<-[:IN_CATEGORY]-()-[:IN_CATEGORY]->(c2:Category)\n" +
+                "   WHERE id(c1) < id(c2)\n" +
+                "   RETURN id(c1) AS source, id(c2) AS target', " +
+                " {graph: 'cypher', iterations:15, writeProperty:'c', threshold:0.01, tau:0.3})").accept(row -> {
+
+            System.out.println("computeMillis = " + row.get("computeMillis"));
+            System.out.println("nodeCount = " + row.get("nodeCount"));
+            System.out.println("iterations = " + row.get("iterations"));
+            System.out.println("communityCount = " + row.get("communityCount"));
+            return true;
+        });
+    }
 }

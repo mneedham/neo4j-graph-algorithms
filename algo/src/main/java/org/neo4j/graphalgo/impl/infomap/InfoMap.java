@@ -1,10 +1,11 @@
 package org.neo4j.graphalgo.impl.infomap;
 
 import com.carrotsearch.hppc.*;
-import com.carrotsearch.hppc.cursors.IntDoubleCursor;
 import com.carrotsearch.hppc.cursors.IntObjectCursor;
+import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.carrotsearch.hppc.procedures.IntDoubleProcedure;
 import com.carrotsearch.hppc.procedures.IntProcedure;
+import com.carrotsearch.hppc.procedures.ObjectProcedure;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
@@ -206,14 +207,14 @@ public class InfoMap extends Algorithm<InfoMap> {
     private boolean optimize() {
         final Pointer.DoublePointer m = Pointer.wrap(-1 * threshold);
         final int[] best = {-1, -1};
-        for (IntObjectCursor<Module> cursor : modules) {
+        for (ObjectCursor<Module> cursor : modules.values()) {
             final Module module = cursor.value;
-            forEachNeighboringModule(module, other -> {
-                final double v = delta(module, other);
+            module.forEachNeighbor(l -> {
+                final double v = delta(module, l);
                 if (v < m.v) {
                     m.v = v;
                     best[0] = module.index;
-                    best[1] = other.index;
+                    best[1] = l.index;
                 }
             });
         }
@@ -227,29 +228,6 @@ public class InfoMap extends Algorithm<InfoMap> {
             modules.get(best[1]).merge(modules.remove(best[0]));
         }
         return true;
-    }
-
-    /**
-     * call consumer for each connected community once
-     *
-     * @param m        the module
-     * @param consumer module consumer
-     */
-    private void forEachNeighboringModule(Module m, Consumer<Module> consumer) {
-        final BitSet bitSet = new BitSet(nodeCount);
-        m.wi.keys().forEach((IntProcedure) node -> {
-            final int c = communities[node];
-            if (c == m.index) {
-                return;
-            }
-            // already visited
-            if (bitSet.get(c)) {
-                return;
-            }
-            // do visit
-            bitSet.set(c);
-            consumer.accept(modules.get(c));
-        });
     }
 
     /**
@@ -288,6 +266,8 @@ public class InfoMap extends Algorithm<InfoMap> {
         double q;
         // precalculated weights into other communities
         IntDoubleMap wi;
+        // visited
+        BitSet visited = new BitSet(nodeCount);
 
         Module(int startNode) {
             this.nodes = new BitSet(nodeCount);
@@ -307,6 +287,23 @@ public class InfoMap extends Algorithm<InfoMap> {
             q = tau * p + tau1 * w;
         }
 
+        void forEachNeighbor(Consumer<Module> consumer) {
+            visited.clear();
+            wi.keys().forEach((IntProcedure) node -> {
+                final int c = communities[node];
+                if (c == index) {
+                    return;
+                }
+                // already visited
+                if (visited.get(c)) {
+                    return;
+                }
+                // do visit
+                visited.set(c);
+                consumer.accept(modules.get(c));
+            });
+        }
+
         double wil(Module l) {
             final Pointer.DoublePointer wi = Pointer.wrap(0.);
             this.wi.forEach((IntDoubleProcedure) (key, value) -> {
@@ -318,14 +315,12 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
 
         void merge(Module l) {
-            nodes.or(l.nodes);
             n += l.n;
             p += l.p;
             w += l.w - wil(l);
-
+            nodes.or(l.nodes);
             wi.putAll(l.wi);
             wi.removeAll(nodes.asIntLookupContainer());
-
             sQi -= q + l.q;
             q = tau * p * (nodeCount - n) / n1 + tau1 * w;
             sQi += q;
@@ -334,8 +329,9 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
 
         void release() {
-            nodes = null;
             wi = null;
+            nodes = null;
+            visited = null;
         }
     }
 
