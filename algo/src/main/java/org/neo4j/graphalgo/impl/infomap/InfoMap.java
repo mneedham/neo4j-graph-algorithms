@@ -1,6 +1,7 @@
 package org.neo4j.graphalgo.impl.infomap;
 
 import com.carrotsearch.hppc.*;
+import com.carrotsearch.hppc.cursors.IntDoubleCursor;
 import com.carrotsearch.hppc.cursors.IntObjectCursor;
 import com.carrotsearch.hppc.procedures.IntDoubleProcedure;
 import com.carrotsearch.hppc.procedures.IntProcedure;
@@ -306,27 +307,30 @@ public class InfoMap extends Algorithm<InfoMap> {
             q = tau * p + tau1 * w;
         }
 
-        double wil(Module other) {
+        double wil(Module l) {
             final Pointer.DoublePointer wi = Pointer.wrap(0.);
             this.wi.forEach((IntDoubleProcedure) (key, value) -> {
-                if (communities[key] == other.index) {
+                if (communities[key] == l.index) {
                     wi.v += value ;
                 }
             });
             return wi.v;
         }
 
-        void merge(Module other) {
-            nodes.or(other.nodes);
-            n += other.n;
-            p += other.p;
-            w += other.w - wil(other);
-            wi.putAll(other.wi);
-            sQi -= q + other.q;
+        void merge(Module l) {
+            nodes.or(l.nodes);
+            n += l.n;
+            p += l.p;
+            w += l.w - wil(l);
+
+            wi.putAll(l.wi);
+            wi.removeAll(nodes.asIntLookupContainer());
+
+            sQi -= q + l.q;
             q = tau * p * (nodeCount - n) / n1 + tau1 * w;
             sQi += q;
-            other.nodes.asIntLookupContainer().forEach((IntProcedure) n -> communities[n] = index);
-            other.release();
+            l.nodes.asIntLookupContainer().forEach((IntProcedure) n -> communities[n] = index);
+            l.release();
         }
 
         void release() {
