@@ -41,7 +41,7 @@ public class InfoMap extends Algorithm<InfoMap> {
     private final int nodeCount;
     // constant TAU (0.15 was given in the original MapEq. paper https://arxiv.org/abs/0906.1405 )
     private final double tau;
-    // absolute minimum difference in deltaL for merging 2 modules together
+    // minimum difference in deltaL for merging 2 modules together
     private final double threshold;
     // an undirected graph
     private Graph graph;
