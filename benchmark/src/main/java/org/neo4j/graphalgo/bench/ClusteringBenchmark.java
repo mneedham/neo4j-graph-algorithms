@@ -56,7 +56,7 @@ public class ClusteringBenchmark {
     private Graph g;
     private GraphDatabaseAPI api;
 
-    @Param({"0.1", "0.3", "0.6"})
+    @Param({"0.1", "0.25", "0.5"})
     private double connectedness;
 
     @Param({"HEAVY"}) //, "HUGE"})
