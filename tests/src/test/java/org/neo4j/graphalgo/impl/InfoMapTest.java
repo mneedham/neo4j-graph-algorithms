@@ -23,10 +23,12 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.neo4j.graphalgo.TestProgressLogger;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
+import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.impl.infomap.InfoMap;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
@@ -149,7 +151,7 @@ public class InfoMapTest {
                 InfoMap.THRESHOLD,
                 InfoMap.TAU,
                 Pools.FJ_POOL,
-                6
+                4, TestProgressLogger.INSTANCE, TerminationFlag.RUNNING_TRUE
         ).compute();
 
         // should be 3 communities in each graph

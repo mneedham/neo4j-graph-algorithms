@@ -5,7 +5,9 @@ import org.neo4j.graphalgo.api.NodeProperties;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.utils.Pools;
+import org.neo4j.graphalgo.core.utils.ProgressLogger;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
+import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.core.write.Translators;
 import org.neo4j.graphalgo.impl.infomap.InfoMap;
@@ -68,6 +70,10 @@ public class InfoMapProc {
         // property name (node property) for predefined pageRanks
         final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, "pageRank");
 
+        // default env
+        final ProgressLogger progressLogger = ProgressLogger.wrap(log, "InfoMap");
+        final TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
+
         switch (setup) {
 
             case WEIGHTED:
@@ -85,7 +91,9 @@ public class InfoMapProc {
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                         config.getNumber("tau", InfoMap.TAU).doubleValue(),
                         Pools.FJ_POOL,
-                        config.getConcurrency()
+                        config.getConcurrency(),
+                        progressLogger,
+                        terminationFlag
                 );
                 break;
 
@@ -105,7 +113,9 @@ public class InfoMapProc {
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                         config.getNumber("tau", InfoMap.TAU).doubleValue(),
                         Pools.FJ_POOL,
-                        config.getConcurrency()
+                        config.getConcurrency(),
+                        progressLogger,
+                        terminationFlag
                 );
                 break;
 
@@ -122,7 +132,9 @@ public class InfoMapProc {
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                         config.getNumber("tau", InfoMap.TAU).doubleValue(),
                         Pools.FJ_POOL,
-                        config.getConcurrency()
+                        config.getConcurrency(),
+                        progressLogger,
+                        terminationFlag
                 );
                 break;
 
@@ -140,7 +152,9 @@ public class InfoMapProc {
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                         config.getNumber("tau", InfoMap.TAU).doubleValue(),
                         Pools.FJ_POOL,
-                        config.getConcurrency()
+                        config.getConcurrency(),
+                        progressLogger,
+                        terminationFlag
                 );
                 break;
 
@@ -184,7 +198,10 @@ public class InfoMapProc {
         // property name (node property) for predefined pageRanks
         final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, "pageRank");
 
+        // env
         final InfoMapResultBuilder builder = InfoMapResult.builder();
+        final ProgressLogger progressLogger = ProgressLogger.wrap(log, "InfoMap");
+        final TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
 
         switch (setup) {
 
@@ -196,7 +213,6 @@ public class InfoMapProc {
                     graph = new GraphLoader(db, Pools.DEFAULT)
                             .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                             .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
-//                            .withDirection(Direction.OUTGOING)
                             .asUndirected(true)
                             .load(config.getGraphImpl());
 
@@ -207,7 +223,9 @@ public class InfoMapProc {
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                             config.getNumber("tau", InfoMap.TAU).doubleValue(),
                             Pools.FJ_POOL,
-                            config.getConcurrency()
+                            config.getConcurrency(),
+                            progressLogger,
+                            terminationFlag
                     );
                 }
                 break;
@@ -229,7 +247,9 @@ public class InfoMapProc {
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                             config.getNumber("tau", InfoMap.TAU).doubleValue(),
                             Pools.FJ_POOL,
-                            config.getConcurrency()
+                            config.getConcurrency(),
+                            progressLogger,
+                            terminationFlag
                     );
                 }
                 break;
@@ -248,7 +268,9 @@ public class InfoMapProc {
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                             config.getNumber("tau", InfoMap.TAU).doubleValue(),
                             Pools.FJ_POOL,
-                            config.getConcurrency()
+                            config.getConcurrency(),
+                            progressLogger,
+                            terminationFlag
                     );
                 }
                 break;
@@ -268,7 +290,9 @@ public class InfoMapProc {
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                             config.getNumber("tau", InfoMap.TAU).doubleValue(),
                             Pools.FJ_POOL,
-                            config.getConcurrency()
+                            config.getConcurrency(),
+                            progressLogger,
+                            terminationFlag
                     );
                 }
                 break;

@@ -2,15 +2,12 @@ package org.neo4j.graphalgo.impl.infomap;
 
 import com.carrotsearch.hppc.*;
 import com.carrotsearch.hppc.cursors.IntObjectCursor;
-import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.carrotsearch.hppc.procedures.IntDoubleProcedure;
 import com.carrotsearch.hppc.procedures.IntProcedure;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
-import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
-import org.neo4j.graphalgo.core.utils.NormalizedRelationshipWeights;
-import org.neo4j.graphalgo.core.utils.Pointer;
+import org.neo4j.graphalgo.core.utils.*;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
@@ -59,14 +56,17 @@ public class InfoMap extends Algorithm<InfoMap> {
     // helper vars
     private final double tau1, n1;
 
+    // default env
     private final ForkJoinPool pool;
     private final int concurrency;
+    private final ProgressLogger logger;
+    private final TerminationFlag terminationFlag;
 
     // following values are updated during a merge
     // number of iterations the last computation took
     private int iterations = 0;
     // module map
-    private IntObjectMap<Module> modules;
+    private IntObjectMap<Module> modules; // TODO replace with Set
     // community assignment helper array
     private int[] communities;
     // sum of exit probs.
@@ -75,7 +75,7 @@ public class InfoMap extends Algorithm<InfoMap> {
     /**
      * create a weighted InfoMap algo instance
      */
-    public static InfoMap weighted(Graph graph, int prIterations, RelationshipWeights weights, double threshold, double tau, ForkJoinPool pool, int concurrency) {
+    public static InfoMap weighted(Graph graph, int prIterations, RelationshipWeights weights, double threshold, double tau, ForkJoinPool pool, int concurrency, ProgressLogger logger, TerminationFlag terminationFlag) {
 
         final PageRankResult pageRankResult;
         // use parallel PR if concurrency is >1
@@ -83,32 +83,32 @@ public class InfoMap extends Algorithm<InfoMap> {
             pageRankResult = PageRankAlgorithm.weightedOf(AllocationTracker.create(), graph, 1. - tau, LongStream.empty(), pool, concurrency, PAGE_RANK_BATCH_SIZE, PAGE_RANK_CACHE_WEIGHTS)
                     .compute(prIterations)
                     .result();
-            return weighted(graph, pageRankResult::score, weights, threshold, tau, pool, concurrency);
+            return weighted(graph, pageRankResult::score, weights, threshold, tau, pool, concurrency, logger, terminationFlag);
         } else {
             pageRankResult = PageRankAlgorithm.weightedOf(graph, 1. - tau, LongStream.empty())
                     .compute(prIterations)
                     .result();
         }
 
-        return weighted(graph, pageRankResult::score, weights, threshold, tau, pool, concurrency);
+        return weighted(graph, pageRankResult::score, weights, threshold, tau, pool, concurrency, logger, terminationFlag);
     }
 
     /**
      * create a weighted InfoMap algo instance with pageRanks
      */
-    public static InfoMap weighted(Graph graph, NodeWeights pageRanks, RelationshipWeights weights, double threshold, double tau, ForkJoinPool pool, int concurrency) {
+    public static InfoMap weighted(Graph graph, NodeWeights pageRanks, RelationshipWeights weights, double threshold, double tau, ForkJoinPool pool, int concurrency, ProgressLogger logger, TerminationFlag terminationFlag) {
         return new InfoMap(
                 graph,
                 pageRanks,
                 new NormalizedRelationshipWeights(Math.toIntExact(graph.nodeCount()), graph, weights),
                 threshold,
-                tau, pool, concurrency);
+                tau, pool, concurrency, logger, terminationFlag);
     }
 
     /**
      * create an unweighted InfoMap algo instance
      */
-    public static InfoMap unweighted(Graph graph, int prIterations, double threshold, double tau, ForkJoinPool pool, int concurrency) {
+    public static InfoMap unweighted(Graph graph, int prIterations, double threshold, double tau, ForkJoinPool pool, int concurrency, ProgressLogger logger, TerminationFlag terminationFlag) {
         final PageRankResult pageRankResult;
 
         // use parallel PR if concurrency is >1
@@ -122,19 +122,19 @@ public class InfoMap extends Algorithm<InfoMap> {
                     .compute(prIterations)
                     .result();
         }
-        return unweighted(graph, pageRankResult::score, threshold, tau, pool, concurrency);
+        return unweighted(graph, pageRankResult::score, threshold, tau, pool, concurrency, logger, terminationFlag);
     }
 
     /**
      * create an unweighted InfoMap algo instance
      */
-    public static InfoMap unweighted(Graph graph, NodeWeights pageRanks, double threshold, double tau, ForkJoinPool pool, int concurrency) {
+    public static InfoMap unweighted(Graph graph, NodeWeights pageRanks, double threshold, double tau, ForkJoinPool pool, int concurrency, ProgressLogger logger, TerminationFlag terminationFlag) {
         return new InfoMap(
                 graph,
                 pageRanks,
                 new DegreeNormalizedRelationshipWeights(graph),
                 threshold,
-                tau, pool, concurrency);
+                tau, pool, concurrency, logger, terminationFlag);
     }
 
     /**
@@ -145,8 +145,10 @@ public class InfoMap extends Algorithm<InfoMap> {
      * @param tau               constant tau (usually 0.15)
      * @param pool
      * @param concurrency
+     * @param logger
+     * @param terminationFlag
      */
-    private InfoMap(Graph graph, NodeWeights pageRank, RelationshipWeights normalizedWeights, double threshold, double tau, ForkJoinPool pool, int concurrency) {
+    private InfoMap(Graph graph, NodeWeights pageRank, RelationshipWeights normalizedWeights, double threshold, double tau, ForkJoinPool pool, int concurrency, ProgressLogger logger, TerminationFlag terminationFlag) {
         this.graph = graph;
         this.pageRank = pageRank;
         this.weights = normalizedWeights;
@@ -155,6 +157,8 @@ public class InfoMap extends Algorithm<InfoMap> {
         this.threshold = threshold;
         this.pool = pool;
         this.concurrency = concurrency;
+        this.logger = logger;
+        this.terminationFlag = terminationFlag;
         this.modules = new IntObjectScatterMap<>(nodeCount);
         this.communities = new int[nodeCount];
         this.tau1 = 1. - tau;
@@ -175,8 +179,12 @@ public class InfoMap extends Algorithm<InfoMap> {
      */
     public InfoMap compute() {
         this.iterations = 0;
-        while (optimize()) {
+        long ts = System.currentTimeMillis();
+        while (terminationFlag.running() && optimize()) {
             this.iterations++;
+            final long c = System.currentTimeMillis();
+            logger.log("Iteration " + iterations + " took " + (c - ts) + "ms");
+            ts = c;
         }
         return this;
     }
@@ -315,20 +323,6 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
     }
 
-    private MergePair compare(MergePair mpA, MergePair mpB) {
-        if (null == mpA && null == mpB) {
-            return null;
-        }
-        if (null == mpB) {
-            return mpA;
-        }
-        if (null == mpA) {
-            return mpB;
-        }
-
-        return mpA.deltaL < mpB.deltaL ? mpA : mpB;
-    }
-
     private static class MergePair {
 
         final Module modA;
@@ -427,6 +421,22 @@ public class InfoMap extends Algorithm<InfoMap> {
             nodes = null;
             visited = null;
         }
+    }
+
+
+
+    private static MergePair compare(MergePair mpA, MergePair mpB) {
+        if (null == mpA && null == mpB) {
+            return null;
+        }
+        if (null == mpB) {
+            return mpA;
+        }
+        if (null == mpA) {
+            return mpB;
+        }
+
+        return mpA.deltaL < mpB.deltaL ? mpA : mpB;
     }
 
     private static double plogp(double v) {

@@ -23,6 +23,7 @@ import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressLogger;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
+import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.helper.graphbuilder.GraphBuilder;
 import org.neo4j.graphalgo.impl.infomap.InfoMap;
@@ -34,7 +35,6 @@ import org.neo4j.test.TestGraphDatabaseFactory;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.LongStream;
 
 /**
@@ -59,6 +59,9 @@ public class ClusteringBenchmark {
     @Param({"0.1", "0.25", "0.5"})
     private double connectedness;
 
+    @Param({"1", "4", "8"})
+    private int concurrency;
+
     @Param({"HEAVY"}) //, "HUGE"})
     GraphImpl graph;
     private PageRankResult pageRankResult;
@@ -71,28 +74,24 @@ public class ClusteringBenchmark {
                         .newImpermanentDatabaseBuilder()
                         .newGraphDatabase();
 
-        try (ProgressTimer timer = ProgressTimer.start(t -> System.out.println("setup took " + t + "ms for " + NODE_COUNT + " nodes"))) {
-            GraphBuilder.create(api)
-                    .setLabel(LABEL)
-                    .setRelationship(RELATIONSHIP)
-                    .newCompleteGraphBuilder()
-                    .createCompleteGraph(NODE_COUNT, connectedness);
-        }
+        GraphBuilder.create(api)
+                .setLabel(LABEL)
+                .setRelationship(RELATIONSHIP)
+                .newCompleteGraphBuilder()
+                .createCompleteGraph(NODE_COUNT, connectedness);
 
-        try (ProgressTimer timer = ProgressTimer.start(t -> System.out.println("load took " + t + "ms"))) {
-            g = new GraphLoader(api)
-                    .withLabel(LABEL)
-                    .withRelationshipType(RELATIONSHIP)
-                    .withoutRelationshipWeights()
-                    .withoutNodeWeights()
-                    .withSort(true)
-                    .asUndirected(true)
-                    .load(graph.impl);
+        g = new GraphLoader(api)
+                .withLabel(LABEL)
+                .withRelationshipType(RELATIONSHIP)
+                .withoutRelationshipWeights()
+                .withoutNodeWeights()
+                .withSort(true)
+                .asUndirected(true)
+                .load(graph.impl);
 
-            pageRankResult = PageRankAlgorithm.of(g, 1. - InfoMap.TAU, LongStream.empty())
-                    .compute(10)
-                    .result();
-        }
+        pageRankResult = PageRankAlgorithm.of(g, 1. - InfoMap.TAU, LongStream.empty())
+                .compute(10)
+                .result();
 
     }
 
@@ -105,15 +104,15 @@ public class ClusteringBenchmark {
 
     @Benchmark
     public Object _01_louvain() {
-        return new Louvain(g, Pools.DEFAULT, 1, AllocationTracker.EMPTY)
+        return new Louvain(g, Pools.DEFAULT, concurrency, AllocationTracker.EMPTY)
                 .withProgressLogger(ProgressLogger.NULL_LOGGER)
-                .compute(10, 99999)
+                .compute(99, 99999)
                 .getCommunityCount();
     }
 
     @Benchmark
     public Object _02_infoMap() {
-        return InfoMap.unweighted(g, pageRankResult::score, InfoMap.THRESHOLD, InfoMap.TAU, Pools.FJ_POOL, 4)
+        return InfoMap.unweighted(g, pageRankResult::score, InfoMap.THRESHOLD, InfoMap.TAU, Pools.FJ_POOL, concurrency,ProgressLogger.NULL_LOGGER, TerminationFlag.RUNNING_TRUE)
                 .compute()
                 .getCommunityCount();
     }
