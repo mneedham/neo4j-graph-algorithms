@@ -5,7 +5,6 @@ import com.carrotsearch.hppc.cursors.IntObjectCursor;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.carrotsearch.hppc.procedures.IntDoubleProcedure;
 import com.carrotsearch.hppc.procedures.IntProcedure;
-import com.carrotsearch.hppc.procedures.ObjectProcedure;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
@@ -18,6 +17,8 @@ import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
 import org.neo4j.graphdb.Direction;
 
 import java.util.Arrays;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveTask;
 import java.util.function.Consumer;
 import java.util.stream.LongStream;
 
@@ -30,6 +31,7 @@ public class InfoMap extends Algorithm<InfoMap> {
 
     private static final double LOG2 = Math.log(2.);
 
+    public static int MIN_MODS_PARALLEL_EXEC = 20;
     // default TAU
     public static final double TAU = 0.15;
     // default threshold
@@ -52,6 +54,9 @@ public class InfoMap extends Algorithm<InfoMap> {
     // helper vars
     private final double tau1, n1;
 
+    private final ForkJoinPool pool;
+    private final int concurrency;
+
     // following values are updated during a merge
     // number of iterations the last computation took
     private int iterations = 0;
@@ -65,61 +70,65 @@ public class InfoMap extends Algorithm<InfoMap> {
     /**
      * create a weighted InfoMap algo instance
      */
-    public static InfoMap weighted(Graph graph, int prIterations, RelationshipWeights weights, double threshold, double tau) {
+    public static InfoMap weighted(Graph graph, int prIterations, RelationshipWeights weights, double threshold, double tau, ForkJoinPool pool, int concurrency) {
         final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - tau, LongStream.empty())
                 .compute(prIterations)
                 .result();
-        return weighted(graph, pageRankResult::score, weights, threshold, tau);
+        return weighted(graph, pageRankResult::score, weights, threshold, tau, pool, concurrency);
     }
 
     /**
      * create a weighted InfoMap algo instance with pageRanks
      */
-    public static InfoMap weighted(Graph graph, NodeWeights pageRanks, RelationshipWeights weights, double threshold, double tau) {
+    public static InfoMap weighted(Graph graph, NodeWeights pageRanks, RelationshipWeights weights, double threshold, double tau, ForkJoinPool pool, int concurrency) {
         return new InfoMap(
                 graph,
                 pageRanks,
                 new NormalizedRelationshipWeights(Math.toIntExact(graph.nodeCount()), graph, weights),
                 threshold,
-                tau);
+                tau, pool, concurrency);
     }
 
     /**
      * create an unweighted InfoMap algo instance
      */
-    public static InfoMap unweighted(Graph graph, int prIterations, double threshold, double tau) {
+    public static InfoMap unweighted(Graph graph, int prIterations, double threshold, double tau, ForkJoinPool pool, int concurrency) {
         final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - tau, LongStream.empty())
                 .compute(prIterations)
                 .result();
-        return unweighted(graph, pageRankResult::score, threshold, tau);
+        return unweighted(graph, pageRankResult::score, threshold, tau, pool, concurrency);
     }
 
     /**
      * create an unweighted InfoMap algo instance
      */
-    public static InfoMap unweighted(Graph graph, NodeWeights pageRanks, double threshold, double tau) {
+    public static InfoMap unweighted(Graph graph, NodeWeights pageRanks, double threshold, double tau, ForkJoinPool pool, int concurrency) {
         return new InfoMap(
                 graph,
                 pageRanks,
                 new DegreeNormalizedRelationshipWeights(graph),
                 threshold,
-                tau);
+                tau, pool, concurrency);
     }
 
     /**
      * @param graph             graph
-     * @param pageRank         page ranks
+     * @param pageRank          page ranks
      * @param normalizedWeights normalized weights (weights of a node must sum up to 1.0)
      * @param threshold         minimum delta L for optimization
      * @param tau               constant tau (usually 0.15)
+     * @param pool
+     * @param concurrency
      */
-    private InfoMap(Graph graph, NodeWeights pageRank, RelationshipWeights normalizedWeights, double threshold, double tau) {
+    private InfoMap(Graph graph, NodeWeights pageRank, RelationshipWeights normalizedWeights, double threshold, double tau, ForkJoinPool pool, int concurrency) {
         this.graph = graph;
         this.pageRank = pageRank;
         this.weights = normalizedWeights;
         this.nodeCount = Math.toIntExact(graph.nodeCount());
         this.tau = tau;
         this.threshold = threshold;
+        this.pool = pool;
+        this.concurrency = concurrency;
         this.modules = new IntObjectScatterMap<>(nodeCount);
         this.communities = new int[nodeCount];
         this.tau1 = 1. - tau;
@@ -205,28 +214,15 @@ public class InfoMap extends Algorithm<InfoMap> {
      * @return true if a merge occurred, false otherwise
      */
     private boolean optimize() {
-        final Pointer.DoublePointer m = Pointer.wrap(-1 * threshold);
-        final int[] best = {-1, -1};
-        for (ObjectCursor<Module> cursor : modules.values()) {
-            final Module module = cursor.value;
-            module.forEachNeighbor(l -> {
-                final double v = delta(module, l);
-                if (v < m.v) {
-                    m.v = v;
-                    best[0] = module.index;
-                    best[1] = l.index;
-                }
-            });
-        }
-        // merge module with higher i into mod with lower i
-        if (best[0] == -1 || best[0] == best[1]) {
+
+        final MergePair pair = pool.invoke(new Task(this.modules.values().toArray(Module.class)));
+
+        if (null == pair) {
             return false;
         }
-        if (best[0] < best[1]) {
-            modules.get(best[0]).merge(modules.remove(best[1]));
-        } else {
-            modules.get(best[1]).merge(modules.remove(best[0]));
-        }
+
+        pair.modA.merge(pair.modB);
+        modules.remove(pair.modB.index);
         return true;
     }
 
@@ -246,6 +242,78 @@ public class InfoMap extends Algorithm<InfoMap> {
                 + plogp(pi + qi)
                 - plogp(j.p + j.q)
                 - plogp(k.p + k.q);
+    }
+
+    private class Task extends RecursiveTask<MergePair> {
+
+        final Module[] m;
+
+        private Task(Module[] m) {
+            this.m = m;
+        }
+
+        @Override
+        protected MergePair compute() {
+
+            if (m.length >= MIN_MODS_PARALLEL_EXEC) {
+                // split mods
+                int half = m.length / 2;
+                final Task taskA = new Task(Arrays.copyOfRange(m, 0, half));
+                taskA.fork();
+                final Task taskB = new Task(Arrays.copyOfRange(m, half, m.length));
+                final MergePair mpA = taskB.compute();
+                final MergePair mpB = taskA.join();
+                return compare(mpA, mpB);
+            }
+
+            final Pointer.DoublePointer min = Pointer.wrap(-1 * threshold);
+
+            final Module[] best = {null, null};
+            for (Module module : m) {
+                module.forEachNeighbor(l -> {
+                    final double v = delta(module, l);
+                    if (v < min.v) {
+                        min.v = v;
+                        best[0] = module;
+                        best[1] = l;
+                    }
+                });
+            }
+
+            if (null == best[0] || best[0] == best[1]) {
+                return null;
+            }
+
+            return new MergePair(best[0], best[1], min.v);
+
+        }
+    }
+
+    private MergePair compare(MergePair mpA, MergePair mpB) {
+        if (null == mpA && null == mpB) {
+            return null;
+        }
+        if (null == mpB) {
+            return mpA;
+        }
+        if (null == mpA) {
+            return mpB;
+        }
+
+        return mpA.deltaL < mpB.deltaL ? mpA : mpB;
+    }
+
+    private static class MergePair {
+
+        final Module modA;
+        final Module modB;
+        final double deltaL;
+
+        private MergePair(Module modA, Module modB, double deltaL) {
+            this.modA = modA;
+            this.modB = modB;
+            this.deltaL = deltaL;
+        }
     }
 
     /**
@@ -308,7 +376,7 @@ public class InfoMap extends Algorithm<InfoMap> {
             final Pointer.DoublePointer wi = Pointer.wrap(0.);
             this.wi.forEach((IntDoubleProcedure) (key, value) -> {
                 if (communities[key] == l.index) {
-                    wi.v += value ;
+                    wi.v += value;
                 }
             });
             return wi.v;

@@ -113,7 +113,7 @@ public class ClusteringBenchmark {
 
     @Benchmark
     public Object _02_infoMap() {
-        return InfoMap.unweighted(g, pageRankResult::score, InfoMap.THRESHOLD, InfoMap.TAU)
+        return InfoMap.unweighted(g, pageRankResult::score, InfoMap.THRESHOLD, InfoMap.TAU, Pools.FJ_POOL, 4)
                 .compute()
                 .getCommunityCount();
     }

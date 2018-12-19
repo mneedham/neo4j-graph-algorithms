@@ -83,7 +83,9 @@ public class InfoMapProc {
                         pageRankIterations,
                         graph,
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
-                        config.getNumber("tau", InfoMap.TAU).doubleValue()
+                        config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                        Pools.FJ_POOL,
+                        config.getConcurrency()
                 );
                 break;
 
@@ -101,7 +103,9 @@ public class InfoMapProc {
                         ((NodeProperties) graph).nodeProperties("_pr")::get,
                         graph,
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
-                        config.getNumber("tau", InfoMap.TAU).doubleValue()
+                        config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                        Pools.FJ_POOL,
+                        config.getConcurrency()
                 );
                 break;
 
@@ -116,7 +120,9 @@ public class InfoMapProc {
                         graph,
                         pageRankIterations,
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
-                        config.getNumber("tau", InfoMap.TAU).doubleValue()
+                        config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                        Pools.FJ_POOL,
+                        config.getConcurrency()
                 );
                 break;
 
@@ -132,7 +138,9 @@ public class InfoMapProc {
                         graph,
                         ((NodeProperties) graph).nodeProperties("_pr")::get,
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
-                        config.getNumber("tau", InfoMap.TAU).doubleValue()
+                        config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                        Pools.FJ_POOL,
+                        config.getConcurrency()
                 );
                 break;
 
@@ -197,7 +205,9 @@ public class InfoMapProc {
                             pageRankIterations,
                             graph,
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
-                            config.getNumber("tau", InfoMap.TAU).doubleValue()
+                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                            Pools.FJ_POOL,
+                            config.getConcurrency()
                     );
                 }
                 break;
@@ -217,7 +227,9 @@ public class InfoMapProc {
                             ((NodeProperties) graph).nodeProperties("_pr")::get,
                             graph,
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
-                            config.getNumber("tau", InfoMap.TAU).doubleValue()
+                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                            Pools.FJ_POOL,
+                            config.getConcurrency()
                     );
                 }
                 break;
@@ -234,7 +246,9 @@ public class InfoMapProc {
                             graph,
                             pageRankIterations,
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
-                            config.getNumber("tau", InfoMap.TAU).doubleValue()
+                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                            Pools.FJ_POOL,
+                            config.getConcurrency()
                     );
                 }
                 break;
@@ -252,7 +266,9 @@ public class InfoMapProc {
                             graph,
                             ((NodeProperties) graph).nodeProperties("_pr")::get,
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
-                            config.getNumber("tau", InfoMap.TAU).doubleValue()
+                            config.getNumber("tau", InfoMap.TAU).doubleValue(),
+                            Pools.FJ_POOL,
+                            config.getConcurrency()
                     );
                 }
                 break;

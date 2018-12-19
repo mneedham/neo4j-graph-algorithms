@@ -27,6 +27,7 @@ import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
+import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.impl.infomap.*;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphdb.Direction;
@@ -143,7 +144,7 @@ public class InfoMapTest {
     @Test
     public void testClustering() throws Exception {
 
-        final InfoMap algo = InfoMap.unweighted(graph, 10, InfoMap.THRESHOLD, InfoMap.TAU)
+        final InfoMap algo = InfoMap.unweighted(graph, 10, InfoMap.THRESHOLD, InfoMap.TAU, Pools.FJ_POOL, 6)
                 .compute();
 
         assertEquals(3, algo.getCommunityCount());
