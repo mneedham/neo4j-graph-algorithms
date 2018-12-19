@@ -11,6 +11,7 @@ import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.utils.DegreeNormalizedRelationshipWeights;
 import org.neo4j.graphalgo.core.utils.NormalizedRelationshipWeights;
 import org.neo4j.graphalgo.core.utils.Pointer;
+import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
@@ -31,7 +32,11 @@ public class InfoMap extends Algorithm<InfoMap> {
 
     private static final double LOG2 = Math.log(2.);
 
+    public static int PAGE_RANK_BATCH_SIZE = 10_000;
+    public static boolean PAGE_RANK_CACHE_WEIGHTS = false;
     public static int MIN_MODS_PARALLEL_EXEC = 20;
+
+
     // default TAU
     public static final double TAU = 0.15;
     // default threshold
@@ -71,9 +76,20 @@ public class InfoMap extends Algorithm<InfoMap> {
      * create a weighted InfoMap algo instance
      */
     public static InfoMap weighted(Graph graph, int prIterations, RelationshipWeights weights, double threshold, double tau, ForkJoinPool pool, int concurrency) {
-        final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - tau, LongStream.empty())
-                .compute(prIterations)
-                .result();
+
+        final PageRankResult pageRankResult;
+        // use parallel PR if concurrency is >1
+        if (concurrency > 1) {
+            pageRankResult = PageRankAlgorithm.weightedOf(AllocationTracker.create(), graph, 1. - tau, LongStream.empty(), pool, concurrency, PAGE_RANK_BATCH_SIZE, PAGE_RANK_CACHE_WEIGHTS)
+                    .compute(prIterations)
+                    .result();
+            return weighted(graph, pageRankResult::score, weights, threshold, tau, pool, concurrency);
+        } else {
+            pageRankResult = PageRankAlgorithm.weightedOf(graph, 1. - tau, LongStream.empty())
+                    .compute(prIterations)
+                    .result();
+        }
+
         return weighted(graph, pageRankResult::score, weights, threshold, tau, pool, concurrency);
     }
 
@@ -93,9 +109,19 @@ public class InfoMap extends Algorithm<InfoMap> {
      * create an unweighted InfoMap algo instance
      */
     public static InfoMap unweighted(Graph graph, int prIterations, double threshold, double tau, ForkJoinPool pool, int concurrency) {
-        final PageRankResult pageRankResult = PageRankAlgorithm.of(graph, 1. - tau, LongStream.empty())
-                .compute(prIterations)
-                .result();
+        final PageRankResult pageRankResult;
+
+        // use parallel PR if concurrency is >1
+        if (concurrency > 1) {
+            final AllocationTracker tracker = AllocationTracker.create();
+            pageRankResult = PageRankAlgorithm.of(tracker, graph, 1. - tau, LongStream.empty(), pool, concurrency, PAGE_RANK_BATCH_SIZE)
+                    .compute(prIterations)
+                    .result();
+        } else {
+            pageRankResult = PageRankAlgorithm.of(graph, 1. - tau, LongStream.empty())
+                    .compute(prIterations)
+                    .result();
+        }
         return unweighted(graph, pageRankResult::score, threshold, tau, pool, concurrency);
     }
 
@@ -255,9 +281,9 @@ public class InfoMap extends Algorithm<InfoMap> {
         @Override
         protected MergePair compute() {
 
-            if (m.length >= MIN_MODS_PARALLEL_EXEC) {
+            if (concurrency > 1 && m.length >= MIN_MODS_PARALLEL_EXEC) {
                 // split mods
-                int half = m.length / 2;
+                final int half = m.length / 2;
                 final Task taskA = new Task(Arrays.copyOfRange(m, 0, half));
                 taskA.fork();
                 final Task taskB = new Task(Arrays.copyOfRange(m, half, m.length));

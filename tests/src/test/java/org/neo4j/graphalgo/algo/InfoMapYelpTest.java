@@ -77,7 +77,7 @@ public class InfoMapYelpTest {
                 "  'MATCH (c1:Category)<-[:IN_CATEGORY]-()-[:IN_CATEGORY]->(c2:Category)\n" +
                 "   WHERE id(c1) < id(c2)\n" +
                 "   RETURN id(c1) AS source, id(c2) AS target, count(*) AS w', " +
-                " {graph: 'cypher', iterations:15, writeProperty:'c', threshold:0.01, tau:0.3, weightProperty:'w'})").accept(row -> {
+                " {graph: 'cypher', iterations:15, writeProperty:'c', threshold:0.01, tau:0.3, weightProperty:'w', concurrency:4})").accept(row -> {
 
             System.out.println("computeMillis = " + row.get("computeMillis"));
             System.out.println("nodeCount = " + row.get("nodeCount"));
@@ -96,7 +96,7 @@ public class InfoMapYelpTest {
                 "  'MATCH (c1:Category)<-[:IN_CATEGORY]-()-[:IN_CATEGORY]->(c2:Category)\n" +
                 "   WHERE id(c1) < id(c2)\n" +
                 "   RETURN id(c1) AS source, id(c2) AS target', " +
-                " {graph: 'cypher', iterations:15, writeProperty:'c', threshold:0.01, tau:0.3})").accept(row -> {
+                " {graph: 'cypher', iterations:15, writeProperty:'c', threshold:0.01, tau:0.3, concurrency:4})").accept(row -> {
 
             System.out.println("computeMillis = " + row.get("computeMillis"));
             System.out.println("nodeCount = " + row.get("nodeCount"));

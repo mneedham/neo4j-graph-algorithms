@@ -42,8 +42,8 @@ import java.util.stream.LongStream;
  */
 @Threads(1)
 @Fork(value = 1, jvmArgs = {"-Xms2g", "-Xmx2g"})
-@Warmup(iterations = 5, time = 3)
-@Measurement(iterations = 5, time = 3)
+@Warmup(iterations = 3, time = 3)
+@Measurement(iterations = 3, time = 3)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -51,7 +51,7 @@ public class ClusteringBenchmark {
 
     private static final String LABEL = "Node";
     private static final String RELATIONSHIP = "REL";
-    private static final int NODE_COUNT = 100;
+    private static final int NODE_COUNT = 200;
 
     private Graph g;
     private GraphDatabaseAPI api;
