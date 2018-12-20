@@ -66,7 +66,7 @@ public class InfoMap extends Algorithm<InfoMap> {
     // number of iterations the last computation took
     private int iterations = 0;
     // module map
-    private IntObjectMap<Module> modules; // TODO replace with Set
+    private IntObjectMap<Module> modules;
     // community assignment helper array
     private int[] communities;
     // sum of exit probs.
