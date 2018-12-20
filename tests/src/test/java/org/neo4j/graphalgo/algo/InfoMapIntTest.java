@@ -32,6 +32,9 @@ import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
+import java.util.BitSet;
+
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -52,10 +55,6 @@ import static org.mockito.Mockito.verify;
  */
 public class InfoMapIntTest {
 
-    interface CommunityConsumer {
-
-        void test(String node, int community);
-    }
 
     @ClassRule
     public static ImpermanentDatabaseRule db = new ImpermanentDatabaseRule();
@@ -77,9 +76,7 @@ public class InfoMapIntTest {
                         " (b)-[:TYPE {v:1.0}]->(a),\n" +
                         " (a)-[:TYPE {v:1.0}]->(c),\n" +
                         " (c)-[:TYPE {v:1.0}]->(a),\n" +
-
                         " (d)-[:TYPE {v:2.0}]->(c),\n" +
-
                         " (d)-[:TYPE {v:1.0}]->(e),\n" +
                         " (d)-[:TYPE {v:1.0}]->(f),\n" +
                         " (e)-[:TYPE {v:1.0}]->(f)";
@@ -92,88 +89,67 @@ public class InfoMapIntTest {
     @Test
     public void testUnweighted() throws Exception {
 
-        final CommunityConsumer consumer = mock(CommunityConsumer.class);
+        final BitSet bitSet = new BitSet(8);
 
         db.execute("CALL algo.infoMap('Node', 'TYPE', {iterations:15, writeProperty:'c'})").close();
 
         db.execute("MATCH (n) RETURN n").accept(row -> {
             final Node node = row.getNode("n");
-            System.out.printf("%s: %d%n",
-                    (String) node.getProperty("name"),
-                    (int) node.getProperty("c"));
-            consumer.test(
-                    (String) node.getProperty("name"),
-                    (int) node.getProperty("c"));
-
+            bitSet.set((Integer) node.getProperty("c"));
             return true;
         });
 
-        verify(consumer, times(3)).test(anyString(), eq(0));
-        verify(consumer, times(3)).test(anyString(), eq(3));
-        verify(consumer, times(1)).test(anyString(), eq(6));
-
+        assertEquals(3, bitSet.cardinality());
     }
 
 
     @Test
     public void testUnweightedStream() throws Exception {
 
-        final CommunityConsumer consumer = mock(CommunityConsumer.class);
+        final BitSet bitSet = new BitSet(8);
 
         db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {iterations:15}) YIELD nodeId, community")
                 .accept(row -> {
-                    consumer.test(
-                            db.getNodeById(row.getNumber("nodeId").longValue())
-                                    .getProperty("name").toString(),
-                            row.getNumber("community").intValue());
+                    bitSet.set((Integer) row.getNumber("community").intValue());
                     return true;
                 });
 
-        verify(consumer, times(3)).test(anyString(), eq(0));
-        verify(consumer, times(3)).test(anyString(), eq(3));
-        verify(consumer, times(1)).test(anyString(), eq(6));
+        assertEquals(3, bitSet.cardinality());
+
     }
 
 
     @Test
     public void testWeighted() throws Exception {
 
-        final CommunityConsumer consumer = mock(CommunityConsumer.class);
+        final BitSet bitSet = new BitSet(8);
 
         db.execute("CALL algo.infoMap('Node', 'TYPE', {weightProperty:'v', writeProperty:'c'})").close();
 
         db.execute("MATCH (n) RETURN n").accept(row -> {
             final Node node = row.getNode("n");
-            consumer.test(
-                    (String) node.getProperty("name"),
-                    (int) node.getProperty("c"));
-
+            bitSet.set((Integer) node.getProperty("c"));
             return true;
         });
 
-        verify(consumer, times(2)).test(anyString(), eq(0));
-        verify(consumer, times(4)).test(anyString(), eq(2));
-        verify(consumer, times(1)).test(anyString(), eq(6));
+        assertEquals(2, bitSet.cardinality());
+
     }
 
 
     @Test
     public void testWeightedStream() throws Exception {
 
-        final CommunityConsumer consumer = mock(CommunityConsumer.class);
+        final BitSet bitSet = new BitSet(8);
 
         db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {iterations:15, weightProperty:'v'}) YIELD nodeId, community")
                 .accept(row -> {
-                    consumer.test(
-                            db.getNodeById(row.getNumber("nodeId").longValue())
-                                    .getProperty("name").toString(),
-                            row.getNumber("community").intValue());
+                    bitSet.set((Integer) row.getNumber("community").intValue());
                     return true;
                 });
 
-        verify(consumer, times(2)).test(anyString(), eq(0));
-        verify(consumer, times(4)).test(anyString(), eq(2));
-        verify(consumer, times(1)).test(anyString(), eq(6));
+        assertEquals(2, bitSet.cardinality());
+
     }
 
     @Test
@@ -182,21 +158,16 @@ public class InfoMapIntTest {
 
         db.execute("CALL algo.pageRank('Node', 'TYPE', {writeProperty:'p', iterations:1}) YIELD nodes").close();
 
-        final CommunityConsumer consumer = mock(CommunityConsumer.class);
+        final BitSet bitSet = new BitSet(8);
 
         db.execute("CALL algo.infoMap.stream('Node', 'TYPE', {pageRankProperty:'p'}) YIELD nodeId, community")
                 .accept(row -> {
-                    consumer.test(
-                            db.getNodeById(row.getNumber("nodeId").longValue())
-                                    .getProperty("name").toString(),
-                            row.getNumber("community").intValue());
+                    bitSet.set((Integer) row.getNumber("community").intValue());
                     return true;
                 });
 
+        assertEquals(3, bitSet.cardinality());
 
-        verify(consumer, times(3)).test(anyString(), eq(0));
-        verify(consumer, times(3)).test(anyString(), eq(3));
-        verify(consumer, times(1)).test(anyString(), eq(6));
     }
 
 }

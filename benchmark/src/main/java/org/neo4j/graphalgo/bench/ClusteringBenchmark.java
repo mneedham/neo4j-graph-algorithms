@@ -20,6 +20,7 @@ package org.neo4j.graphalgo.bench;
 
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.core.GraphLoader;
+import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressLogger;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
@@ -62,8 +63,6 @@ public class ClusteringBenchmark {
     @Param({"1", "4", "8"})
     private int concurrency;
 
-    @Param({"HEAVY"}) //, "HUGE"})
-    GraphImpl graph;
     private PageRankResult pageRankResult;
 
 
@@ -87,12 +86,11 @@ public class ClusteringBenchmark {
                 .withoutNodeWeights()
                 .withSort(true)
                 .asUndirected(true)
-                .load(graph.impl);
+                .load(HeavyGraphFactory.class);
 
         pageRankResult = PageRankAlgorithm.of(g, 1. - InfoMap.TAU, LongStream.empty())
                 .compute(10)
                 .result();
-
     }
 
 
