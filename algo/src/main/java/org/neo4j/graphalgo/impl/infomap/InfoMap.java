@@ -442,8 +442,14 @@ public class InfoMap extends Algorithm<InfoMap> {
     }
 
     private static MergePair compare(MergePair mpA, MergePair mpB) {
-        if (null == mpA || null == mpB) {
+        if (null == mpA && null == mpB) {
             return null;
+        }
+        if (null == mpA) {
+            return mpB;
+        }
+        if (null == mpB) {
+            return mpA;
         }
         return mpA.deltaL < mpB.deltaL ? mpA : mpB;
     }
