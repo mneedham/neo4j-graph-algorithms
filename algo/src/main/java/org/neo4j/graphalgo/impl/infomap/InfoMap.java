@@ -161,10 +161,10 @@ public class InfoMap extends Algorithm<InfoMap> {
      * @param normalizedWeights normalized weights (weights of a node must sum up to 1.0)
      * @param threshold         minimum delta L for optimization
      * @param tau               constant tau (usually 0.15)
-     * @param pool
-     * @param concurrency
-     * @param logger
-     * @param terminationFlag
+     * @param pool              executor service
+     * @param concurrency       number of threads
+     * @param logger            log
+     * @param terminationFlag   running flag
      */
     private InfoMap(Graph graph, NodeWeights pageRank, RelationshipWeights normalizedWeights, double threshold, double tau, ForkJoinPool pool, int concurrency, ProgressLogger logger, TerminationFlag terminationFlag) {
         this.graph = graph;
@@ -441,19 +441,10 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
     }
 
-
-
     private static MergePair compare(MergePair mpA, MergePair mpB) {
-        if (null == mpA && null == mpB) {
+        if (null == mpA || null == mpB) {
             return null;
         }
-        if (null == mpB) {
-            return mpA;
-        }
-        if (null == mpA) {
-            return mpB;
-        }
-
         return mpA.deltaL < mpB.deltaL ? mpA : mpB;
     }
 
