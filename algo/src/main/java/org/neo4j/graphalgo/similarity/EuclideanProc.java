@@ -66,7 +66,7 @@ public class EuclideanProc extends SimilarityProc {
 
         WeightedInput[] inputs = prepareWeights(rawData, configuration, skipValue);
 
-        String writeRelationshipType = configuration.get("writeRelationshipType", "NARROWER_THAN");
+        String writeRelationshipType = configuration.get("writeRelationshipType", "SIMILAR");
         String writeProperty = configuration.getWriteProperty("score");
         if(inputs.length == 0) {
             return emptyStream(writeRelationshipType, writeProperty);
