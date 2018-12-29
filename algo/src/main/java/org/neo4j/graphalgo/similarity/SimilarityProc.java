@@ -75,10 +75,7 @@ public class SimilarityProc {
         return configuration.get("degreeCutoff", 0L);
     }
 
-    Stream<SimilaritySummaryResult> writeAndAggregateResults(ProcedureConfiguration configuration, Stream<SimilarityResult> stream, int length, boolean write, String defaultWriteProperty) {
-        String writeRelationshipType = configuration.get("writeRelationshipType", defaultWriteProperty);
-        String writeProperty = configuration.getWriteProperty("score");
-
+    Stream<SimilaritySummaryResult> writeAndAggregateResults(Stream<SimilarityResult> stream, int length, boolean write, String writeRelationshipType, String writeProperty) {
         AtomicLong similarityPairs = new AtomicLong();
         DoubleHistogram histogram = new DoubleHistogram(5);
         Consumer<SimilarityResult> recorder = result -> {
@@ -94,6 +91,11 @@ public class SimilarityProc {
         }
 
         return Stream.of(SimilaritySummaryResult.from(length, similarityPairs, writeRelationshipType, writeProperty, write, histogram));
+    }
+
+    Stream<SimilaritySummaryResult> emptyStream(String writeRelationshipType, String writeProperty) {
+        return Stream.of(SimilaritySummaryResult.from(0, new AtomicLong(0), writeRelationshipType,
+                writeProperty, false, new DoubleHistogram(5)));
     }
 
     Double getSimilarityCutoff(ProcedureConfiguration configuration) {

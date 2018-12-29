@@ -43,6 +43,10 @@ public class EuclideanProc extends SimilarityProc {
 
         WeightedInput[] inputs = prepareWeights(rawData, configuration, skipValue);
 
+        if(inputs.length == 0) {
+            return Stream.empty();
+        }
+
         double similarityCutoff = similarityCutoff(configuration);
         int topN = -getTopN(configuration);
         int topK = -getTopK(configuration);
@@ -62,6 +66,12 @@ public class EuclideanProc extends SimilarityProc {
 
         WeightedInput[] inputs = prepareWeights(rawData, configuration, skipValue);
 
+        String writeRelationshipType = configuration.get("writeRelationshipType", "NARROWER_THAN");
+        String writeProperty = configuration.getWriteProperty("score");
+        if(inputs.length == 0) {
+            return emptyStream(writeRelationshipType, writeProperty);
+        }
+
         double similarityCutoff = similarityCutoff(configuration);
         int topN = -getTopN(configuration);
         int topK = -getTopK(configuration);
@@ -69,7 +79,7 @@ public class EuclideanProc extends SimilarityProc {
         Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, computer);
 
         boolean write = configuration.isWriteFlag(false); //  && similarityCutoff != 0.0;
-        return writeAndAggregateResults(configuration, stream, inputs.length, write, "SIMILAR");
+        return writeAndAggregateResults(stream, inputs.length, write, writeRelationshipType, writeProperty);
     }
 
     Stream<SimilarityResult> generateWeightedStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
