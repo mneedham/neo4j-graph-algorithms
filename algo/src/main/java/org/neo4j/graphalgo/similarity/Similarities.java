@@ -178,4 +178,19 @@ public class Similarities {
         long denominator = Math.min(vector1.size(), vector2.size());
         return denominator == 0 ? 0 : (double) intersection / denominator;
     }
+
+    @UserFunction("algo.similarity.adamicAdar")
+    @Description("algo.similarity.adamicAdar([vector1]) " +
+            "given a vector , calculate Adamic Adar similarity")
+    public double adamicAdarSimilarity(@Name("vector") List<Number> vector) {
+        // https://en.wikipedia.org/wiki/Adamic/Adar_index
+        if (vector == null) return 0;
+
+        double score = 0.0;
+        for (int i = 0; i < vector.size(); i++) {
+            double value = vector.get(i).doubleValue();
+            score += 1 / Math.log(value);
+        }
+        return score;
+    }
 }
