@@ -180,8 +180,8 @@ public class Similarities {
     }
 
     @UserFunction("algo.similarity.adamicAdar")
-    @Description("algo.similarity.adamicAdar([vector1]) " +
-            "given a vector , calculate Adamic Adar similarity")
+    @Description("algo.similarity.adamicAdar([vector]) " +
+            "given a vector of the degree of common neighbors, calculate Adamic Adar similarity")
     public double adamicAdarSimilarity(@Name("vector") List<Number> vector) {
         // https://en.wikipedia.org/wiki/Adamic/Adar_index
         if (vector == null) return 0;
@@ -190,6 +190,21 @@ public class Similarities {
         for (int i = 0; i < vector.size(); i++) {
             double value = vector.get(i).doubleValue();
             score += 1 / Math.log(value);
+        }
+        return score;
+    }
+
+    @UserFunction("algo.similarity.resourceAllocation")
+    @Description("algo.similarity.resourceAllocation([vector]) " +
+            "given a vector of the degree of common neighbors, calculate Resource Allocation similarity")
+    public double resourceAllocationSimilarity(@Name("vector") List<Number> vector) {
+        // https://en.wikipedia.org/wiki/Adamic/Adar_index
+        if (vector == null) return 0;
+
+        double score = 0.0;
+        for (int i = 0; i < vector.size(); i++) {
+            double value = vector.get(i).doubleValue();
+            score += 1 / value;
         }
         return score;
     }
