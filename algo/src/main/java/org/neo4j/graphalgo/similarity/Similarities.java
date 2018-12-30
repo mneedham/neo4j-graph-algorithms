@@ -198,7 +198,7 @@ public class Similarities {
     @Description("algo.similarity.resourceAllocation([vector]) " +
             "given a vector of the degree of common neighbors, calculate Resource Allocation similarity")
     public double resourceAllocationSimilarity(@Name("vector") List<Number> vector) {
-        // https://en.wikipedia.org/wiki/Adamic/Adar_index
+        // https://arxiv.org/pdf/0901.0553.pdf
         if (vector == null) return 0;
 
         double score = 0.0;
