@@ -54,11 +54,7 @@ public final class ShortestPathDijkstraSelfRelationshipsTest {
             "CREATE (g:Label1 {name:\"g\"})\n" +
             "CREATE\n" +
 
-            "  (g)-[:TYPE9 {cost:4}]->(f),\n" +
-            "  (g)-[:BLAH {cost:4}]->(g),\n" +
-            "  (g)-[:TYPE1 {cost:4}]->(b),\n" +
             "  (g)-[:TYPE4 {cost:4}]->(c),\n" +
-
             "  (b)-[:TYPE5 {cost:4}]->(g),\n" +
             "  (g)-[:ZZZZ {cost:4}]->(g),\n" +
             "  (g)-[:TYPE6 {cost:4}]->(d),\n" +
@@ -69,15 +65,12 @@ public final class ShortestPathDijkstraSelfRelationshipsTest {
     +----------------------------------+
     | id(a) | id(b) | relId | type(r)  |
     +----------------------------------+
-    | 34    | 5     | 0     | "TYPE9"  |
-    | 34    | 34    | 1     | "BLAH"   |
-    | 34    | 1     | 2     | "TYPE1"  |
-    | 34    | 2     | 3     | "TYPE4"  |
-    | 1     | 34    | 4     | "TYPE5"  |
-    | 34    | 34    | 5     | "ZZZZ"   |
-    | 34    | 3     | 6     | "TYPE6"  |
-    | 1     | 34    | 7     | "TYPE6"  |
-    | 34    | 34    | 8     | "TYPE99" |
+    | 6     | 2     | 0     | "TYPE4"  |
+    | 1     | 6     | 1     | "TYPE5"  |
+    | 6     | 6     | 2     | "ZZZZ"   |
+    | 6     | 3     | 3     | "TYPE6"  |
+    | 1     | 6     | 4     | "TYPE6"  |
+    | 6     | 6     | 5     | "TYPE99" |
     +----------------------------------+
      */
 
