@@ -87,10 +87,11 @@ abstract class VisitRelationship {
 //        System.out.println(length + "->" + targetId);
 
         if(length >= targets.length) {
-            System.out.println("[" + sourceGraphId + "] " + length + "-> " + targetId + " " + Arrays.toString(targets));
+            System.out.println("node id:" + sourceGraphId + ", position:" + length + ", nodeToAdd:" + targetId + ", targets:" + Arrays.toString(targets));
         }
 
         targets[length] = targetId;
+//        System.out.println("[" + sourceGraphId + "] " + length + "-> " + targetId + " " + Arrays.toString(targets));
 
         length++;
 
@@ -189,6 +190,7 @@ final class VisitOutgoingNoWeight extends VisitRelationship {
 
     @Override
     void visit(final RelationshipSelectionCursor cursor) {
+        System.out.println("[node id:" + this.sourceGraphId + "][OutgoingNoWeight] Append [node id:" + cursor.targetNodeReference() + ", rel id:" + cursor.type() + "]");
         addNode(cursor.targetNodeReference());
     }
 }
@@ -201,6 +203,7 @@ final class VisitIncomingNoWeight extends VisitRelationship {
 
     @Override
     void visit(final RelationshipSelectionCursor cursor) {
+        System.out.println("[node id:" + this.sourceGraphId + "][IncomingNoWeight] Append [node id:" + cursor.targetNodeReference() + ", rel id:" + cursor.type() + "]");
         addNode(cursor.sourceNodeReference());
     }
 }
@@ -277,6 +280,8 @@ final class VisitUndirectedOutgoingWithWeight extends VisitRelationship {
 
     @Override
     void visit(final RelationshipSelectionCursor cursor) {
+        System.out.println("[node id:" + this.sourceGraphId + "][UndirectedOutgoingWithWeight] Append [node id:" + cursor.targetNodeReference() + ", rel id:" + cursor.type() + "]");
+
         if (addNode(cursor.targetNodeReference())) {
             visitUndirectedWeight(readOp, cursors, sourceGraphId, prevTarget, weights, cursor.relationshipReference());
         }

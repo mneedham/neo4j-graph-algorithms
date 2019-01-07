@@ -88,15 +88,18 @@ abstract class RelationshipLoader {
             int inDegree = loadRelationships.degreeIn(sourceNode);
             int outDegree = loadRelationships.degreeOut(sourceNode);
 
-            if(degree < inDegree + outDegree) {
-                System.out.println("both:" + degree + ", in:" + inDegree + ", out:" + outDegree);
-            }
+//            if(degree < inDegree + outDegree) {
+//            }
+            System.out.println("[" + localNodeId +  "] -> both:" + degree + ", in:" + inDegree + ", out:" + outDegree);
 
             visitIn.prepareNextNode(localNodeId, targets);
             this.visitIn(sourceNode, visitIn);
 
             visitOut.prepareNextNode(visitIn);
+
             this.visitOut(sourceNode, visitOut);
+
+
             matrix.setOutDegree(localNodeId, visitOut.flush());
         }
         return degree;
