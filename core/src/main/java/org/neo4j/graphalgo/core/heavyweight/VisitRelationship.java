@@ -203,7 +203,7 @@ final class VisitIncomingNoWeight extends VisitRelationship {
 
     @Override
     void visit(final RelationshipSelectionCursor cursor) {
-        System.out.println("[node id:" + this.sourceGraphId + "][IncomingNoWeight] Append [node id:" + cursor.targetNodeReference() + ", rel id:" + cursor.type() + "]");
+        System.out.println("[node id:" + this.sourceGraphId + "][IncomingNoWeight] Append [node id:" + cursor.sourceNodeReference() + ", rel id:" + cursor.type() + "]");
         addNode(cursor.sourceNodeReference());
     }
 }
