@@ -29,14 +29,14 @@ import static org.junit.Assert.assertEquals;
 public class ResourceAllocationSimilarityTest {
     @Test
     public void uniqueCommonNeighbour() {
-        assertEquals(0.5, new Similarities().resourceAllocationSimilarity(Collections.singletonList(2)), 0.01);
-        assertEquals(1.0, new Similarities().resourceAllocationSimilarity(Arrays.asList(2,2 )), 0.01);
+        assertEquals(0.5, new Similarities().sumInverse(Collections.singletonList(2)), 0.01);
+        assertEquals(1.0, new Similarities().sumInverse(Arrays.asList(2,2 )), 0.01);
     }
 
     @Test
     public void veryWellLinkedNeighbours() {
-        assertEquals(0.2, new Similarities().resourceAllocationSimilarity(Collections.singletonList(5)), 0.01);
-        assertEquals(0.4, new Similarities().resourceAllocationSimilarity(Arrays.asList(5,5)), 0.01);
+        assertEquals(0.2, new Similarities().sumInverse(Collections.singletonList(5)), 0.01);
+        assertEquals(0.4, new Similarities().sumInverse(Arrays.asList(5,5)), 0.01);
     }
 
 }

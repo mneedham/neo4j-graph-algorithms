@@ -23,21 +23,20 @@ import org.neo4j.graphalgo.similarity.Similarities;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
 public class AdamicAdarSimilarityTest {
     @Test
     public void uniqueCommonNeighbour() {
-        assertEquals(1.44, new Similarities().adamicAdarSimilarity(Collections.singletonList(2)), 0.01);
-        assertEquals(2.88, new Similarities().adamicAdarSimilarity(Arrays.asList(2,2 )), 0.01);
+        assertEquals(1.44, new Similarities().sumInverseLog(Collections.singletonList(2)), 0.01);
+        assertEquals(2.88, new Similarities().sumInverseLog(Arrays.asList(2,2 )), 0.01);
     }
 
     @Test
     public void veryWellLinkedNeighbours() {
-        assertEquals(0.62, new Similarities().adamicAdarSimilarity(Collections.singletonList(5)), 0.01);
-        assertEquals(1.24, new Similarities().adamicAdarSimilarity(Arrays.asList(5,5)), 0.01);
+        assertEquals(0.62, new Similarities().sumInverseLog(Collections.singletonList(5)), 0.01);
+        assertEquals(1.24, new Similarities().sumInverseLog(Arrays.asList(5,5)), 0.01);
     }
 
 }
