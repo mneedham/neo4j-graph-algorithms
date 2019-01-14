@@ -18,9 +18,7 @@
  */
 package org.neo4j.graphalgo.impl.louvain;
 
-import com.carrotsearch.hppc.BitSet;
-import com.carrotsearch.hppc.IntIntMap;
-import com.carrotsearch.hppc.IntIntScatterMap;
+import com.carrotsearch.hppc.*;
 import org.neo4j.collection.primitive.PrimitiveIntIterator;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeIterator;
@@ -351,14 +349,21 @@ public class ModularityOptimization extends Algorithm<ModularityOptimization> {
          */
         private boolean move(int node) {
             final int currentCommunity = bestCommunity = localCommunities[node];
-            final double w = weightIntoCom(node, currentCommunity);
+
+            IntDoubleMap communityWeights = computeNeighborCommunities(node);
+
+            final double w = communityWeights.get(currentCommunity);
             sTot[currentCommunity] -= ki[node];
             sIn[currentCommunity] -= 2 * (w + nodeWeights.weightOf(node));
+
+            removeWeightForSelfRelationships(node, communityWeights);
+
             localCommunities[node] = NONE;
             bestGain = .0;
             bestWeight = w;
+
             forEachConnectedCommunity(node, c -> {
-                final double wic = weightIntoCom(node, c);
+                final double wic = communityWeights.get(c);
                 final double g = wic / m2 - sTot[c] * ki[node] / m22;
                 if (g > bestGain) {
                     bestGain = g;
@@ -371,6 +376,27 @@ public class ModularityOptimization extends Algorithm<ModularityOptimization> {
             localCommunities[node] = bestCommunity;
             return bestCommunity != currentCommunity;
         }
+
+        private IntDoubleMap computeNeighborCommunities(int node) {
+            IntDoubleMap communityWeights = new IntDoubleHashMap(graph.degree(node, D));
+            graph.forEachRelationship(node, D, (s, t, r) -> {
+                double weight = graph.weightOf(s, t);
+                communityWeights.putOrAdd(localCommunities[t], weight, weight);
+                return true;
+            });
+            return communityWeights;
+        }
+
+        private void removeWeightForSelfRelationships(int node, IntDoubleMap communityWeights) {
+            graph.forEachRelationship(node, D, (s, t, r) -> {
+                if(s == t) {
+                    double currentWeight = communityWeights.get(localCommunities[s]);
+                    communityWeights.put(localCommunities[s], currentWeight - graph.weightOf(s, t));
+                }
+                return true;
+            });
+        }
+
 
         /**
          * apply consumer to each connected community one time
@@ -402,14 +428,14 @@ public class ModularityOptimization extends Algorithm<ModularityOptimization> {
          * @return sum of weights from node into community c
          */
         private double weightIntoCom(int node, int c) {
-            final Pointer.DoublePointer p = Pointer.wrap(.0);
+            double[] p = new double[1];
             graph.forEachRelationship(node, D, (s, t, r) -> {
                 if (localCommunities[t] == c) {
-                    p.map(v -> v + graph.weightOf(s, t));
+                    p[0] += graph.weightOf(s, t);
                 }
                 return true;
             });
-            return p.v;
+            return p[0];
         }
 
         private double calcModularity() {
