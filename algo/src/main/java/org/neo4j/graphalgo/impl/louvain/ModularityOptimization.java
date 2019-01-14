@@ -19,6 +19,8 @@
 package org.neo4j.graphalgo.impl.louvain;
 
 import com.carrotsearch.hppc.*;
+import com.carrotsearch.hppc.BitSet;
+import com.carrotsearch.hppc.cursors.IntDoubleCursor;
 import org.neo4j.collection.primitive.PrimitiveIntIterator;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeIterator;
@@ -31,9 +33,7 @@ import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphdb.Direction;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
@@ -350,7 +350,23 @@ public class ModularityOptimization extends Algorithm<ModularityOptimization> {
         private boolean move(int node) {
             final int currentCommunity = bestCommunity = localCommunities[node];
 
-            IntDoubleMap communityWeights = computeNeighborCommunities(node);
+            int degree = graph.degree(node, D);
+            int[] communitiesInOrder = new int[degree];
+            IntDoubleMap communityWeights = new IntDoubleHashMap(degree);
+
+            final int[] communityCount = {0};
+            graph.forEachRelationship(node, D, (s, t, r) -> {
+                double weight = graph.weightOf(s, t);
+                int localCommunity = localCommunities[t];
+                if (communityWeights.containsKey(localCommunity)) {
+                    communityWeights.addTo(localCommunity, weight);
+                } else {
+                    communityWeights.put(localCommunity, weight);
+                    communitiesInOrder[communityCount[0]++] = localCommunity;
+                }
+
+                return true;
+            });
 
             final double w = communityWeights.get(currentCommunity);
             sTot[currentCommunity] -= ki[node];
@@ -362,29 +378,21 @@ public class ModularityOptimization extends Algorithm<ModularityOptimization> {
             bestGain = .0;
             bestWeight = w;
 
-            forEachConnectedCommunity(node, c -> {
-                final double wic = communityWeights.get(c);
-                final double g = wic / m2 - sTot[c] * ki[node] / m22;
+            for (int i = 0; i < communityCount[0]; i++) {
+                int community = communitiesInOrder[i];
+                double wic = communityWeights.get(community);
+                final double g = wic / m2 - sTot[community] * ki[node] / m22;
                 if (g > bestGain) {
                     bestGain = g;
-                    bestCommunity = c;
+                    bestCommunity = community;
                     bestWeight = wic;
                 }
-            });
+            }
+
             sTot[bestCommunity] += ki[node];
             sIn[bestCommunity] += 2 * (bestWeight + nodeWeights.weightOf(node));
             localCommunities[node] = bestCommunity;
             return bestCommunity != currentCommunity;
-        }
-
-        private IntDoubleMap computeNeighborCommunities(int node) {
-            IntDoubleMap communityWeights = new IntDoubleHashMap(graph.degree(node, D));
-            graph.forEachRelationship(node, D, (s, t, r) -> {
-                double weight = graph.weightOf(s, t);
-                communityWeights.putOrAdd(localCommunities[t], weight, weight);
-                return true;
-            });
-            return communityWeights;
         }
 
         private void removeWeightForSelfRelationships(int node, IntDoubleMap communityWeights) {
