@@ -244,7 +244,7 @@ YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, 
 .The following will run the algorithm and stream results:
 [source,cypher]
 ----
-CALL algo.similarity.cosine.stream(userData:Array<Map>>, {
+CALL algo.similarity.cosine.stream(userData:List<Map>>, {
     degreeCutoff: 10, similarityCutoff: 0.1, concurrency:4
 })
 YIELD item1, item2, count1, count2, intersection, similarity
