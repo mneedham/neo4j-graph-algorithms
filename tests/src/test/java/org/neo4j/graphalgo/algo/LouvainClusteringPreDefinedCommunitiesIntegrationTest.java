@@ -55,24 +55,9 @@ public class LouvainClusteringPreDefinedCommunitiesIntegrationTest {
 
         final String cypher =
                 "MERGE (nAlice:User {id:'Alice'}) SET nAlice.community = 0\n" +
-                        "MERGE (nBridget:User {id:'Bridget'}) SET nBridget.community = 0\n" +
-                        "MERGE (nCharles:User {id:'Charles'}) SET nCharles.community = 1\n" +
-                        "MERGE (nDoug:User {id:'Doug'}) SET nDoug.community = 1\n" +
-                        "MERGE (nMark:User {id:'Mark'}) SET nMark.community = 1\n" +
-                        "MERGE (nMichael:User {id:'Michael'}) SET nMichael.community = 0\n" +
-                        "MERGE (nKarin:User {id:'Karin'}) SET nKarin.community = 1\n" +
-                        "MERGE (nAmy:User {id:'Amy'}) SET nAmy.community = 100\n" +
+                        "MERGE (nBridget:User {id:'Bridget'}) SET nBridget.community = 2\n" +
                         "\n" +
-                        "MERGE (nAlice)-[:FRIEND]->(nBridget)\n" +
-                        "MERGE (nAlice)-[:FRIEND]->(nCharles)\n" +
-                        "MERGE (nMark)-[:FRIEND]->(nDoug)\n" +
-                        "MERGE (nBridget)-[:FRIEND]->(nMichael)\n" +
-                        "MERGE (nCharles)-[:FRIEND]->(nMark)\n" +
-                        "MERGE (nAlice)-[:FRIEND]->(nMichael)\n" +
-                        "MERGE (nCharles)-[:FRIEND]->(nDoug)\n" +
-                        "MERGE (nMark)-[:FRIEND]->(nKarin)\n" +
-                        "MERGE (nKarin)-[:FRIEND]->(nAmy)\n" +
-                        "MERGE (nAmy)-[:FRIEND]->(nDoug);";
+                        "MERGE (nAlice)-[:FRIEND]->(nBridget);";
 
         DB.resolveDependency(Procedures.class).registerProcedure(LouvainProc.class);
         DB.execute(cypher);
