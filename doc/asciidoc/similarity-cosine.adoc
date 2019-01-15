@@ -279,8 +279,7 @@ YIELD item1, item2, count1, count2, intersection, similarity
 [[algorithms-similarity-cosine-cypher-projection]]
 == Cypher projection
 
-If label and relationship-type are not selective enough to describe your subgraph to run the algorithm on, you can use Cypher statements to load or project subsets of your graph.
-This can also be used to run algorithms on a virtual graph.
+If the similarity lists are very sparse (i.e. contain a lot of 0s), you can use Cypher statements to project a graph.
 
 .Set `graph:'cypher'` in the config:
 
