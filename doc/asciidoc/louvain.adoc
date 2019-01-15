@@ -187,9 +187,39 @@ Initial or pre-defined communities for nodes are specified using the `communityP
 .The following will create a sample graph:
 [source, cypher]
 ----
-include::scripts/louvain.cypher[tag=create-hierarchical-sample-graph]
+include::scripts/louvain.cypher[tag=create-pre-defined-sample-graph]
 ----
 
+.The following will run the algorithm and stream results:
+[source, cypher]
+----
+include::scripts/louvain.cypher[tag=stream-pre-defined-sample-graph]
+----
+
+.The following will run the algorithm and write back results:
+[source, cypher]
+----
+include::scripts/louvain.cypher[tag=write-pre-defined-sample-graph]
+----
+
+In this example the pre-defined communities are read from the `community` property, and the communities computed by the algorithm are stored to the `newCommunity` property.
+
+
+// tag::stream-pre-defined-sample-graph-result[]
+.Results
+[opts="header",cols="1,1"]
+|===
+| Name    | Community
+| Alice   | 0
+| Bridget | 0
+| Michael | 0
+| Charles | 1
+| Doug    | 1
+| Mark    | 1
+| Karin   | 1
+| Amy     | 1
+|===
+// end::stream-pre-defined-sample-graph-result[]
 
 [[algorithms-louvain-syntax]]
 == Syntax

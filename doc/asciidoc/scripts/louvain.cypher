@@ -138,3 +138,14 @@ YIELD nodeId, communities
 RETURN algo.getNodeById(nodeId).id AS user, communities
 ORDER BY communities;
 // end::stream-pre-defined-sample-graph[]
+
+// tag::write-pre-defined-sample-graph[]
+
+CALL algo.louvain('User', 'FRIEND', {
+  write:true,
+  communityProperty: "community",
+  writeProperty: "newCommunity"
+})
+YIELD nodes, communityCount, iterations, loadMillis, computeMillis, writeMillis;
+
+// end::write-pre-defined-sample-graph[]
