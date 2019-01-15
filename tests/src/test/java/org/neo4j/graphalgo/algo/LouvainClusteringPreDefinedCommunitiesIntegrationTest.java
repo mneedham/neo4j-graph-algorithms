@@ -19,20 +19,17 @@
 package org.neo4j.graphalgo.algo;
 
 import com.carrotsearch.hppc.IntIntScatterMap;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.graphalgo.LouvainProc;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Graph:
@@ -45,8 +42,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class LouvainClusteringPreDefinedCommunitiesIntegrationTest {
 
-    private final static String[] NODES = {"a", "b", "c", "d", "e", "f", "g", "h", "z"};
-
     @ClassRule
     public static ImpermanentDatabaseRule DB = new ImpermanentDatabaseRule();
 
@@ -54,10 +49,11 @@ public class LouvainClusteringPreDefinedCommunitiesIntegrationTest {
     public static void setupGraph() throws KernelException {
 
         final String cypher =
+                "MERGE (nRyan:User {id:'Ryan'}) SET nRyan.community = 12\n" +
                 "MERGE (nAlice:User {id:'Alice'}) SET nAlice.community = 0\n" +
-                        "MERGE (nBridget:User {id:'Bridget'}) SET nBridget.community = 2\n" +
-                        "\n" +
-                        "MERGE (nAlice)-[:FRIEND]->(nBridget);";
+                "MERGE (nBridget:User {id:'Bridget'}) SET nBridget.community = 2\n" +
+                "MERGE (nMark:User {id:'Mark'}) SET nMark.community = 10\n" +
+                "MERGE (nAlice)-[:FRIEND]->(nBridget);";
 
         DB.resolveDependency(Procedures.class).registerProcedure(LouvainProc.class);
         DB.execute(cypher);
@@ -74,11 +70,10 @@ public class LouvainClusteringPreDefinedCommunitiesIntegrationTest {
         DB.execute(cypher).accept(row -> {
             final long nodeId = (long) row.get("nodeId");
             final long community = (long) row.get("community");
-            System.out.println(nodeId + ": " + community);
             testMap.addTo((int) community, 1);
             return false;
         });
-//        assertEquals(3, testMap.size());
+        assertEquals(3, testMap.size());
     }
 
 

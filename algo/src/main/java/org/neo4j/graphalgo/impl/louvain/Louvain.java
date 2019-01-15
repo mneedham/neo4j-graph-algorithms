@@ -131,6 +131,7 @@ public class Louvain extends Algorithm<Louvain> {
         });
         // temporary graph
         int nodeCount = comCount.cardinality();
+        communities = LouvainUtils.squashCommunities(communities);
         Graph graph = rebuildGraph(this.root, communities, nodeCount);
         // result arrays
         dendrogram = new int[maxLevel][];

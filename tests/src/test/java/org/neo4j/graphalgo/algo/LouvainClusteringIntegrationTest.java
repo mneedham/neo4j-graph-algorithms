@@ -56,14 +56,14 @@ public class LouvainClusteringIntegrationTest {
 
         final String cypher =
                 "CREATE (a:Node {name:'a', c:1})\n" +
-                        "CREATE (c:Node {name:'c', c:0})\n" + // shuffled
+                        "CREATE (c:Node {name:'c', c:1})\n" + // shuffled
                         "CREATE (b:Node {name:'b', c:1})\n" +
                         "CREATE (d:Node {name:'d', c:1})\n" +
                         "CREATE (e:Node {name:'e', c:1})\n" +
                         "CREATE (g:Node {name:'g', c:1})\n" +
                         "CREATE (f:Node {name:'f', c:1})\n" +
                         "CREATE (h:Node {name:'h', c:1})\n" +
-                        "CREATE (z:Node {name:'z'})\n" + // assign impossible community to outstanding node
+                        "CREATE (z:Node {name:'z', c:1})\n" + // assign impossible community to outstanding node
 
                         "CREATE" +
 
