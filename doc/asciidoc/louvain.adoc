@@ -130,6 +130,7 @@ Mark, Doug, and Charles are all friends with each other, as are Bridget, Alice, 
 Charles is the only one who has friends in both communities, but he has more in community 4 so he fits better in that one.
 // end::stream-sample-graph-explanation[]
 
+[[algorithms-louvain-hierarchical]]
 == Hierarchical Louvain algorithm sample
 
 This sample will explain the hierarchical communities option of the Louvain algorithm:
@@ -177,9 +178,18 @@ On the second level it found two communities. Alice, Bridget and Michael stay in
 
 // end::stream-hierarchical-sample-graph-explanation[]
 
+[[algorithms-louvain-pre-defined]]
 == Pre-defined communities
 
 This sample will explain the pre-defined communities option of the Louvain algorithm.
+Initial or pre-defined communities for nodes are specified using the `communityProperty` parameter.
+
+.The following will create a sample graph:
+[source, cypher]
+----
+include::scripts/louvain.cypher[tag=create-hierarchical-sample-graph]
+----
+
 
 [[algorithms-louvain-syntax]]
 == Syntax
@@ -202,6 +212,7 @@ YIELD nodes, communityCount, iterations, loadMillis, computeMillis, writeMillis
 | weightProperty | string  | null           | yes      | The property name that contains weight. If null, treats the graph as unweighted. Must be numeric.
 | write          | boolean | true           | yes      | Specifies if the result should be written back as a node property
 | writeProperty  | string  | 'community'    | yes      | The property name written back to the ID of the community that particular node belongs to
+| communityProperty  | string  | null    | yes      | The property name that contains an initial or pre-defined community (must be a number)
 | defaultValue   | float   | null           | yes      | The default value of the weight in case it is missing or invalid
 | includeIntermediateCommunities          | boolean | false           | yes      | Specifies whether an array of intermediate communities should be returned
 | intermediateCommunitiesWriteProperty  | string  | 'communities'    | yes      | The property name written back to the ID of the intermediate communities that particular node belongs to
