@@ -186,7 +186,6 @@ include::scripts/similarity-euclidean.cypher[tag=query]
 // end::query[]
 
 
-
 [[algorithms-similarity-euclidean-syntax]]
 == Syntax
 
@@ -265,7 +264,7 @@ YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, 
 | `similarity`   | int  | The euclidean distance between the two nodes.
 |===
 
-[[algorithms-similarity-pearson-euclidean-projection]]
+[[algorithms-similarity-euclidean-projection]]
 == Cypher projection
 
 If the similarity lists are very sparse (i.e. contain a lot of 0s) they can end up taking up a lot of memory.
