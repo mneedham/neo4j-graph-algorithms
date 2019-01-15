@@ -281,7 +281,8 @@ YIELD item1, item2, count1, count2, intersection, similarity
 [[algorithms-similarity-cosine-cypher-projection]]
 == Cypher projection
 
-If the similarity lists are very sparse (i.e. contain a lot of 0s), you can use Cypher statements to project a graph.
+If the similarity lists are very sparse (i.e. contain a lot of 0s) they can end up taking up a lot of memory.
+For those use cases you can use Cypher statements to project the graph instead.
 
 .Set `graph:'cypher'` in the config:
 
