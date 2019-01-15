@@ -97,9 +97,19 @@ ORDER BY communities;
 
 // tag::write-hierarchical-sample-graph[]
 
-CALL algo.louvain('User', 'FRIEND',
-  {write:true, includeIntermediateCommunities: true, intermediateCommunitiesWriteProperty: 'communities'})
+CALL algo.louvain('User', 'FRIEND', {
+  write:true,
+  includeIntermediateCommunities: true,
+  intermediateCommunitiesWriteProperty: 'communities'
+})
 YIELD nodes, communityCount, iterations, loadMillis, computeMillis, writeMillis; 
 
 // end::write-hierarchical-sample-graph[]
 
+// tag::stream-pre-defined-sample-graph[]
+CALL algo.louvain.stream('User', 'FRIEND', {community: true})
+YIELD nodeId, communities
+
+RETURN algo.getNodeById(nodeId).id AS user, communities
+  ORDER BY communities;
+// end::stream-pre-defined-sample-graph[]

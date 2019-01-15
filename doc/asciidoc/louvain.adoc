@@ -132,7 +132,7 @@ Charles is the only one who has friends in both communities, but he has more in 
 
 == Hierarchical Louvain algorithm sample
 
-This sample will explain hierarchical communities option of Louvain algorithm:
+This sample will explain the hierarchical communities option of the Louvain algorithm:
 
 .The following will create a sample graph:
 [source, cypher]
@@ -176,6 +176,10 @@ On the first level it found three communities with Alice, Bridget and Michael fo
 On the second level it found two communities. Alice, Bridget and Michael stay in the same community, but the other two communities merge into a single one. 
 
 // end::stream-hierarchical-sample-graph-explanation[]
+
+== Pre-defined communities
+
+This sample will explain the pre-defined communities option of the Louvain algorithm.
 
 [[algorithms-louvain-syntax]]
 == Syntax
