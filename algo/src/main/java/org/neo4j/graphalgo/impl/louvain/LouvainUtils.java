@@ -1,25 +1,29 @@
 package org.neo4j.graphalgo.impl.louvain;
 
-import com.carrotsearch.hppc.IntIntHashMap;
 import com.carrotsearch.hppc.IntIntMap;
+import com.carrotsearch.hppc.IntIntScatterMap;
 
 public class LouvainUtils {
 
-    public static int[] squashCommunities(int[] communities) {
-        int[] newCommunities = new int[communities.length];
-
-        IntIntMap communityMapping = new IntIntHashMap();
-
-        int communityCounter = 0;
+    /**
+     * normalize nodeToCommunity-Array. Maps community IDs
+     * in a sequential order starting at 0.
+     *
+     * @param communities
+     * @return number of communities
+     */
+    static int normalize(int[] communities) {
+        final IntIntMap map = new IntIntScatterMap(communities.length);
+        int c = 0;
         for (int i = 0; i < communities.length; i++) {
-            int community = communities[i];
-            if (communityMapping.containsKey(community)) {
-                newCommunities[i] = communityMapping.get(community);
+            int mapped, community = communities[i];
+            if ((mapped = map.getOrDefault(community, -1)) != -1) {
+                communities[i] = mapped;
             } else {
-                communityMapping.put(community, communityCounter);
-                newCommunities[i] = communityCounter++;
+                map.put(community, c);
+                communities[i] = c++;
             }
         }
-        return newCommunities;
+        return c;
     }
 }
