@@ -195,7 +195,7 @@ include::scripts/similarity-cosine.cypher[tag=query]
 .The following will run the algorithm and write back results:
 [source, cypher]
 ----
-CALL algo.similarity.cosine(userData:Array<Map>>, {
+CALL algo.similarity.cosine(userData:List<Map>> or String, {
     topK: 1, similarityCutoff: 0.1, write:true, writeProperty: "cosineSimilarity"
 })
 YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, max, mean, stdDev, p25, p50, p75, p90, p95, p99, p999, p100
@@ -213,6 +213,7 @@ YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, 
 | `degreeCutoff`           | int     | 0              | yes      | The threshold for the number of items in the `targets` list. If the list contains less than this amount, that node will be excluded from the calculation.
 | `skipValue`              | double  | null           | yes      | Value to skip when executing similarity computation
 | `concurrency`            | int     | available CPUs | yes      | The number of concurrent threads.
+| `graph`                  | string  | dense          | yes      | The graph name ('dense' or 'cypher')
 | `write`                  | boolean | false          | yes      | Indicates whether results should be stored.
 | `writeRelationshipType`  | string  | SIMILAR        | yes      | The relationship type to use when storing results.
 | `writeProperty`          | string  | score          | yes      | The property to use when storing results.
@@ -244,7 +245,7 @@ YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, 
 .The following will run the algorithm and stream results:
 [source,cypher]
 ----
-CALL algo.similarity.cosine.stream(userData:List<Map>>, {
+CALL algo.similarity.cosine.stream(userData:List<Map>> or String, {
     degreeCutoff: 10, similarityCutoff: 0.1, concurrency:4
 })
 YIELD item1, item2, count1, count2, intersection, similarity
@@ -262,6 +263,7 @@ YIELD item1, item2, count1, count2, intersection, similarity
 | `skipValue`              | double  | null           | yes      | Value to skip when executing similarity computation
 | `degreeCutoff`     | int    | 0              | yes      | The threshold for the number of items in the `targets` list. If the list contains less than this amount, that node will be excluded from the calculation.
 | `concurrency`      | int    | available CPUs | yes      | The number of concurrent threads.
+| `graph`                  | string  | dense          | yes      | The graph name ('dense' or 'cypher')
 |===
 
 .Results
