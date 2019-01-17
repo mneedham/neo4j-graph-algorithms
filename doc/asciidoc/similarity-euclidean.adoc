@@ -182,7 +182,7 @@ include::scripts/similarity-euclidean.cypher[tag=query]
 |===
 // end::query[]
 
-[[algorithms-similarity-cosine-cypher-projection]]
+[[algorithms-similarity-euclidean-cypher-projection]]
 == Cypher projection
 
 If the similarity lists are very large they can take up a lot of memory.
@@ -195,7 +195,7 @@ For cases where those lists contain lots of values that should be skipped, you c
 include::scripts/similarity-euclidean.cypher[tag=cypher-projection]
 ----
 
-[[algorithms-similarity-cosine-skipping-values]]
+[[algorithms-similarity-euclidean-skipping-values]]
 == Skipping values
 
 By default the `skipValue` parameter is `algo.Nan()`.
@@ -235,7 +235,7 @@ YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, 
 | `topK`                   | int     | 0              | yes      | The number of similar values to return per node. If `0`, it will return as many as it finds.
 | `similarityCutoff`       | int     | -1             | yes      | The threshold for Euclidean distance. Values above this will not be returned.
 | `degreeCutoff`           | int     | 0              | yes      | The threshold for the number of items in the `targets` list. If the list contains less than this amount, that node will be excluded from the calculation.
-| `skipValue`              | double  | null           | yes      | Value to skip when executing similarity computation.
+| `skipValue`              | double  | algo.NaN()     | yes      | Value to skip when executing similarity computation. A value of `null` means that skipping is disabled.
 | `concurrency`            | int     | available CPUs | yes      | The number of concurrent threads.
 | `graph`                  | string  | dense          | yes      | The graph name ('dense' or 'cypher').
 | `write`                  | boolean | false          | yes      | Indicates whether results should be stored.
@@ -276,6 +276,7 @@ YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, 
 | `topK`             | int    | 0              | yes      | The number of similar values to return per node. If `0`, it will return as many as it finds.
 | `similarityCutoff` | int    | -1             | yes      | The threshold for euclidean distance. Values above this will not be returned.
 | `degreeCutoff`     | int    | 0              | yes      | The threshold for the number of items in the `targets` list. If the list contains less than this amount, that node will be excluded from the calculation.
+| `skipValue`              | double  | algo.NaN()     | yes      | Value to skip when executing similarity computation. A value of `null` means that skipping is disabled.
 | `concurrency`      | int    | available CPUs | yes      | The number of concurrent threads.
 | `graph`                  | string  | dense          | yes      | The graph name ('dense' or 'cypher').
 |===
