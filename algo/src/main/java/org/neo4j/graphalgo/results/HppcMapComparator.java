@@ -50,7 +50,7 @@ public final class HppcMapComparator implements IndirectComparator {
 
         private boolean validIndex(int index) {
             assert index >= 0 : "The index " + index + " must point at an existing key.";
-            assert index < max || (index == max && hasEmptyKey);
+            assert index <= max || (index == max && hasEmptyKey);
             return true;
         }
     }

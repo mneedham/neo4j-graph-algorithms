@@ -8,6 +8,8 @@ import org.HdrHistogram.Histogram;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author mknblch
@@ -20,9 +22,9 @@ public class CommunityResult {
 
      */
 
-    public final long loadDuration;
-    public final long evalDuration;
-    public final long writeDuration;
+    public final long loadMillis;
+    public final long computeMillis;
+    public final long writeMillis;
     public final long nodes;
     public final long communityCount;
     public final long iterations;
@@ -32,11 +34,11 @@ public class CommunityResult {
     public final long p90;
     public final long p75;
     public final long p50;
-    public final int[] biggestCommunities;
+    public final List<Long> top;
 
-    CommunityResult(long loadDuration,
-                    long evalDuration,
-                    long writeDuration,
+    CommunityResult(long loadMillis,
+                    long computeMillis,
+                    long writeMillis,
                     long nodes,
                     long communityCount,
                     long iterations,
@@ -47,9 +49,9 @@ public class CommunityResult {
                     long p75,
                     long p50,
                     int[] biggestCommunities) {
-        this.loadDuration = loadDuration;
-        this.evalDuration = evalDuration;
-        this.writeDuration = writeDuration;
+        this.loadMillis = loadMillis;
+        this.computeMillis = computeMillis;
+        this.writeMillis = writeMillis;
         this.nodes = nodes;
         this.communityCount = communityCount;
         this.iterations = iterations;
@@ -59,7 +61,7 @@ public class CommunityResult {
         this.p90 = p90;
         this.p75 = p75;
         this.p50 = p50;
-        this.biggestCommunities = biggestCommunities;
+        this.top = Arrays.stream(biggestCommunities).asLongStream().boxed().collect(Collectors.toList());
     }
 
     public static Builder builder() {
@@ -69,7 +71,7 @@ public class CommunityResult {
     public static class Builder extends AbstractResultBuilder<CommunityResult> {
 
         private long nodes = 1;
-        private long iterations = 1;
+        private long iterations = -1;
         private int[] communities = new int[]{};
         private boolean convergence = false;
 
