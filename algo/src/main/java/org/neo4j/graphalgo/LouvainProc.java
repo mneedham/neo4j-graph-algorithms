@@ -30,6 +30,7 @@ import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.louvain.*;
+import org.neo4j.graphalgo.results.CommunityResult;
 import org.neo4j.graphalgo.results.LouvainResult;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.impl.store.PropertyType;
@@ -66,7 +67,7 @@ public class LouvainProc {
     @Description("CALL algo.louvain(label:String, relationship:String, " +
             "{weightProperty:'weight', defaultValue:1.0, write: true, writeProperty:'community', concurrency:4, communityProperty:'propertyOfPredefinedCommunity'}) " +
             "YIELD nodes, communityCount, iterations, loadMillis, computeMillis, writeMillis")
-    public Stream<LouvainResult> louvain(
+    public Stream<CommunityResult> louvain(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
@@ -75,14 +76,14 @@ public class LouvainProc {
                 .overrideNodeLabelOrQuery(label)
                 .overrideRelationshipTypeOrQuery(relationship);
 
-        LouvainResult.Builder builder = LouvainResult.builder();
+        final CommunityResult.Builder builder = CommunityResult.builder();
 
         final Graph graph;
         try (ProgressTimer timer = builder.timeLoad()) {
             graph = graph(label, relationship, configuration);
         }
 
-        builder.withNodeCount(graph.nodeCount());
+        builder.withNodes(graph.nodeCount());
 
         if(graph.nodeCount() == 0) {
             graph.release();
@@ -102,10 +103,12 @@ public class LouvainProc {
             } else {
                 louvain.compute(configuration.getIterations(10), configuration.get("innerIterations", 10));
             }
-            builder.withIterations(louvain.getLevel())
-                    .withCommunityCount(louvain.getCommunityCount())
-                    .withModularities(louvain.getModularities())
-                    .withFinalModularity(louvain.getFinalModularity());
+
+            builder.withCommunities(louvain.getCommunityIds());
+            builder.withIterations(louvain.getLevel()); // in real we have threads * innerIterations * maxLevel iterations
+//            builder.withModularities(louvain.getModularities())
+            builder.withConvergence(true); // only subsequent modularity optimizations can converge
+
         }
 
         if (configuration.isWriteFlag()) {
