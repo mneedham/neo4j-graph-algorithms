@@ -18,7 +18,7 @@ public class CommunityResult {
 
     /*
 
-    YIELD
+    YIELD loadMillis, computeMillis, writeMillis, nodes, communityCount, iterations, convergence, p99, p95, p90, p75, p50, top3
 
      */
 
@@ -34,7 +34,7 @@ public class CommunityResult {
     public final long p90;
     public final long p75;
     public final long p50;
-    public final List<Long> top;
+    public final List<Long> top3;
 
     CommunityResult(long loadMillis,
                     long computeMillis,
@@ -61,7 +61,7 @@ public class CommunityResult {
         this.p90 = p90;
         this.p75 = p75;
         this.p50 = p50;
-        this.top = Arrays.stream(biggestCommunities).asLongStream().boxed().collect(Collectors.toList());
+        this.top3 = Arrays.stream(biggestCommunities).asLongStream().boxed().collect(Collectors.toList());
     }
 
     public static Builder builder() {
@@ -74,6 +74,7 @@ public class CommunityResult {
         private long iterations = -1;
         private int[] communities = new int[]{};
         private boolean convergence = false;
+        private long communityCount = -1;
 
         public Builder withIterations(long iterations) {
             this.iterations = iterations;
@@ -92,6 +93,17 @@ public class CommunityResult {
 
         public Builder withCommunities(int[] communities) {
             this.communities = communities;
+            return this;
+        }
+
+        // overwrite community count
+        public Builder withCommunityCount(long communityCount) {
+            this.communityCount = communityCount;
+            return this;
+        }
+
+        public Builder withoutCommunities() {
+            this.communities = new int[0];
             return this;
         }
 
@@ -138,8 +150,9 @@ public class CommunityResult {
                     evalDuration,
                     writeDuration,
                     nodes,
-                    map.size(),
-                    iterations, convergence,
+                    communityCount == -1 ? map.size() : communityCount,
+                    iterations,
+                    convergence,
                     histogram.getValueAtPercentile(.99),
                     histogram.getValueAtPercentile(.95),
                     histogram.getValueAtPercentile(.90),

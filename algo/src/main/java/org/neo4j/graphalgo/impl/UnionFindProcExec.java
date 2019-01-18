@@ -19,6 +19,7 @@
 package org.neo4j.graphalgo.impl;
 
 import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.api.HugeGraph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.utils.Pools;
@@ -29,6 +30,7 @@ import org.neo4j.graphalgo.core.utils.dss.DisjointSetStruct;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.core.utils.paged.PagedDisjointSetStruct;
 import org.neo4j.graphalgo.core.write.Exporter;
+import org.neo4j.graphalgo.results.CommunityResult;
 import org.neo4j.graphalgo.results.UnionFindResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
@@ -53,7 +55,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
     private final UnionFindAlgo sequential;
     private final UnionFindAlgo parallel;
 
-    public static Stream<UnionFindResult> run(
+    public static Stream<CommunityResult> run(
             Map<String, Object> config,
             String label,
             String relationship,
@@ -64,7 +66,8 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
                 .overrideRelationshipTypeOrQuery(relationship);
 
         AllocationTracker tracker = AllocationTracker.create();
-        UnionFindResult.Builder builder = UnionFindResult.builder();
+
+        final CommunityResult.Builder builder = CommunityResult.builder();
 
         UnionFindProcExec uf = unionFind.get();
 
@@ -73,8 +76,8 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
         if (graph.nodeCount() == 0) {
             graph.release();
             return Stream.of(builder
-                    .withNodeCount(graph.nodeCount())
-                    .withSetCount(0)
+                    .withNodes(graph.nodeCount())
+                    .withoutCommunities()
                     .build());
         }
 
@@ -89,10 +92,16 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
             uf.write(builder::timeWrite, graph, dssResult, configuration);
         }
 
-        return Stream.of(builder
-                .withNodeCount(graph.nodeCount())
-                .withSetCount(dssResult.getSetCount())
-                .build());
+        final CommunityResult.Builder result = builder
+                .withNodes(graph.nodeCount());
+
+        if (graph instanceof HugeGraph) {
+            result.withCommunityCount(dssResult.getSetCount());
+        } else {
+            result.withCommunities(dssResult.getCommunities());
+        }
+
+        return Stream.of(result.build());
     }
 
     public static Stream<DisjointSetStruct.Result> stream(

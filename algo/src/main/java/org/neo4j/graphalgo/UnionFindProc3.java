@@ -21,6 +21,7 @@ package org.neo4j.graphalgo;
 import org.neo4j.graphalgo.core.utils.dss.DisjointSetStruct;
 import org.neo4j.graphalgo.impl.UnionFindAlgo;
 import org.neo4j.graphalgo.impl.UnionFindProcExec;
+import org.neo4j.graphalgo.results.CommunityResult;
 import org.neo4j.graphalgo.results.UnionFindResult;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -52,7 +53,7 @@ public class UnionFindProc3 {
     @Description("CALL algo.unionFind(label:String, relationship:String, " +
             "{property:'weight', threshold:0.42, defaultValue:1.0, write: true, partitionProperty:'partition', concurrency:4}) " +
             "YIELD nodes, setCount, loadMillis, computeMillis, writeMillis")
-    public Stream<UnionFindResult> unionFind(
+    public Stream<CommunityResult> unionFind(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
