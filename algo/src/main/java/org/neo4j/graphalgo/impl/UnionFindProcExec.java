@@ -67,7 +67,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
 
         AllocationTracker tracker = AllocationTracker.create();
 
-        final CommunityResult.Builder builder = CommunityResult.builder();
+        final UnionFindResult.Builder builder = UnionFindResult.builder();
 
         UnionFindProcExec uf = unionFind.get();
 
@@ -92,16 +92,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
             uf.write(builder::timeWrite, graph, dssResult, configuration);
         }
 
-        final CommunityResult.Builder result = builder
-                .withNodes(graph.nodeCount());
-
-        if (graph instanceof HugeGraph) {
-            result.withCommunityCount(dssResult.getSetCount());
-        } else {
-            result.withCommunities(dssResult.getCommunities());
-        }
-
-        return Stream.of(result.build());
+        return Stream.of(builder.withNodes(graph.nodeCount()).withDSSResult(dssResult));
     }
 
     public static Stream<DisjointSetStruct.Result> stream(

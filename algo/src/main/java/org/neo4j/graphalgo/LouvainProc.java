@@ -21,9 +21,6 @@ package org.neo4j.graphalgo;
 import org.neo4j.graphalgo.api.*;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
-import org.neo4j.graphalgo.core.ProcedureConstants;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressLogger;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
@@ -33,7 +30,6 @@ import org.neo4j.graphalgo.impl.louvain.*;
 import org.neo4j.graphalgo.results.CommunityResult;
 import org.neo4j.graphalgo.results.LouvainResult;
 import org.neo4j.kernel.api.KernelTransaction;
-import org.neo4j.kernel.impl.store.PropertyType;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
@@ -76,7 +72,7 @@ public class LouvainProc {
                 .overrideNodeLabelOrQuery(label)
                 .overrideRelationshipTypeOrQuery(relationship);
 
-        final CommunityResult.Builder builder = CommunityResult.builder();
+        final LouvainResult.Builder builder = LouvainResult.builder();
 
         final Graph graph;
         try (ProgressTimer timer = builder.timeLoad()) {

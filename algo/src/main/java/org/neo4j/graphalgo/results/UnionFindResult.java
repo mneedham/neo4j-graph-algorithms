@@ -1,63 +1,88 @@
 /**
  * Copyright (c) 2017 "Neo4j, Inc." <http://neo4j.com>
- *
+ * <p>
  * This file is part of Neo4j Graph Algorithms <http://github.com/neo4j-contrib/neo4j-graph-algorithms>.
- *
+ * <p>
  * Neo4j Graph Algorithms is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.neo4j.graphalgo.results;
 
+import org.neo4j.graphalgo.core.utils.dss.DisjointSetStruct;
+import org.neo4j.graphalgo.core.utils.paged.PagedDisjointSetStruct;
+import org.neo4j.graphalgo.impl.DSSResult;
+
 /**
  * @author mknblch
  */
-public class UnionFindResult {
+public class UnionFindResult extends CommunityResult {
 
-    public final Long loadMillis;
-    public final Long computeMillis;
-    public final Long writeMillis;
-    public final Long nodes;
-    public final Long setCount;
-
-    private UnionFindResult(Long loadMillis, Long computeMillis, Long writeMillis, Long nodes, Long setCount) {
-        this.loadMillis = loadMillis;
-        this.computeMillis = computeMillis;
-        this.writeMillis = writeMillis;
-        this.nodes = nodes;
-        this.setCount = setCount;
+    UnionFindResult(long loadMillis, long computeMillis, long writeMillis, long nodes, long communityCount, long iterations, boolean convergence, long p99, long p95, long p90, long p75, long p50, int[] biggestCommunities) {
+        super(loadMillis, computeMillis, writeMillis, nodes, communityCount, iterations, convergence, p99, p95, p90, p75, p50, biggestCommunities);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static class Builder extends AbstractResultBuilder<UnionFindResult> {
+    public static class Builder extends CommunityResult.AbstractCommunityBuilder<CommunityResult> {
 
-        private long nodes = 0;
-        private long setCount = 0;
 
-        public Builder withSetCount(long setCount) {
-            this.setCount = setCount;
+        public Builder withDSSResult(DSSResult result) {
+            if (result.isHuge) {
+                withStruct(result.hugeStruct);
+            } else {
+                withStruct(result.struct);
+            }
             return this;
         }
 
-        public Builder withNodeCount(long nodes) {
-            this.nodes = nodes;
+        public Builder withStruct(DisjointSetStruct setStruct) {
+            for (int i = 0; i < setStruct.capacity(); i++) {
+                final int c = setStruct.find(i);
+                histogram.recordValue(c);
+                communityMap.addTo(i, 1);
+            }
             return this;
         }
 
-        public UnionFindResult build() {
-            return new UnionFindResult(loadDuration, evalDuration, writeDuration, nodes, setCount);
+        public Builder withStruct(PagedDisjointSetStruct setStruct) {
+            for (long i = 0; i < setStruct.capacity(); i++) {
+                final long c = setStruct.find(i);
+                histogram.recordValue(c);
+                communityMap.addTo(i, 1);
+            }
+            return this;
+        }
+
+        @Override
+        public CommunityResult build() {
+
+            return new UnionFindResult(
+                    loadDuration,
+                    evalDuration,
+                    writeDuration,
+                    nodes,
+                    communityMap.size(),
+                    iterations, convergence,
+                    histogram.getValueAtPercentile(.99),
+                    histogram.getValueAtPercentile(.95),
+                    histogram.getValueAtPercentile(.90),
+                    histogram.getValueAtPercentile(.75),
+                    histogram.getValueAtPercentile(.50),
+                    getTopN(3));
         }
     }
+
+
 }

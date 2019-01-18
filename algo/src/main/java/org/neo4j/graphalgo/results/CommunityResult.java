@@ -1,20 +1,21 @@
 package org.neo4j.graphalgo.results;
 
 import com.carrotsearch.hppc.IntIntHashMap;
-import com.carrotsearch.hppc.cursors.IntIntCursor;
+import com.carrotsearch.hppc.LongLongHashMap;
 import com.carrotsearch.hppc.sorting.IndirectComparator;
 import com.carrotsearch.hppc.sorting.IndirectSort;
 import org.HdrHistogram.Histogram;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 
 /**
  * @author mknblch
  */
-public class CommunityResult {
+public abstract class CommunityResult {
 
     /*
 
@@ -64,102 +65,79 @@ public class CommunityResult {
         this.top3 = Arrays.stream(biggestCommunities).asLongStream().boxed().collect(Collectors.toList());
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
+    public static abstract class AbstractCommunityBuilder<T extends CommunityResult> extends AbstractResultBuilder<T> {
 
-    public static class Builder extends AbstractResultBuilder<CommunityResult> {
+        protected long nodes = 1;
+        protected long iterations = -1;
+        protected boolean convergence = false;
+        protected long communityCount = -1;
+        protected final Histogram histogram = new Histogram(2);
+        protected final IntIntHashMap communityMap = new IntIntHashMap();
 
-        private long nodes = 1;
-        private long iterations = -1;
-        private int[] communities = new int[]{};
-        private boolean convergence = false;
-        private long communityCount = -1;
-
-        public Builder withIterations(long iterations) {
+        public AbstractCommunityBuilder withIterations(long iterations) {
             this.iterations = iterations;
             return this;
         }
 
-        public Builder withConvergence(boolean convergence) {
+        public AbstractCommunityBuilder withConvergence(boolean convergence) {
             this.convergence = convergence;
             return this;
         }
 
-        public Builder withNodes(long nodes) {
+        public AbstractCommunityBuilder withNodes(long nodes) {
             this.nodes = nodes;
             return this;
         }
 
-        public Builder withCommunities(int[] communities) {
-            this.communities = communities;
+        public AbstractCommunityBuilder withCommunities(int[] communities) {
+            for (int i = 0; i < communities.length; i++) {
+                communityMap.addTo(communities[i], 1);
+                histogram.recordValue(communities[i]);
+            }
             return this;
         }
 
         // overwrite community count
-        public Builder withCommunityCount(long communityCount) {
+        public AbstractCommunityBuilder withCommunityCount(long communityCount) {
             this.communityCount = communityCount;
             return this;
         }
 
-        public Builder withoutCommunities() {
-            this.communities = new int[0];
+        public AbstractCommunityBuilder withoutCommunities() {
             return this;
         }
 
-        private static int[] mapSortTopN(IntIntHashMap map, int topN) {
-            return mapSortTopN_(topN, map.keys, new HppcMapComparator(map));
-        }
+        public static List<Long> top3(long elements, ToLongFunction<Long> fun) {
 
-        public static int[] mapSortTopN_dense(IntIntHashMap map, int topN) {
-            int size = map.size();
-            int[] keys = new int[size];
-            int[] values = new int[size];
-            Iterator<IntIntCursor> cursor = map.iterator();
-            for (int index = 0; cursor.hasNext(); ++index) {
-                IntIntCursor entry = cursor.next();
-                keys[index] = entry.key;
-                values[index] = entry.value;
+            long t1 = -1L, t2 = -1L, t3 = -1L;
+
+            for (long i = 0; i < elements; i++) {
+                final long r = fun.applyAsLong(i);
+                if (r > t1) {
+                    t3 = t2;
+                    t2 = t1;
+                    t1 = r;
+                    continue;
+                }
+                if (r > t2) {
+                    t3 = t2;
+                    t2 = r;
+                    continue;
+                }
+                if (r > t3) {
+                    t3 = r;
+                }
             }
 
-            return mapSortTopN_(topN, keys, new IndirectComparator.DescendingIntComparator(values));
+            final ArrayList<Long> longs = new ArrayList<>();
+            longs.add(t1);
+            longs.add(t2);
+            longs.add(t3);
+            return longs;
         }
 
-        private static int[] mapSortTopN_(int topN, int[] keys, IndirectComparator comp) {
-            int[] sortedKeys = IndirectSort.mergesort(0, keys.length, comp);
-            topN = Math.min(topN, keys.length);
-            for (int i = 0; i < topN; i++) {
-                sortedKeys[i] = keys[sortedKeys[i]];
-            }
-            return Arrays.copyOf(sortedKeys, topN);
-        }
+        public abstract T build();
 
-        @Override
-        public CommunityResult build() {
-            // evaluate count and biggest communities
-            final IntIntHashMap map = new IntIntHashMap();
-            final Histogram histogram = new Histogram(0);
-
-            for (int i = 0; i < communities.length; i++) {
-                map.addTo(communities[i], 1);
-                histogram.recordValue(communities[i]);
-            }
-
-            return new CommunityResult(
-                    loadDuration,
-                    evalDuration,
-                    writeDuration,
-                    nodes,
-                    communityCount == -1 ? map.size() : communityCount,
-                    iterations,
-                    convergence,
-                    histogram.getValueAtPercentile(.99),
-                    histogram.getValueAtPercentile(.95),
-                    histogram.getValueAtPercentile(.90),
-                    histogram.getValueAtPercentile(.75),
-                    histogram.getValueAtPercentile(.50),
-                    mapSortTopN(map, 3));
-        }
     }
 
 }
