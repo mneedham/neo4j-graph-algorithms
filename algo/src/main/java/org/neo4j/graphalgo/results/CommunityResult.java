@@ -9,6 +9,8 @@ import org.HdrHistogram.Histogram;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntToLongFunction;
+import java.util.function.LongFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 
@@ -35,7 +37,7 @@ public abstract class CommunityResult {
     public final long p90;
     public final long p75;
     public final long p50;
-    public final List<Long> top3;
+    public final long[] top3;
 
     CommunityResult(long loadMillis,
                     long computeMillis,
@@ -49,7 +51,7 @@ public abstract class CommunityResult {
                     long p90,
                     long p75,
                     long p50,
-                    int[] biggestCommunities) {
+                    long[] biggestCommunities) {
         this.loadMillis = loadMillis;
         this.computeMillis = computeMillis;
         this.writeMillis = writeMillis;
@@ -62,7 +64,7 @@ public abstract class CommunityResult {
         this.p90 = p90;
         this.p75 = p75;
         this.p50 = p50;
-        this.top3 = Arrays.stream(biggestCommunities).asLongStream().boxed().collect(Collectors.toList());
+        this.top3 = biggestCommunities;
     }
 
     public static abstract class AbstractCommunityBuilder<T extends CommunityResult> extends AbstractResultBuilder<T> {
@@ -72,72 +74,52 @@ public abstract class CommunityResult {
         protected boolean convergence = false;
         protected long communityCount = -1;
         protected final Histogram histogram = new Histogram(2);
-        protected final IntIntHashMap communityMap = new IntIntHashMap();
+        protected final LongLongHashMap communityMap = new LongLongHashMap();
+        protected final long[] top3 = new long[]{-1L, -1L, -1L};
 
-        public AbstractCommunityBuilder withIterations(long iterations) {
+
+        public AbstractCommunityBuilder<T> withIterations(long iterations) {
             this.iterations = iterations;
             return this;
         }
 
-        public AbstractCommunityBuilder withConvergence(boolean convergence) {
+        public AbstractCommunityBuilder<T> withConvergence(boolean convergence) {
             this.convergence = convergence;
             return this;
         }
 
-        public AbstractCommunityBuilder withNodes(long nodes) {
+        public AbstractCommunityBuilder<T> withCommunities(long nodes, LongFunction<Long> fun) {
+
+            top3[0] = -1L;
+            top3[1] = -1L;
+            top3[2] = -1L;
+
             this.nodes = nodes;
-            return this;
-        }
 
-        public AbstractCommunityBuilder withCommunities(int[] communities) {
-            for (int i = 0; i < communities.length; i++) {
-                communityMap.addTo(communities[i], 1);
-                histogram.recordValue(communities[i]);
-            }
-            return this;
-        }
-
-        // overwrite community count
-        public AbstractCommunityBuilder withCommunityCount(long communityCount) {
-            this.communityCount = communityCount;
-            return this;
-        }
-
-        public AbstractCommunityBuilder withoutCommunities() {
-            return this;
-        }
-
-        public static List<Long> top3(long elements, ToLongFunction<Long> fun) {
-
-            long t1 = -1L, t2 = -1L, t3 = -1L;
-
-            for (long i = 0; i < elements; i++) {
-                final long r = fun.applyAsLong(i);
-                if (r > t1) {
-                    t3 = t2;
-                    t2 = t1;
-                    t1 = r;
-                    continue;
-                }
-                if (r > t2) {
-                    t3 = t2;
-                    t2 = r;
-                    continue;
-                }
-                if (r > t3) {
-                    t3 = r;
+            for (int i = 0; i < nodes; i++) {
+                // map to community id
+                final long r = fun.apply(i);
+                // aggregate
+                communityMap.addTo(r, 1);
+                // create histogram
+                histogram.recordValue(r);
+                // eval top 3 communities
+                if (r > top3[0]) {
+                    top3[2] = top3[1];
+                    top3[1] = top3[0];
+                    top3[0] = r;
+                } else if (r > top3[1]) {
+                    top3[2] = top3[1];
+                    top3[1] = r;
+                } else if (r > top3[2]) {
+                    top3[2] = r;
                 }
             }
 
-            final ArrayList<Long> longs = new ArrayList<>();
-            longs.add(t1);
-            longs.add(t2);
-            longs.add(t3);
-            return longs;
+            return this;
         }
 
         public abstract T build();
 
     }
-
 }

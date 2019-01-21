@@ -27,7 +27,7 @@ import org.neo4j.graphalgo.impl.DSSResult;
  */
 public class UnionFindResult extends CommunityResult {
 
-    UnionFindResult(long loadMillis, long computeMillis, long writeMillis, long nodes, long communityCount, long iterations, boolean convergence, long p99, long p95, long p90, long p75, long p50, int[] biggestCommunities) {
+    UnionFindResult(long loadMillis, long computeMillis, long writeMillis, long nodes, long communityCount, long iterations, boolean convergence, long p99, long p95, long p90, long p75, long p50, long[] biggestCommunities) {
         super(loadMillis, computeMillis, writeMillis, nodes, communityCount, iterations, convergence, p99, p95, p90, p75, p50, biggestCommunities);
     }
 
@@ -48,20 +48,12 @@ public class UnionFindResult extends CommunityResult {
         }
 
         public Builder withStruct(DisjointSetStruct setStruct) {
-            for (int i = 0; i < setStruct.capacity(); i++) {
-                final int c = setStruct.find(i);
-                histogram.recordValue(c);
-                communityMap.addTo(i, 1);
-            }
+            withCommunities(setStruct.capacity(), i -> (long) setStruct.find((int) i));
             return this;
         }
 
         public Builder withStruct(PagedDisjointSetStruct setStruct) {
-            for (long i = 0; i < setStruct.capacity(); i++) {
-                final long c = setStruct.find(i);
-                histogram.recordValue(c);
-                communityMap.addTo(i, 1);
-            }
+            withCommunities(setStruct.capacity(), setStruct::find);
             return this;
         }
 
@@ -80,7 +72,7 @@ public class UnionFindResult extends CommunityResult {
                     histogram.getValueAtPercentile(.90),
                     histogram.getValueAtPercentile(.75),
                     histogram.getValueAtPercentile(.50),
-                    getTopN(3));
+                    top3);
         }
     }
 

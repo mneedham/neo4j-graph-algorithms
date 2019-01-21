@@ -52,7 +52,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
     private final GraphDatabaseAPI api;
     private final Log log;
     private final KernelTransaction transaction;
-    private final UnionFindAlgo sequential;
+    private final  UnionFindAlgo sequential;
     private final UnionFindAlgo parallel;
 
     public static Stream<CommunityResult> run(
@@ -75,10 +75,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
 
         if (graph.nodeCount() == 0) {
             graph.release();
-            return Stream.of(builder
-                    .withNodes(graph.nodeCount())
-                    .withoutCommunities()
-                    .build());
+            return Stream.of(builder.withCommunities(Math.toIntExact(graph.nodeCount()), i -> -1).build());
         }
 
         DSSResult dssResult = uf.evaluate(
@@ -92,7 +89,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
             uf.write(builder::timeWrite, graph, dssResult, configuration);
         }
 
-        return Stream.of(builder.withNodes(graph.nodeCount()).withDSSResult(dssResult));
+        return Stream.of(builder.withDSSResult(dssResult));
     }
 
     public static Stream<DisjointSetStruct.Result> stream(

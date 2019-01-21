@@ -79,8 +79,6 @@ public class LouvainProc {
             graph = graph(label, relationship, configuration);
         }
 
-        builder.withNodes(graph.nodeCount());
-
         if(graph.nodeCount() == 0) {
             graph.release();
             return Stream.of(builder.build());
@@ -100,11 +98,10 @@ public class LouvainProc {
                 louvain.compute(configuration.getIterations(10), configuration.get("innerIterations", 10));
             }
 
-            builder.withCommunities(louvain.getCommunityIds());
-            builder.withIterations(louvain.getLevel()); // in real we have threads * innerIterations * maxLevel iterations
-//            builder.withModularities(louvain.getModularities())
-            builder.withConvergence(true); // only subsequent modularity optimizations can converge
-
+            final int[] communityIds = louvain.getCommunityIds();
+            builder.withCommunities(Math.toIntExact(graph.nodeCount()), n -> communityIds[n]);
+            builder.withIterations(louvain.getLevel()); // we have threads * innerIterations * maxLevel iterations
+            builder.withConvergence(true); // only modularity optimization can converge
         }
 
         if (configuration.isWriteFlag()) {
