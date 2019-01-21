@@ -19,7 +19,6 @@
 package org.neo4j.graphalgo.impl;
 
 import org.neo4j.graphalgo.api.Graph;
-import org.neo4j.graphalgo.api.HugeGraph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.utils.Pools;
@@ -31,7 +30,6 @@ import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.core.utils.paged.PagedDisjointSetStruct;
 import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.results.CommunityResult;
-import org.neo4j.graphalgo.results.UnionFindResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -67,7 +65,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
 
         AllocationTracker tracker = AllocationTracker.create();
 
-        final UnionFindResult.Builder builder = UnionFindResult.builder();
+        final UnionFindResultBuilder builder = new UnionFindResultBuilder();
 
         UnionFindProcExec uf = unionFind.get();
 
@@ -75,7 +73,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
 
         if (graph.nodeCount() == 0) {
             graph.release();
-            return Stream.of(builder.withCommunities(graph.nodeCount(), i -> -1L).build());
+            return Stream.of(builder.buildEmpty());
         }
 
         DSSResult dssResult = uf.evaluate(
@@ -237,6 +235,18 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
                         DEFAULT_CLUSTER_PROPERTY),
                 struct,
                 PagedDisjointSetStruct.Translator.INSTANCE);
+    }
+
+
+    public static class UnionFindResultBuilder extends CommunityResult.CommunityResultBuilder {
+
+        public CommunityResult build(DSSResult result) {
+            if (result.isHuge) {
+                return build(result.hugeStruct.capacity(), result.hugeStruct::find);
+            } else {
+                return build(result.struct.capacity(), l -> (long) result.struct.find((int) l));
+            }
+        }
     }
 
 }

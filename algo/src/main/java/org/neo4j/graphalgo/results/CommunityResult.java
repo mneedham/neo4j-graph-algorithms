@@ -1,20 +1,26 @@
 package org.neo4j.graphalgo.results;
 
+import com.carrotsearch.hppc.IntStack;
 import com.carrotsearch.hppc.LongLongHashMap;
 import org.HdrHistogram.Histogram;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.LongFunction;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 /**
+ * unified community algo result
+ *
+ * YIELD loadMillis, computeMillis, writeMillis, nodes, communityCount, iterations, convergence, p99, p95, p90, p75, p50, p25, p10, p05, p01, top3
+ *
  * @author mknblch
  */
 @SuppressWarnings("WeakerAccess")
 public class CommunityResult {
-
-    /*
-        YIELD loadMillis, computeMillis, writeMillis, nodes, communityCount, iterations, convergence, p99, p95, p90, p75, p50, p25, p10, p05, p01, top3
-     */
 
     public final long loadMillis;
     public final long computeMillis;
@@ -22,8 +28,6 @@ public class CommunityResult {
     public final long writeMillis;
     public final long nodes;
     public final long communityCount;
-    public final long iterations;
-    public final boolean convergence;
     public final long p99;
     public final long p95;
     public final long p90;
@@ -33,15 +37,13 @@ public class CommunityResult {
     public final long p10;
     public final long p05;
     public final long p01;
-    public final long[] top3;
+    public final List<Long> top3;
 
     public CommunityResult(long loadMillis,
                            long computeMillis,
                            long writeMillis,
                            long postProcessingMillis, long nodes,
                            long communityCount,
-                           long iterations,
-                           boolean convergence,
                            long p99,
                            long p95,
                            long p90,
@@ -51,15 +53,13 @@ public class CommunityResult {
                            long p10,
                            long p05,
                            long p01,
-                           long[] biggestCommunities) {
+                           Long[] biggestCommunities) {
         this.loadMillis = loadMillis;
         this.computeMillis = computeMillis;
         this.writeMillis = writeMillis;
         this.postProcessingMillis = postProcessingMillis;
         this.nodes = nodes;
         this.communityCount = communityCount;
-        this.iterations = iterations;
-        this.convergence = convergence;
         this.p99 = p99;
         this.p95 = p95;
         this.p90 = p90;
@@ -69,32 +69,30 @@ public class CommunityResult {
         this.p10 = p10;
         this.p05 = p05;
         this.p01 = p01;
-        this.top3 = biggestCommunities;
+        this.top3 = Arrays.asList(biggestCommunities);
+
     }
 
     /**
      * Helper class for creating Builders for community algo results
-     * @param <T> concrete type of the result
      */
-    public static abstract class AbstractCommunityResultBuilder<T extends CommunityResult> {
+    public static class CommunityResultBuilder<T extends CommunityResult> {
 
-        private long loadDuration = -1;
-        private long evalDuration = -1;
-        private long writeDuration = -1;
-        private long iterations = -1;
-        private boolean convergence = false;
+        protected long loadDuration = -1;
+        protected long evalDuration = -1;
+        protected long writeDuration = -1;
 
-        public AbstractCommunityResultBuilder<T> withLoadDuration(long loadDuration) {
+        public CommunityResultBuilder<T> withLoadDuration(long loadDuration) {
             this.loadDuration = loadDuration;
             return this;
         }
 
-        public AbstractCommunityResultBuilder<T> withEvalDuration(long evalDuration) {
+        public CommunityResultBuilder<T> withEvalDuration(long evalDuration) {
             this.evalDuration = evalDuration;
             return this;
         }
 
-        public AbstractCommunityResultBuilder<T> withWriteDuration(long writeDuration) {
+        public CommunityResultBuilder<T> withWriteDuration(long writeDuration) {
             this.writeDuration = writeDuration;
             return this;
         }
@@ -156,38 +154,29 @@ public class CommunityResult {
             }
         }
 
-
-        /**
-         * number of iterations the algorithm did in total. Can be omitted.
-         * @param iterations
-         * @return
-         */
-        public AbstractCommunityResultBuilder<T> withIterations(long iterations) {
-            this.iterations = iterations;
-            return this;
-        }
-
-        /**
-         * should be set to true if the algorithm did (and is able to) converge to an
-         * optimum. Should be set to false if the algorithm ran into an artificial limit
-         * (like maximum iterations without convergence). Can be omitted if the algo
-         * does not have such thing
-         *
-         * @param convergence
-         * @return
-         */
-        public AbstractCommunityResultBuilder<T> withConvergence(boolean convergence) {
-            this.convergence = convergence;
-            return this;
-        }
-
-        // do it
-        protected abstract T build(
+        protected T build(
                 long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis,
-                long nodeCount, long communityCount, long iterations, boolean convergence,
+                long nodeCount, long communityCount,
                 long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01,
-                long[] top3Communities
-        );
+                Long[] top3Communities) {
+            //noinspection unchecked
+            return (T) new CommunityResult(loadDuration,
+                    evalDuration,
+                    writeDuration,
+                    postProcessingMillis,
+                    nodeCount,
+                    communityCount,
+                    p99,
+                    p95,
+                    p90,
+                    p75,
+                    p50,
+                    p25,
+                    p10,
+                    p05,
+                    p01,
+                    top3Communities);
+        }
 
         /**
          * build result
@@ -197,7 +186,7 @@ public class CommunityResult {
          */
         public T build(long nodes, LongFunction<Long> fun) {
 
-            final long[] top3 = new long[]{-1L, -1L, -1L};
+            final Long[] top3 = new Long[]{-1L, -1L, -1L};
             final Histogram histogram = new Histogram(2);
             final LongLongHashMap communityMap = new LongLongHashMap();
 
@@ -223,15 +212,12 @@ public class CommunityResult {
             }
             timer.stop();
 
-            return build(
-                    loadDuration,
+            return build(loadDuration,
                     evalDuration,
                     writeDuration,
                     timer.getDuration(),
                     nodes,
                     communityMap.size(),
-                    iterations,
-                    convergence,
                     histogram.getValueAtPercentile(.99),
                     histogram.getValueAtPercentile(.95),
                     histogram.getValueAtPercentile(.9),
@@ -241,9 +227,26 @@ public class CommunityResult {
                     histogram.getValueAtPercentile(.1),
                     histogram.getValueAtPercentile(.05),
                     histogram.getValueAtPercentile(.01),
-                    top3
-            );
+                    top3);
         }
 
+        public CommunityResult buildEmpty() {
+            return new CommunityResult(loadDuration,
+                    evalDuration,
+                    writeDuration,
+                    -1,
+                    0,
+                    0,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    new Long[]{-1L, -1L, -1L});
+        }
     }
 }

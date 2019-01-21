@@ -28,7 +28,6 @@ import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.louvain.*;
 import org.neo4j.graphalgo.results.CommunityResult;
-import org.neo4j.graphalgo.results.LouvainResult;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
@@ -72,7 +71,7 @@ public class LouvainProc {
                 .overrideNodeLabelOrQuery(label)
                 .overrideRelationshipTypeOrQuery(relationship);
 
-        final LouvainResult.Builder builder = LouvainResult.builder();
+        final CommunityResult.CommunityResultBuilder builder = new CommunityResult.CommunityResultBuilder();
 
         final Graph graph;
         try (ProgressTimer timer = builder.timeLoad()) {
@@ -81,7 +80,7 @@ public class LouvainProc {
 
         if(graph.nodeCount() == 0) {
             graph.release();
-            return Stream.of(builder.build());
+            return Stream.of(builder.buildEmpty());
         }
 
         final Louvain louvain = new Louvain(graph, Pools.DEFAULT, configuration.getConcurrency(), AllocationTracker.create())
@@ -97,18 +96,14 @@ public class LouvainProc {
             } else {
                 louvain.compute(configuration.getIterations(10), configuration.get("innerIterations", 10));
             }
-
-            final int[] communityIds = louvain.getCommunityIds();
-            builder.withCommunities(Math.toIntExact(graph.nodeCount()), n -> communityIds[n]);
-            builder.withIterations(louvain.getLevel()); // we have threads * innerIterations * maxLevel iterations
-            builder.withConvergence(true); // only modularity optimization can converge
         }
 
         if (configuration.isWriteFlag()) {
             builder.timeWrite(() -> write(graph, louvain.getDendrogram(), louvain.getCommunityIds(), configuration));
         }
 
-        return Stream.of(builder.build());
+        final int[] communityIds = louvain.getCommunityIds();
+        return Stream.of(builder.build(graph.nodeCount(), n -> (long) communityIds[(int) n]));
     }
 
     @Procedure(value = "algo.louvain.stream")
@@ -179,4 +174,6 @@ public class LouvainProc {
                 configuration.get(INTERMEDIATE_COMMUNITIES_WRITE_PROPERTY, "communities"))
                 .export(allCommunities, finalCommunities, includeIntermediateCommunities);
     }
+
+
 }
