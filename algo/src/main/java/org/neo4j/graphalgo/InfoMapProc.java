@@ -68,7 +68,7 @@ public class InfoMapProc {
         // number of iterations for the pageRank computation
         final int pageRankIterations = config.getNumber("iterations", 10).intValue();
         // property name (node property) for predefined pageRanks
-        final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, "pageRank");
+        final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, PageRankProc.DEFAULT_SCORE_PROPERTY);
 
         // default env
         final ProgressLogger progressLogger = ProgressLogger.wrap(log, "InfoMap");
