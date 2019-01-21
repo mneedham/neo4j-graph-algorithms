@@ -37,14 +37,14 @@ public class LouvainResult extends CommunityResult {
 
 
     private LouvainResult(long loadMillis, long computeMillis, long writeMillis, long nodes, long communityCount, long iterations, boolean convergence, long p99, long p95, long p90, long p75, long p50, int[] biggestCommunities) {
-        super(loadMillis, computeMillis, writeMillis, nodes, communityCount, iterations, convergence, p99, p95, p90, p75, p50, biggestCommunities);
+        super(loadMillis, computeMillis, writeMillis, postProcessingMillis, nodes, communityCount, iterations, convergence, p99, p95, p90, p75, p50, p25, p10, p05, p01, biggestCommunities);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static class Builder extends CommunityResult.AbstractCommunityBuilder<LouvainResult> {
+    public static class Builder extends AbstractCommunityResultBuilder<LouvainResult> {
 
         private long nodes = 0;
         private long communityCount = 0;

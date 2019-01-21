@@ -75,7 +75,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
 
         if (graph.nodeCount() == 0) {
             graph.release();
-            return Stream.of(builder.withCommunities(Math.toIntExact(graph.nodeCount()), i -> -1).build());
+            return Stream.of(builder.withCommunities(graph.nodeCount(), i -> -1L).build());
         }
 
         DSSResult dssResult = uf.evaluate(
@@ -89,7 +89,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
             uf.write(builder::timeWrite, graph, dssResult, configuration);
         }
 
-        return Stream.of(builder.withDSSResult(dssResult));
+        return Stream.of(builder.build(dssResult));
     }
 
     public static Stream<DisjointSetStruct.Result> stream(

@@ -18,8 +18,6 @@
  */
 package org.neo4j.graphalgo.results;
 
-import org.neo4j.graphalgo.core.utils.dss.DisjointSetStruct;
-import org.neo4j.graphalgo.core.utils.paged.PagedDisjointSetStruct;
 import org.neo4j.graphalgo.impl.DSSResult;
 
 /**
@@ -27,54 +25,27 @@ import org.neo4j.graphalgo.impl.DSSResult;
  */
 public class UnionFindResult extends CommunityResult {
 
-    UnionFindResult(long loadMillis, long computeMillis, long writeMillis, long nodes, long communityCount, long iterations, boolean convergence, long p99, long p95, long p90, long p75, long p50, long[] biggestCommunities) {
-        super(loadMillis, computeMillis, writeMillis, nodes, communityCount, iterations, convergence, p99, p95, p90, p75, p50, biggestCommunities);
+    public UnionFindResult(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodes, long communityCount, long iterations, boolean convergence, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, long[] biggestCommunities) {
+        super(loadMillis, computeMillis, writeMillis, postProcessingMillis, nodes, communityCount, iterations, convergence, p99, p95, p90, p75, p50, p25, p10, p05, p01, biggestCommunities);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static class Builder extends CommunityResult.AbstractCommunityBuilder<CommunityResult> {
+    public static class Builder extends CommunityResult.AbstractCommunityResultBuilder<UnionFindResult> {
 
-
-        public Builder withDSSResult(DSSResult result) {
+        public UnionFindResult build(DSSResult result) {
             if (result.isHuge) {
-                withStruct(result.hugeStruct);
+                return build(result.hugeStruct.capacity(), result.hugeStruct::find);
             } else {
-                withStruct(result.struct);
+                return build(result.struct.capacity(), l -> (long) result.struct.find((int) l));
             }
-            return this;
-        }
-
-        public Builder withStruct(DisjointSetStruct setStruct) {
-            withCommunities(setStruct.capacity(), i -> (long) setStruct.find((int) i));
-            return this;
-        }
-
-        public Builder withStruct(PagedDisjointSetStruct setStruct) {
-            withCommunities(setStruct.capacity(), setStruct::find);
-            return this;
         }
 
         @Override
-        public CommunityResult build() {
-
-            return new UnionFindResult(
-                    loadDuration,
-                    evalDuration,
-                    writeDuration,
-                    nodes,
-                    communityMap.size(),
-                    iterations, convergence,
-                    histogram.getValueAtPercentile(.99),
-                    histogram.getValueAtPercentile(.95),
-                    histogram.getValueAtPercentile(.90),
-                    histogram.getValueAtPercentile(.75),
-                    histogram.getValueAtPercentile(.50),
-                    top3);
+        protected UnionFindResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, long iterations, boolean convergence, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, long[] top3Communities) {
+            return new UnionFindResult(loadMillis, computeMillis, writeMillis, postProcessingMillis, communityCount, communityCount, iterations, convergence, p99, p95, p90, p75, p50, p25, p10, p05, p01, top3Communities);
         }
     }
-
-
 }
