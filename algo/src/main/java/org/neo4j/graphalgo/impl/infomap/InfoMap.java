@@ -19,8 +19,8 @@
 package org.neo4j.graphalgo.impl.infomap;
 
 import com.carrotsearch.hppc.*;
+import com.carrotsearch.hppc.cursors.IntDoubleCursor;
 import com.carrotsearch.hppc.cursors.IntObjectCursor;
-import com.carrotsearch.hppc.procedures.IntDoubleProcedure;
 import com.carrotsearch.hppc.procedures.IntProcedure;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
@@ -412,13 +412,13 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
 
         double wil(Module l) {
-            final Pointer.DoublePointer wi = Pointer.wrap(0.);
-            this.wi.forEach((IntDoubleProcedure) (key, value) -> {
-                if (communities[key] == l.index) {
-                    wi.v += value;
+            double wi = 0.;
+            for (final IntDoubleCursor cursor : this.wi) {
+                if (communities[cursor.key] == l.index) {
+                    wi += cursor.value;
                 }
-            });
-            return wi.v;
+            }
+            return wi;
         }
 
         void merge(Module l) {
