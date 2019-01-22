@@ -29,7 +29,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <neo4j.version>3.4.9</neo4j.version>
-        <jmh.version>1.19</jmh.version>
+        <jmh.version>1.21</jmh.version>
         <javac.target>1.8</javac.target>
     </properties>
 
@@ -170,7 +170,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                   
+
                     <doclint>none</doclint>
                 </configuration>
             </plugin>
