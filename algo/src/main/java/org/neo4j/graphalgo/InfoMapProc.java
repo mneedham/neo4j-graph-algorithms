@@ -308,14 +308,17 @@ public class InfoMapProc {
         builder.withNodeCount(graph.nodeCount());
         builder.withIterations(infoMap.getIterations());
 
-        try (ProgressTimer timer = builder.timeWrite()) {
-            Exporter.of(db, graph)
-                    .withLog(log)
-                    .build()
-                    .write(config.getWriteProperty(DEFAULT_WRITE_PROPERTY_VALUE),
-                            infoMap.getCommunities(),
-                            Translators.INT_ARRAY_TRANSLATOR);
+        if (config.isWriteFlag()) {
+            try (ProgressTimer timer = builder.timeWrite()) {
+                Exporter.of(db, graph)
+                        .withLog(log)
+                        .build()
+                        .write(config.getWriteProperty(DEFAULT_WRITE_PROPERTY_VALUE),
+                                infoMap.getCommunities(),
+                                Translators.INT_ARRAY_TRANSLATOR);
+            }
         }
+
 
         return Stream.of(builder.build());
 
