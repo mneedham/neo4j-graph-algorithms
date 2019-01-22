@@ -7,7 +7,7 @@ This section describes the Adamic Adar Similarity algorithm in the Neo4j Graph A
 --
 
 // tag::introduction[]
-link:https://en.wikipedia.org/wiki/Adamic/Adar_index[Adamic Adar similarity] is
+link:https://en.wikipedia.org/wiki/Adamic/Adar_index[Adamic Adar similarity] is a measure used to compute similarity between nodes based on their shared neighbors.
 // end::introduction[]
 
 
@@ -16,13 +16,14 @@ link:https://en.wikipedia.org/wiki/Adamic/Adar_index[Adamic Adar similarity] is
 
 // tag::explanation[]
 
-Adamic Adar similarity is computed using the following formula:
+Adamic Adar similarity was introduced in 2003 by Lada Adamic and Eytan Adar to https://www.semanticscholar.org/paper/Friends-and-neighbors-on-the-Web-Adamic-Adar/39348c10c90be968357e2a6b65d5e0e479307735[predict links in a social network^].
+It is computed using the following formula:
 
-image::adamic-adar-similarity.png[role="middle"]
+image::adamic-adar-similarity.svg[role="middle"]
 
 where `N(u)` is the set of nodes adjacent to `u`.
 
-Values range between -1 and 1, where -1 is perfectly dissimilar and 1 is perfectly similar.
+A value of 0 indicates that two nodes are dissimilar, while higher values indicate nodes are more similar.
 
 The library contains a function to calculate similarity between two nodes.
 
@@ -97,15 +98,8 @@ RETURN algo.similarity.cosine(node1:Node, node2:Node, {
 [opts="header",cols="1,1,1,1,4"]
 |===
 | Name                   | Type    | Default        | Optional | Description
-| `node1`                   | Node    | null           | no       | A list of maps of the following structure: `{item: nodeId, categories: [nodeId, nodeId, nodeId]}` or a Cypher query.
-| `top`                    | int     | 0              | yes      | The number of similar pairs to return. If `0`, it will return as many as it finds.
-| `topK`                   | int     | 0              | yes      | The number of similar values to return per node. If `0`, it will return as many as it finds.
-| `similarityCutoff`       | int     | -1             | yes      | The threshold for similarity. Values below this will not be returned.
-| `degreeCutoff`           | int     | 0              | yes      | The threshold for the number of items in the `targets` list. If the list contains less than this amount, that node will be excluded from the calculation.
-| `skipValue`              | double  | null           | yes      | Value to skip when executing similarity computation.
-| `concurrency`            | int     | available CPUs | yes      | The number of concurrent threads.
-| `graph`                  | string  | dense          | yes      | The graph name ('dense' or 'cypher').
-| `write`                  | boolean | false          | yes      | Indicates whether results should be stored.
-| `writeRelationshipType`  | string  | SIMILAR        | yes      | The relationship type to use when storing results.
-| `writeProperty`          | string  | score          | yes      | The property to use when storing results.
+| `node1`                   | Node    | null           | no       | A node
+| `node2`                   | Node    | null           | no       | Another node
+| `relationshipQuery`                   | String    | null           | yes       | The relationship type to use to compute similarity between `node1` and `node2`
+| `direction`                   | String    | BOTH           | yes       | The direction of relationship type to use to compute similarity between `node1` and `node2`
 |===
