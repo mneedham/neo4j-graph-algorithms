@@ -29,7 +29,7 @@ The library contains a function to calculate similarity between two nodes.
 
 // end::explanation[]
 
-[[algorithms-similarity-cosine-usecase]]
+[[algorithms-similarity-adamic-adar-usecase]]
 == Use-cases - when to use the Adamic Adar Similarity algorithm
 
 // tag::use-case[]
@@ -87,7 +87,7 @@ include::scripts/similarity-adamic-adar.cypher[tag=only-friends]
 .The following will run the algorithm and return the result:
 [source, cypher]
 ----
-RETURN algo.similarity.cosine(node1:Node, node2:Node, {
+RETURN algo.similarity.adamicAdar(node1:Node, node2:Node, {
     relationshipQuery: null,
     direction: "BOTH"
 })
