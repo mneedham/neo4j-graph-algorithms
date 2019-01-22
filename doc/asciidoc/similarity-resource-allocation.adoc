@@ -65,7 +65,7 @@ include::scripts/similarity-resource-allocation.cypher[tag=all-rels]
 
 We can also compute the similarity between a pair of nodes based on a specific relationship type.
 
-.The following will return the similarity of Zhen and Arya based only on `FRIENDS` relationships:
+.The following will return the similarity of Michael and Karin based only on `FRIENDS` relationships:
 [source, cypher]
 ----
 include::scripts/similarity-resource-allocation.cypher[tag=only-friends]
