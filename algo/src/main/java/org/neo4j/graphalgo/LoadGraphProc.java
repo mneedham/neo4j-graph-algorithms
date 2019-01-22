@@ -28,6 +28,7 @@ import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.LabelPropagation;
+import org.neo4j.graphalgo.impl.infomap.InfoMap;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -68,6 +69,7 @@ public final class LoadGraphProc {
         final String relationshipWeight = configuration.getString("relationshipWeight", null);
         final String nodeWeight = configuration.getString("nodeWeight", null);
         final String nodeProperty = configuration.getString("nodeProperty", null);
+        final String pageRankPropertyName = configuration.getString(InfoMapProc.PAGE_RANK_PROPERTY, null);
 
         LoadGraphStats stats = new LoadGraphStats();
         stats.name = name;
@@ -100,7 +102,8 @@ public final class LoadGraphProc {
                     .withOptionalNodeWeightsFromProperty(nodeWeight, 1.0d)
                     .withOptionalNodeProperties(
                             PropertyMapping.of(LabelPropagation.PARTITION_TYPE, nodeProperty, 0.0d),
-                            PropertyMapping.of(LabelPropagation.WEIGHT_TYPE, nodeWeight, 1.0d)
+                            PropertyMapping.of(LabelPropagation.WEIGHT_TYPE, nodeWeight, 1.0d),
+                            PropertyMapping.of(InfoMapProc.PAGE_RANK_KEY, pageRankPropertyName, 0.)
                     )
                     .withDirection(direction)
                     .withSort(stats.sorted)
