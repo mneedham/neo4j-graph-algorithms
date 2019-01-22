@@ -418,7 +418,8 @@ public class InfoMap extends Algorithm<InfoMap> {
 
         void forEachNeighbor(Consumer<Module> consumer, BitSet visited) {
             visited.clear();
-            wi.keys().forEach((IntProcedure) node -> {
+            for (final IntDoubleCursor cursor : this.wi) {
+                final int node = cursor.key;
                 final int c = communities[node];
                 if (c == index) {
                     return;
@@ -430,7 +431,7 @@ public class InfoMap extends Algorithm<InfoMap> {
                 // do visit
                 visited.set(c);
                 consumer.accept(modules.get(c));
-            });
+            }
         }
 
         double wil(Module l) {
