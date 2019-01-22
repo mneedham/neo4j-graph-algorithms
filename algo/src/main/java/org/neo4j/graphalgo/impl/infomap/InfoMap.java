@@ -316,7 +316,13 @@ public class InfoMap extends Algorithm<InfoMap> {
                 final Task taskB = new Task(Arrays.copyOfRange(m, half, m.length));
                 final MergePair mpA = taskB.compute();
                 final MergePair mpB = taskA.join();
-                return compare(mpA, mpB);
+                MergePair competitivePair = compare(mpA, mpB);
+                MergePair uncompetitivePair = competitivePair == mpA ? mpB : mpA;
+                if (uncompetitivePair != null) {
+                    uncompetitivePair.modA.freeTemporarily();
+                    uncompetitivePair.modB.freeTemporarily();
+                }
+                return competitivePair;
             }
 
             final Pointer.DoublePointer min = Pointer.wrap(-1 * threshold);
@@ -329,6 +335,9 @@ public class InfoMap extends Algorithm<InfoMap> {
                         min.v = v;
                         best[0] = module;
                         best[1] = l;
+                    } else {
+                        // module wont be merged for now
+                        module.freeTemporarily();
                     }
                 });
             }
@@ -374,12 +383,12 @@ public class InfoMap extends Algorithm<InfoMap> {
         // precalculated weights into other communities
         IntDoubleMap wi;
         // visited
-        BitSet visited = new BitSet(nodeCount);
+        BitSet visited;
 
         Module(int startNode) {
-            this.nodes = new BitSet(nodeCount);
+            this.nodes = null;
+            this.visited = null;
             this.index = startNode;
-            this.nodes.set(startNode);
             this.wi = new IntDoubleScatterMap();
             graph.forEachRelationship(startNode, D, (s, t, r) -> {
                 if (s != t) {
@@ -395,7 +404,13 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
 
         void forEachNeighbor(Consumer<Module> consumer) {
-            visited.clear();
+            BitSet localVisited = this.visited;
+            if (localVisited == null) {
+                localVisited = this.visited = new BitSet();
+            } else {
+                localVisited.clear();
+            }
+            final BitSet visited = localVisited;
             wi.keys().forEach((IntProcedure) node -> {
                 final int c = communities[node];
                 if (c == index) {
@@ -425,14 +440,31 @@ public class InfoMap extends Algorithm<InfoMap> {
             n += l.n;
             p += l.p;
             w += l.w - wil(l);
-            nodes.or(l.nodes);
+            if (nodes == null) {
+                nodes = new BitSet(index);
+                nodes.set(index);
+            }
+            if (l.nodes != null) {
+                nodes.or(l.nodes);
+                BitSetIterator iterator = l.nodes.iterator();
+                int lNode;
+                while ((lNode = iterator.nextSetBit()) != BitSetIterator.NO_MORE) {
+                    communities[lNode] = index;
+                }
+            } else {
+                nodes.set(l.index);
+                communities[l.index] = index;
+            }
             wi.putAll(l.wi);
             wi.removeAll(nodes.asIntLookupContainer());
             sQi -= q + l.q;
             q = tau * p * (nodeCount - n) / n1 + tau1 * w;
             sQi += q;
-            l.nodes.asIntLookupContainer().forEach((IntProcedure) n -> communities[n] = index);
             l.release();
+        }
+
+        void freeTemporarily() {
+            visited = null;
         }
 
         void release() {
