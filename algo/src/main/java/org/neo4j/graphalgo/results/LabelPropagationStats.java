@@ -18,14 +18,17 @@
  */
 package org.neo4j.graphalgo.results;
 
-public class LabelPropagationStats extends CommunityResult {
+import java.util.Collections;
+import java.util.List;
+
+public class LabelPropagationStats extends AbstractCommunityResult {
 
     public final long iterations;
     public final long nodes;
     public final boolean write, didConverge;
     public final String weightProperty, partitionProperty;
 
-    public LabelPropagationStats(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodes, long communityCount, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, Long[] biggestCommunities, long iterations, boolean write, boolean didConverge, String weightProperty, String partitionProperty) {
+    public LabelPropagationStats(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodes, long communityCount, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> biggestCommunities, long iterations, boolean write, boolean didConverge, String weightProperty, String partitionProperty) {
         super(loadMillis, computeMillis, writeMillis, postProcessingMillis, nodes, communityCount, p99, p95, p90, p75, p50, p25, p10, p05, p01, biggestCommunities);
         this.iterations = iterations;
         this.write = write;
@@ -68,7 +71,6 @@ public class LabelPropagationStats extends CommunityResult {
             return this;
         }
 
-        @Override
         protected LabelPropagationStats build(long loadMillis,
                                               long computeMillis,
                                               long writeMillis,
@@ -84,7 +86,7 @@ public class LabelPropagationStats extends CommunityResult {
                                               long p10,
                                               long p05,
                                               long p01,
-                                              Long[] top3Communities) {
+                                              List<Long> top3Communities) {
             return new LabelPropagationStats(
                     loadMillis,
                     computeMillis,
@@ -127,7 +129,7 @@ public class LabelPropagationStats extends CommunityResult {
                     -1,
                     -1,
                     -1,
-                    new Long[]{-1L, -1L, -1L},
+                    Collections.emptyList(),
                     iterations,
                     write,
                     didConverge,

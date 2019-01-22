@@ -115,7 +115,7 @@ public class LabelPropagationProcIntegrationTest {
 
     @Test
     public void shouldRunLabelPropagation() {
-        String query = "CALL algo.labelPropagation(null, 'X', 'OUTGOING', {batchSize:$batchSize,concurrency:$concurrency}) YIELD loadMillis";
+        String query = "CALL algo.labelPropagation(null, 'X', 'OUTGOING', {batchSize:$batchSize,concurrency:$concurrency}) RETURN loadMillis";
         String check = "MATCH (n) WHERE n.id IN [0,1] RETURN n.partition AS partition";
 
         runQuery(query, parParams(), row -> {

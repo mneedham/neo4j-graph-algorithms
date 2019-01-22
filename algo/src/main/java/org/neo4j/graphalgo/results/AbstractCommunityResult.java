@@ -1,16 +1,14 @@
 package org.neo4j.graphalgo.results;
 
-import com.carrotsearch.hppc.IntStack;
-import com.carrotsearch.hppc.LongLongHashMap;
+import com.carrotsearch.hppc.*;
+import com.carrotsearch.hppc.cursors.LongLongCursor;
 import org.HdrHistogram.Histogram;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.LongFunction;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 /**
  * unified community algo result
@@ -20,7 +18,7 @@ import java.util.stream.LongStream;
  * @author mknblch
  */
 @SuppressWarnings("WeakerAccess")
-public class CommunityResult {
+public abstract class AbstractCommunityResult {
 
     public final long loadMillis;
     public final long computeMillis;
@@ -39,21 +37,21 @@ public class CommunityResult {
     public final long p01;
     public final List<Long> top3;
 
-    public CommunityResult(long loadMillis,
-                           long computeMillis,
-                           long writeMillis,
-                           long postProcessingMillis, long nodes,
-                           long communityCount,
-                           long p99,
-                           long p95,
-                           long p90,
-                           long p75,
-                           long p50,
-                           long p25,
-                           long p10,
-                           long p05,
-                           long p01,
-                           Long[] biggestCommunities) {
+    public AbstractCommunityResult(long loadMillis,
+                                   long computeMillis,
+                                   long writeMillis,
+                                   long postProcessingMillis, long nodes,
+                                   long communityCount,
+                                   long p99,
+                                   long p95,
+                                   long p90,
+                                   long p75,
+                                   long p50,
+                                   long p25,
+                                   long p10,
+                                   long p05,
+                                   long p01,
+                                   List<Long> top) {
         this.loadMillis = loadMillis;
         this.computeMillis = computeMillis;
         this.writeMillis = writeMillis;
@@ -69,14 +67,14 @@ public class CommunityResult {
         this.p10 = p10;
         this.p05 = p05;
         this.p01 = p01;
-        this.top3 = Arrays.asList(biggestCommunities);
+        this.top3 = top;
 
     }
 
     /**
      * Helper class for creating Builders for community algo results
      */
-    public static class CommunityResultBuilder<T extends CommunityResult> {
+    public static class CommunityResultBuilder<T extends AbstractCommunityResult> {
 
         protected long loadDuration = -1;
         protected long evalDuration = -1;
@@ -158,9 +156,9 @@ public class CommunityResult {
                 long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis,
                 long nodeCount, long communityCount,
                 long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01,
-                Long[] top3Communities) {
+                List<Long> top3Communities) {
             //noinspection unchecked
-            return (T) new CommunityResult(loadDuration,
+            return (T) new DefaultCommunityResult(loadDuration,
                     evalDuration,
                     writeDuration,
                     postProcessingMillis,
@@ -178,6 +176,35 @@ public class CommunityResult {
                     top3Communities);
         }
 
+        private static List<Long> top3(LongLongMap assignment) {
+
+            // index of top 3 biggest communities
+            final Long[] t3idx = new Long[]{-1L, -1L, -1L};
+            // size of the top 3 communities
+            final long[] top3 = new long[]{-1L, -1L, -1L};
+
+            for (LongLongCursor cursor : assignment) {
+                if (cursor.value > top3[0]) {
+                    top3[2] = top3[1];
+                    top3[1] = top3[0];
+                    top3[0] = cursor.value;
+                    t3idx[2] = t3idx[1];
+                    t3idx[1] = t3idx[0];
+                    t3idx[0] = cursor.key;
+                } else if (cursor.value > top3[1]) {
+                    top3[2] = top3[1];
+                    top3[1] = cursor.value;
+                    t3idx[2] = t3idx[1];
+                    t3idx[1] = cursor.key;
+                } else if (cursor.value > top3[2]) {
+                    top3[2] = cursor.value;
+                    t3idx[2] = cursor.key;
+                }
+            }
+
+            return Arrays.asList(t3idx);
+        }
+
         /**
          * build result
          * @param nodes number of nodes in the graph
@@ -186,9 +213,8 @@ public class CommunityResult {
          */
         public T build(long nodes, LongFunction<Long> fun) {
 
-            final Long[] top3 = new Long[]{-1L, -1L, -1L};
             final Histogram histogram = new Histogram(2);
-            final LongLongHashMap communityMap = new LongLongHashMap();
+            final LongLongMap communityMap = new LongLongScatterMap();
 
             final ProgressTimer timer = ProgressTimer.start();
             for (int i = 0; i < nodes; i++) {
@@ -198,17 +224,6 @@ public class CommunityResult {
                 communityMap.addTo(r, 1);
                 // fill histogram
                 histogram.recordValue(r);
-                // eval top 3 communities
-                if (r > top3[0]) {
-                    top3[2] = top3[1];
-                    top3[1] = top3[0];
-                    top3[0] = r;
-                } else if (r > top3[1]) {
-                    top3[2] = top3[1];
-                    top3[1] = r;
-                } else if (r > top3[2]) {
-                    top3[2] = r;
-                }
             }
             timer.stop();
 
@@ -227,11 +242,12 @@ public class CommunityResult {
                     histogram.getValueAtPercentile(.1),
                     histogram.getValueAtPercentile(.05),
                     histogram.getValueAtPercentile(.01),
-                    top3);
+                    top3(communityMap));
         }
 
-        public CommunityResult buildEmpty() {
-            return new CommunityResult(loadDuration,
+        public AbstractCommunityResult buildEmpty() {
+            return new DefaultCommunityResult(
+                    loadDuration,
                     evalDuration,
                     writeDuration,
                     -1,
@@ -246,7 +262,15 @@ public class CommunityResult {
                     -1,
                     -1,
                     -1,
-                    new Long[]{-1L, -1L, -1L});
+                    Collections.emptyList());
+        }
+
+    }
+
+    private static class DefaultCommunityResult extends AbstractCommunityResult {
+
+        public DefaultCommunityResult(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodes, long communityCount, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> biggestCommunities) {
+            super(loadMillis, computeMillis, writeMillis, postProcessingMillis, nodes, communityCount, p99, p95, p90, p75, p50, p25, p10, p05, p01, biggestCommunities);
         }
     }
 }

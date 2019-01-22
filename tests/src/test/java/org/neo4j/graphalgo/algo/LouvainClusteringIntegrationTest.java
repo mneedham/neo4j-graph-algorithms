@@ -28,7 +28,6 @@ import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static junit.framework.TestCase.assertNull;
@@ -336,5 +335,4 @@ public class LouvainClusteringIntegrationTest {
         });
         return id;
     }
-
 }

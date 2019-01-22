@@ -29,7 +29,7 @@ import org.neo4j.graphalgo.core.utils.dss.DisjointSetStruct;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.core.utils.paged.PagedDisjointSetStruct;
 import org.neo4j.graphalgo.core.write.Exporter;
-import org.neo4j.graphalgo.results.CommunityResult;
+import org.neo4j.graphalgo.results.AbstractCommunityResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -53,7 +53,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
     private final  UnionFindAlgo sequential;
     private final UnionFindAlgo parallel;
 
-    public static Stream<CommunityResult> run(
+    public static Stream<AbstractCommunityResult> run(
             Map<String, Object> config,
             String label,
             String relationship,
@@ -238,9 +238,9 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
     }
 
 
-    public static class UnionFindResultBuilder extends CommunityResult.CommunityResultBuilder {
+    public static class UnionFindResultBuilder extends AbstractCommunityResult.CommunityResultBuilder {
 
-        public CommunityResult build(DSSResult result) {
+        public AbstractCommunityResult build(DSSResult result) {
             if (result.isHuge) {
                 return build(result.hugeStruct.capacity(), result.hugeStruct::find);
             } else {
@@ -248,5 +248,4 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
             }
         }
     }
-
 }

@@ -27,12 +27,14 @@ import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.louvain.*;
-import org.neo4j.graphalgo.results.CommunityResult;
+import org.neo4j.graphalgo.results.AbstractCommunityResult;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -62,7 +64,7 @@ public class LouvainProc {
     @Description("CALL algo.louvain(label:String, relationship:String, " +
             "{weightProperty:'weight', defaultValue:1.0, write: true, writeProperty:'community', concurrency:4, communityProperty:'propertyOfPredefinedCommunity'}) " +
             "YIELD nodes, communityCount, iterations, loadMillis, computeMillis, writeMillis")
-    public Stream<CommunityResult> louvain(
+    public Stream<LouvainResult> louvain(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
@@ -71,7 +73,7 @@ public class LouvainProc {
                 .overrideNodeLabelOrQuery(label)
                 .overrideRelationshipTypeOrQuery(relationship);
 
-        final CommunityResult.CommunityResultBuilder builder = new CommunityResult.CommunityResultBuilder();
+        final AbstractCommunityResult.CommunityResultBuilder<LouvainResult> builder = new AbstractCommunityResult.CommunityResultBuilder<>();
 
         final Graph graph;
         try (ProgressTimer timer = builder.timeLoad()) {
@@ -80,7 +82,7 @@ public class LouvainProc {
 
         if(graph.nodeCount() == 0) {
             graph.release();
-            return Stream.of(builder.buildEmpty());
+            return Stream.of(LouvainResult.EMPTY);
         }
 
         final Louvain louvain = new Louvain(graph, Pools.DEFAULT, configuration.getConcurrency(), AllocationTracker.create())
@@ -175,5 +177,29 @@ public class LouvainProc {
                 .export(allCommunities, finalCommunities, includeIntermediateCommunities);
     }
 
+    private static class LouvainResult extends AbstractCommunityResult {
 
+        public LouvainResult(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodes, long communityCount, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> top) {
+            super(loadMillis, computeMillis, writeMillis, postProcessingMillis, nodes, communityCount, p99, p95, p90, p75, p50, p25, p10, p05, p01, top);
+        }
+
+        public static final LouvainResult EMPTY = new LouvainResult(
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                Collections.emptyList()
+        );
+    }
 }
