@@ -197,6 +197,11 @@ public class Similarities {
     public double adamicAdarSimilarity(@Name("node1") Node node1, @Name("node2") Node node2,
                                        @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
         // https://en.wikipedia.org/wiki/Adamic/Adar_index
+
+        if (node1 == null || node2 == null) {
+            throw new RuntimeException("Nodes must not be null");
+        }
+
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
@@ -206,6 +211,7 @@ public class Similarities {
             Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
             neighbors.removeIf(node -> !hasCommonNeighbor(node, relationshipType, direction, node2));
             neighbors.forEach(neighbor -> vector.add(degree(relationshipType, direction, neighbor)));
+            tx.success();
         }
 
         if (vector.isEmpty()) return 0;
