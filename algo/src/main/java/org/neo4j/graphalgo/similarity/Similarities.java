@@ -209,12 +209,11 @@ public class Similarities {
         List<Number> vector = new ArrayList<>();
         try(Transaction tx = api.beginTx()) {
             Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
-            neighbors.removeIf(node -> !hasCommonNeighbor(node, relationshipType, direction, node2));
+            neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
             neighbors.forEach(neighbor -> vector.add(degree(relationshipType, direction, neighbor)));
             tx.success();
         }
 
-        if (vector.isEmpty()) return 0;
         return sumInverseLog(vector);
     }
 
@@ -230,11 +229,11 @@ public class Similarities {
         List<Number> vector = new ArrayList<>();
         try(Transaction tx = api.beginTx()) {
             Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
-            neighbors.removeIf(node -> !hasCommonNeighbor(node, relationshipType, direction, node2));
+            neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
             neighbors.forEach(neighbor -> vector.add(degree(relationshipType, direction, neighbor)));
+            tx.success();
         }
 
-        if (vector.isEmpty()) return 0;
         return sumInverse(vector);
     }
 
@@ -282,13 +281,13 @@ public class Similarities {
         return relationshipType == null ? node.getRelationships(direction) : node.getRelationships(relationshipType, direction);
     }
 
-    private boolean hasCommonNeighbor(Node node, RelationshipType relationshipType, Direction direction, Node node2) {
+    private boolean noCommonNeighbors(Node node, RelationshipType relationshipType, Direction direction, Node node2) {
         for(Relationship rel : loadRelationships(node, relationshipType, direction)) {
             if(rel.getOtherNode(node).equals(node2)) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
 
