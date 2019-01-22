@@ -26,7 +26,8 @@ import java.util.stream.Stream;
  */
 public class InfoMapProc {
 
-    private static final String PAGE_RANK_PROPERTY = "pageRankProperty";
+    public static final String PAGE_RANK_PROPERTY = "pageRankProperty";
+    public static final String PAGE_RANK_KEY = "_pr";
     private static final String DEFAULT_WRITE_PROPERTY_VALUE = "community";
 
     @Context
@@ -100,15 +101,16 @@ public class InfoMapProc {
             case WEIGHTED_EXT_PR:
 
                 log.info("initializing weighted InfoMap with predefined PageRank");
+
                 graph = new GraphLoader(db, Pools.DEFAULT)
                         .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                         .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
-                        .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
+                        .withOptionalNodeProperties(PropertyMapping.of(PAGE_RANK_KEY, pageRankPropertyName, 0.))
                         .asUndirected(true)
                         .load(config.getGraphImpl());
                 infoMap = InfoMap.weighted(
                         graph,
-                        ((NodeProperties) graph).nodeProperties("_pr")::get,
+                        ((NodeProperties) graph).nodeProperties(PAGE_RANK_KEY)::get,
                         graph,
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                         config.getNumber("tau", InfoMap.TAU).doubleValue(),
@@ -143,12 +145,12 @@ public class InfoMapProc {
                 log.info("initializing unweighted InfoMap with predefined PageRank");
                 graph = new GraphLoader(db, Pools.DEFAULT)
                         .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
-                        .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
+                        .withOptionalNodeProperties(PropertyMapping.of(PAGE_RANK_KEY, pageRankPropertyName, 0.))
                         .asUndirected(true)
                         .load(config.getGraphImpl());
                 infoMap = InfoMap.unweighted(
                         graph,
-                        ((NodeProperties) graph).nodeProperties("_pr")::get,
+                        ((NodeProperties) graph).nodeProperties(PAGE_RANK_KEY)::get,
                         config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                         config.getNumber("tau", InfoMap.TAU).doubleValue(),
                         Pools.FJ_POOL,
@@ -196,7 +198,7 @@ public class InfoMapProc {
         // number of iterations for the pageRank computation
         final int pageRankIterations = config.getNumber("iterations", 10).intValue();
         // property name (node property) for predefined pageRanks
-        final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, "pageRank");
+        final String pageRankPropertyName = config.getString(PAGE_RANK_PROPERTY, PageRankProc.DEFAULT_SCORE_PROPERTY);
 
         // env
         final InfoMapResultBuilder builder = InfoMapResult.builder();
@@ -237,12 +239,12 @@ public class InfoMapProc {
                     graph = new GraphLoader(db, Pools.DEFAULT)
                             .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
                             .withRelationshipWeightsFromProperty(config.getWeightProperty(), 1.0)
-                            .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
+                            .withOptionalNodeProperties(PropertyMapping.of(PAGE_RANK_KEY, pageRankPropertyName, 0.))
                             .asUndirected(true)
                             .load(config.getGraphImpl());
                     infoMap = InfoMap.weighted(
                             graph,
-                            ((NodeProperties) graph).nodeProperties("_pr")::get,
+                            ((NodeProperties) graph).nodeProperties(PAGE_RANK_KEY)::get,
                             graph,
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                             config.getNumber("tau", InfoMap.TAU).doubleValue(),
@@ -281,12 +283,12 @@ public class InfoMapProc {
                 try (ProgressTimer timer = builder.timeLoad()) {
                     graph = new GraphLoader(db, Pools.DEFAULT)
                             .init(log, config.getNodeLabelOrQuery(), config.getRelationshipOrQuery(), config)
-                            .withOptionalNodeProperties(PropertyMapping.of("_pr", pageRankPropertyName, 0.))
+                            .withOptionalNodeProperties(PropertyMapping.of(PAGE_RANK_KEY, pageRankPropertyName, 0.))
                             .asUndirected(true)
                             .load(config.getGraphImpl());
                     infoMap = InfoMap.unweighted(
                             graph,
-                            ((NodeProperties) graph).nodeProperties("_pr")::get,
+                            ((NodeProperties) graph).nodeProperties(PAGE_RANK_KEY)::get,
                             config.getNumber("threshold", InfoMap.THRESHOLD).doubleValue(),
                             config.getNumber("tau", InfoMap.TAU).doubleValue(),
                             Pools.FJ_POOL,
