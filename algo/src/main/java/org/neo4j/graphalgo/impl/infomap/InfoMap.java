@@ -269,7 +269,7 @@ public class InfoMap extends Algorithm<InfoMap> {
     private boolean optimize() {
 
         Module[] modules = this.modules.values().toArray(Module.class);
-        final MergePair pair = pool.invoke(new Task(modules, 0, modules.length));
+        final MergePair pair = pool.invoke(new Task(modules, 0, modules.length, new BitSet()));
 
         if (null == pair) {
             return false;
@@ -300,14 +300,16 @@ public class InfoMap extends Algorithm<InfoMap> {
 
     private class Task extends RecursiveTask<MergePair> {
 
-        final Module[] m;
+        private final Module[] m;
         private final int from;
         private final int to;
+        private final BitSet visited;
 
-        private Task(Module[] m, int from, int to) {
+        private Task(Module[] m, int from, int to, BitSet visited) {
             this.m = m;
             this.from = from;
             this.to = to;
+            this.visited = visited;
         }
 
         @Override
@@ -317,9 +319,9 @@ public class InfoMap extends Algorithm<InfoMap> {
             if (concurrency > 1 && length >= MIN_MODS_PARALLEL_EXEC) {
                 // split mods
                 final int half = from + ((length + 1) >> 1);
-                final Task taskA = new Task(m, from, half);
+                final Task taskA = new Task(m, from, half, null);
                 taskA.fork();
-                final Task taskB = new Task(m, half, to);
+                final Task taskB = new Task(m, half, to, visited);
                 final MergePair mpA = taskB.compute();
                 final MergePair mpB = taskA.join();
                 MergePair competitivePair = compare(mpA, mpB);
@@ -334,6 +336,10 @@ public class InfoMap extends Algorithm<InfoMap> {
             final Pointer.DoublePointer min = Pointer.wrap(-1 * threshold);
 
             final Module[] best = {null, null};
+            BitSet visited = this.visited;
+            if (visited == null) {
+                visited = new BitSet();
+            }
             for (int i = from; i < to; i++) {
                 final Module module = m[i];
                 module.forEachNeighbor(l -> {
@@ -346,7 +352,7 @@ public class InfoMap extends Algorithm<InfoMap> {
                         // module wont be merged for now
                         module.freeTemporarily();
                     }
-                });
+                }, visited);
             }
 
             if (null == best[0] || best[0] == best[1]) {
@@ -410,14 +416,8 @@ public class InfoMap extends Algorithm<InfoMap> {
             q = tau * p + tau1 * w;
         }
 
-        void forEachNeighbor(Consumer<Module> consumer) {
-            BitSet localVisited = this.visited;
-            if (localVisited == null) {
-                localVisited = this.visited = new BitSet();
-            } else {
-                localVisited.clear();
-            }
-            final BitSet visited = localVisited;
+        void forEachNeighbor(Consumer<Module> consumer, BitSet visited) {
+            visited.clear();
             wi.keys().forEach((IntProcedure) node -> {
                 final int c = communities[node];
                 if (c == index) {
