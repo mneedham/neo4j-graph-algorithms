@@ -99,7 +99,7 @@ RETURN movie.name AS movie
 WITH "MATCH (person:Person)-[likes:LIKES]->(c)
       RETURN id(person) AS item, id(c) AS category, likes.score AS weight" AS query
 CALL algo.similarity.pearson(query, {
-  graph: "cypher", topK: 1, similarityCutoff: 0.1, write:true
+  graph: 'cypher', topK: 1, similarityCutoff: 0.1, write:true
 })
 YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, max, mean, stdDev, p95
 RETURN nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, max, mean, p95

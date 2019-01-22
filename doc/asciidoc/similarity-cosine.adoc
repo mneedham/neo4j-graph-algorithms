@@ -89,6 +89,7 @@ include::scripts/similarity-cosine.cypher[tag=stream]
 .Results
 [opts="header"]
 |===
+| `from`       | `to`         | `similarity`
 | "Praveena" | "Karin"    | 1.0
 | "Michael"  | "Arya"     | 0.9788908326303921
 | "Arya"     | "Karin"    | 0.9610904115204073
@@ -155,7 +156,7 @@ include::scripts/similarity-cosine.cypher[tag=stream-topk]
 // end::stream-topk[]
 
 These results will not be symmetrical.
-For example, the person most similar to Zhen is Michael, but the person most similar to Michael Arya.
+For example, the person most similar to Zhen is Michael, but the person most similar to Michael is Arya.
 
 .The following will find the most similar user for each user, and store a relationship between those users:
 [source, cypher]

@@ -89,7 +89,7 @@ RETURN cuisine.name AS cuisine
 WITH "MATCH (person:Person)-[likes:LIKES]->(c)
       RETURN id(person) AS item, id(c) AS category, likes.score AS weight" AS query
 CALL algo.similarity.euclidean(query, {
-  graph: "cypher", topK: 1, similarityCutoff: 4.0, write:true
+  graph: 'cypher', topK: 1, similarityCutoff: 4.0, write:true
 })
 YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, max, mean, stdDev, p95
 RETURN nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, max, mean, p95

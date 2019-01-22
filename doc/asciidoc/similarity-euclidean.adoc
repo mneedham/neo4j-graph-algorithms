@@ -98,7 +98,7 @@ include::scripts/similarity-euclidean.cypher[tag=stream]
 |===
 // end::stream[]
 
-Zhen and Arya and Zhen and Karin have the most similar food preferences, with a euclidean distance of 0.0.
+Zhen and Arya, and Zhen and Karin have the most similar food preferences, with a euclidean distance of 0.0.
 Lower scores are better here; a score of 0 would indicate that users have exactly the same preferences.
 
 We might decide that we don't want to see users with a similarity above 5 returned in our results.
@@ -137,6 +137,7 @@ include::scripts/similarity-euclidean.cypher[tag=stream-topk]
 .Results
 [opts="header",cols="1,1,1"]
 |===
+| `from`       | `to`         | `similarity`
 | "Arya"     | "Zhen"  | 0.0
 | "Karin"    | "Zhen"  | 0.0
 | "Michael"  | "Zhen"  | 3.605551275463989
