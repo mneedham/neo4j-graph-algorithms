@@ -47,7 +47,7 @@ We might then use the computed similarity as part of a link prediction solution.
 include::scripts/similarity-adamic-adar.cypher[tag=create-sample-graph]
 ----
 
-.The following will return the Adamic Adar similarity of Michael and Karin:
+.The following will return the similarity of Michael and Karin:
 [source, cypher]
 ----
 include::scripts/similarity-adamic-adar.cypher[tag=all-rels]
@@ -65,7 +65,7 @@ include::scripts/similarity-adamic-adar.cypher[tag=all-rels]
 
 We can also compute the similarity between a pair of nodes based on a specific relationship type.
 
-.The following will return the Adamic Adar similarity of Zhen and Arya based only on `FRIENDS` relationships:
+.The following will return the similarity of Zhen and Arya based only on `FRIENDS` relationships:
 [source, cypher]
 ----
 include::scripts/similarity-adamic-adar.cypher[tag=only-friends]
@@ -100,6 +100,6 @@ RETURN algo.similarity.adamicAdar(node1:Node, node2:Node, {
 | Name                   | Type    | Default        | Optional | Description
 | `node1`                   | Node    | null           | no       | A node
 | `node2`                   | Node    | null           | no       | Another node
-| `relationshipQuery`                   | String    | null           | yes       | The relationship type to use to compute similarity between `node1` and `node2`
-| `direction`                   | String    | BOTH           | yes       | The direction of relationship type to use to compute similarity between `node1` and `node2`
+| `relationshipQuery`                   | String    | null           | yes       | The relationship type used to compute similarity between `node1` and `node2`
+| `direction`                   | String    | BOTH           | yes       | The direction of relationship type used to compute similarity between `node1` and `node2`
 |===

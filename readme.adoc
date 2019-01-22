@@ -72,6 +72,7 @@ These algorithms help calculate the similarity of nodes:
 * <<algorithms-similarity-pearson, Pearson Similarity>> (`algo.similarity.pearson`)
 * <<algorithms-similarity-euclidean, Euclidean Distance>> (`algo.similarity.euclidean`)
 * <<algorithms-similarity-overlap, Overlap Similarity>> (`algo.similarity.overlap`)
+* <<algorithms-similarity-adamic-adar, Adamic Adar Similarity>> (`algo.similarity.adamicAdar`)
 
 === Preprocessing
 

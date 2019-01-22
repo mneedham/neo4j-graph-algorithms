@@ -1,0 +1,105 @@
+[[algorithms-similarity-resource-allocation]]
+= The Resource Allocation algorithm
+
+[abstract]
+--
+This section describes the Resource Allocation Similarity algorithm in the Neo4j Graph Algorithms library.
+--
+
+// tag::introduction[]
+link:https://arxiv.org/pdf/0901.0553.pdf[Resource Allocation similarity] is a measure used to compute similarity between nodes based on their shared neighbors.
+// end::introduction[]
+
+
+[[algorithms-similarity-resource-allocation-context]]
+== History and explanation
+
+// tag::explanation[]
+
+Resource Allocation similarity was introduced in 2009 by Tao Zhou, Linyuan Lü, and Yi-Cheng Zhang as part of a study to predict links in various networks.
+It is computed using the following formula:
+
+image::resource-allocation-similarity.svg[role="middle"]
+
+where `N(u)` is the set of nodes adjacent to `u`.
+
+A value of 0 indicates that two nodes are dissimilar, while higher values indicate nodes are more similar.
+
+The library contains a function to calculate similarity between two nodes.
+
+// end::explanation[]
+
+[[algorithms-similarity-resource-allocation-usecase]]
+== Use-cases - when to use the Resource Allocation Similarity algorithm
+
+// tag::use-case[]
+We can use the Resource Allocation Similarity algorithm to work out the similarity between two nodes.
+We might then use the computed similarity as part of a link prediction solution.
+// end::use-case[]
+
+
+[[algorithms-similarity-resource-allocation-sample]]
+== Resource Allocation algorithm sample
+
+.The following will create a sample graph:
+[source, cypher]
+----
+include::scripts/similarity-resource-allocation.cypher[tag=create-sample-graph]
+----
+
+.The following will return the similarity of Michael and Karin:
+[source, cypher]
+----
+include::scripts/similarity-resource-allocation.cypher[tag=all-rels]
+----
+
+// tag::function[]
+.Results
+[opts="header",cols="1"]
+|===
+| `similarity`
+| 0.5
+|===
+// end::function[]
+
+
+We can also compute the similarity between a pair of nodes based on a specific relationship type.
+
+.The following will return the similarity of Zhen and Arya based only on `FRIENDS` relationships:
+[source, cypher]
+----
+include::scripts/similarity-resource-allocation.cypher[tag=only-friends]
+----
+
+// tag::function[]
+.Results
+[opts="header",cols="1"]
+|===
+| `similarity`
+| 0.0
+|===
+// end::function[]
+
+
+[[algorithms-similarity-resource-allocation-syntax]]
+== Syntax
+
+.The following will run the algorithm and return the result:
+[source, cypher]
+----
+RETURN algo.similarity.resourceAllocation(node1:Node, node2:Node, {
+    relationshipQuery: null,
+    direction: "BOTH"
+})
+----
+
+
+.Parameters
+[opts="header",cols="1,1,1,1,4"]
+|===
+| Name                   | Type    | Default        | Optional | Description
+| `node1`                   | Node    | null           | no       | A node
+| `node2`                   | Node    | null           | no       | Another node
+| `relationshipQuery`                   | String    | null           | yes       | The relationship type to use to compute similarity between `node1` and `node2`
+| `direction`                   | String    | BOTH           | yes       | The direction of relationship type to use to compute similarity between `node1` and `node2`
+|===
