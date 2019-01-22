@@ -268,14 +268,15 @@ public class InfoMap extends Algorithm<InfoMap> {
      */
     private boolean optimize() {
 
-        final MergePair pair = pool.invoke(new Task(this.modules.values().toArray(Module.class)));
+        Module[] modules = this.modules.values().toArray(Module.class);
+        final MergePair pair = pool.invoke(new Task(modules, 0, modules.length));
 
         if (null == pair) {
             return false;
         }
 
         pair.modA.merge(pair.modB);
-        modules.remove(pair.modB.index);
+        this.modules.remove(pair.modB.index);
         return true;
     }
 
@@ -300,20 +301,25 @@ public class InfoMap extends Algorithm<InfoMap> {
     private class Task extends RecursiveTask<MergePair> {
 
         final Module[] m;
+        private final int from;
+        private final int to;
 
-        private Task(Module[] m) {
+        private Task(Module[] m, int from, int to) {
             this.m = m;
+            this.from = from;
+            this.to = to;
         }
 
         @Override
         protected MergePair compute() {
 
-            if (concurrency > 1 && m.length >= MIN_MODS_PARALLEL_EXEC) {
+            int length = to - from;
+            if (concurrency > 1 && length >= MIN_MODS_PARALLEL_EXEC) {
                 // split mods
-                final int half = m.length / 2;
-                final Task taskA = new Task(Arrays.copyOfRange(m, 0, half));
+                final int half = from + ((length + 1) >> 1);
+                final Task taskA = new Task(m, from, half);
                 taskA.fork();
-                final Task taskB = new Task(Arrays.copyOfRange(m, half, m.length));
+                final Task taskB = new Task(m, half, to);
                 final MergePair mpA = taskB.compute();
                 final MergePair mpB = taskA.join();
                 MergePair competitivePair = compare(mpA, mpB);
@@ -328,7 +334,8 @@ public class InfoMap extends Algorithm<InfoMap> {
             final Pointer.DoublePointer min = Pointer.wrap(-1 * threshold);
 
             final Module[] best = {null, null};
-            for (Module module : m) {
+            for (int i = from; i < to; i++) {
+                final Module module = m[i];
                 module.forEachNeighbor(l -> {
                     final double v = delta(module, l);
                     if (v < min.v) {
