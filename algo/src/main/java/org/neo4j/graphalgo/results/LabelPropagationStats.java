@@ -18,27 +18,83 @@
  */
 package org.neo4j.graphalgo.results;
 
+import com.carrotsearch.hppc.LongLongMap;
+import org.HdrHistogram.Histogram;
+
 import java.util.Collections;
 import java.util.List;
 
-public class LabelPropagationStats extends AbstractCommunityResult {
+public class LabelPropagationStats {
 
-    public final long iterations;
+    public static final LabelPropagationStats EMPTY = new LabelPropagationStats(
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            Collections.emptyList(),
+            0,
+            false,
+            false,
+            "<empty>",
+            "<empty>");
+
+    public final long loadMillis;
+    public final long computeMillis;
+    public final long postProcessingMillis;
+    public final long writeMillis;
     public final long nodes;
+    public final long communityCount;
+    public final long p99;
+    public final long p95;
+    public final long p90;
+    public final long p75;
+    public final long p50;
+    public final long p25;
+    public final long p10;
+    public final long p05;
+    public final long p01;
+    public final List<Long> top3;
+    public final long iterations;
     public final boolean write, didConverge;
     public final String weightProperty, partitionProperty;
 
-    public LabelPropagationStats(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodes, long communityCount, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> biggestCommunities, long iterations, boolean write, boolean didConverge, String weightProperty, String partitionProperty) {
-        super(loadMillis, computeMillis, writeMillis, postProcessingMillis, nodes, communityCount, p99, p95, p90, p75, p50, p25, p10, p05, p01, biggestCommunities);
+    public LabelPropagationStats(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> top3, long iterations, boolean write, boolean didConverge, String weightProperty, String partitionProperty) {
+        this.loadMillis = loadMillis;
+        this.computeMillis = computeMillis;
+        this.postProcessingMillis = postProcessingMillis;
+        this.writeMillis = writeMillis;
+        this.nodes = nodes;
+        this.communityCount = communityCount;
+        this.p99 = p99;
+        this.p95 = p95;
+        this.p90 = p90;
+        this.p75 = p75;
+        this.p50 = p50;
+        this.p25 = p25;
+        this.p10 = p10;
+        this.p05 = p05;
+        this.p01 = p01;
+        this.top3 = top3;
         this.iterations = iterations;
         this.write = write;
         this.didConverge = didConverge;
         this.weightProperty = weightProperty;
         this.partitionProperty = partitionProperty;
-        this.nodes = nodes;
     }
 
-    public static class Builder extends CommunityResultBuilder<LabelPropagationStats> {
+
+    public static class Builder extends AbstractCommunityResultBuilder<LabelPropagationStats> {
 
         private long iterations = 0;
         private boolean didConverge = false;
@@ -71,22 +127,8 @@ public class LabelPropagationStats extends AbstractCommunityResult {
             return this;
         }
 
-        protected LabelPropagationStats build(long loadMillis,
-                                              long computeMillis,
-                                              long writeMillis,
-                                              long postProcessingMillis,
-                                              long nodeCount,
-                                              long communityCount,
-                                              long p99,
-                                              long p95,
-                                              long p90,
-                                              long p75,
-                                              long p50,
-                                              long p25,
-                                              long p10,
-                                              long p05,
-                                              long p01,
-                                              List<Long> top3Communities) {
+        @Override
+        protected LabelPropagationStats build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, List<Long> top3Communities) {
             return new LabelPropagationStats(
                     loadMillis,
                     computeMillis,
@@ -94,15 +136,15 @@ public class LabelPropagationStats extends AbstractCommunityResult {
                     postProcessingMillis,
                     nodeCount,
                     communityCount,
-                    p99,
-                    p95,
-                    p90,
-                    p75,
-                    p50,
-                    p25,
-                    p10,
-                    p05,
-                    p01,
+                    communityHistogram.getValueAtPercentile(.99),
+                    communityHistogram.getValueAtPercentile(.95),
+                    communityHistogram.getValueAtPercentile(.9),
+                    communityHistogram.getValueAtPercentile(.75),
+                    communityHistogram.getValueAtPercentile(.5),
+                    communityHistogram.getValueAtPercentile(.25),
+                    communityHistogram.getValueAtPercentile(.1),
+                    communityHistogram.getValueAtPercentile(.05),
+                    communityHistogram.getValueAtPercentile(.01),
                     top3Communities,
                     iterations,
                     write,
@@ -112,29 +154,5 @@ public class LabelPropagationStats extends AbstractCommunityResult {
             );
         }
 
-        public LabelPropagationStats emptyResult() {
-            return new LabelPropagationStats(
-                    loadDuration,
-                    evalDuration,
-                    writeDuration,
-                    -1,
-                    0,
-                    0,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    Collections.emptyList(),
-                    iterations,
-                    write,
-                    didConverge,
-                    weightProperty,
-                    partitionProperty);
-        }
     }
 }

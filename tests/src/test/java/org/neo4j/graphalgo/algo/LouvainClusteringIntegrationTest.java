@@ -97,18 +97,17 @@ public class LouvainClusteringIntegrationTest {
     @Test
     public void test() {
         final String cypher = "CALL algo.louvain('', '', {concurrency:1}) " +
-                "YIELD nodes, communityCount, iterations, loadMillis, computeMillis, writeMillis, top3, p99";
+                "YIELD nodes, communityCount, loadMillis, computeMillis, writeMillis, postProcessingMillis, top3, p99";
 
         DB.execute(cypher).accept(row -> {
             final long nodes = row.getNumber("nodes").longValue();
             final long communityCount = row.getNumber("communityCount").longValue();
-            final long iterations = row.getNumber("iterations").longValue();
             final long loadMillis = row.getNumber("loadMillis").longValue();
             final long computeMillis = row.getNumber("computeMillis").longValue();
             final long writeMillis = row.getNumber("writeMillis").longValue();
+            System.out.println("postProcessingMillis = " + row.getNumber("postProcessingMillis"));
             System.out.println("nodes = " + nodes);
             System.out.println("communityCount = " + communityCount);
-            System.out.println("iterations = " + iterations);
             System.out.println("p99 = " + row.get("p99"));
             System.out.println("top3 = " + row.get("top3"));
 

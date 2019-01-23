@@ -29,7 +29,7 @@ import org.neo4j.graphalgo.core.utils.dss.DisjointSetStruct;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.core.utils.paged.PagedDisjointSetStruct;
 import org.neo4j.graphalgo.core.write.Exporter;
-import org.neo4j.graphalgo.results.AbstractCommunityResult;
+import org.neo4j.graphalgo.results.DefaultCommunityResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -53,7 +53,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
     private final  UnionFindAlgo sequential;
     private final UnionFindAlgo parallel;
 
-    public static Stream<AbstractCommunityResult> run(
+    public static Stream<DefaultCommunityResult> run(
             Map<String, Object> config,
             String label,
             String relationship,
@@ -65,7 +65,7 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
 
         AllocationTracker tracker = AllocationTracker.create();
 
-        final UnionFindResultBuilder builder = new UnionFindResultBuilder();
+        final DefaultCommunityResult.DefaultCommunityResultBuilder builder = new DefaultCommunityResult.DefaultCommunityResultBuilder();
 
         UnionFindProcExec uf = unionFind.get();
 
@@ -73,10 +73,10 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
 
         if (graph.nodeCount() == 0) {
             graph.release();
-            return Stream.of(builder.buildEmpty());
+            return Stream.of(DefaultCommunityResult.EMPTY);
         }
 
-        DSSResult dssResult = uf.evaluate(
+        final DSSResult dssResult = uf.evaluate(
                 builder::timeEval,
                 graph,
                 configuration,
@@ -87,7 +87,11 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
             uf.write(builder::timeWrite, graph, dssResult, configuration);
         }
 
-        return Stream.of(builder.build(dssResult));
+        if (dssResult.isHuge) {
+            return Stream.of(builder.build(graph, dssResult.hugeStruct::find));
+        } else {
+            return Stream.of(builder.build(graph, l -> (long) dssResult.struct.find((int) l)));
+        }
     }
 
     public static Stream<DisjointSetStruct.Result> stream(
@@ -238,14 +242,5 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
     }
 
 
-    public static class UnionFindResultBuilder extends AbstractCommunityResult.CommunityResultBuilder {
 
-        public AbstractCommunityResult build(DSSResult result) {
-            if (result.isHuge) {
-                return build(result.hugeStruct.capacity(), result.hugeStruct::find);
-            } else {
-                return build(result.struct.capacity(), l -> (long) result.struct.find((int) l));
-            }
-        }
-    }
 }

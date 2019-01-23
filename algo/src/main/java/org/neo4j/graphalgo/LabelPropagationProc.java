@@ -105,7 +105,7 @@ public final class LabelPropagationProc {
 
         if(graph.nodeCount() == 0) {
             graph.release();
-            return Stream.of(stats.emptyResult());
+            return Stream.of(LabelPropagationStats.EMPTY);
         }
 
         final int[] labels = compute(direction, iterations, batchSize, concurrency, graph, stats);
@@ -113,7 +113,7 @@ public final class LabelPropagationProc {
             write(concurrency, partitionProperty, graph, labels, stats);
         }
 
-        return Stream.of(stats.build(graph.nodeCount(), l -> (long) labels[(int) l]));
+        return Stream.of(stats.build(graph, l -> (long) labels[(int) l]));
     }
 
     @Procedure(value = "algo.labelPropagation.stream")

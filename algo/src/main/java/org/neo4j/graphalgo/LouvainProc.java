@@ -18,6 +18,8 @@
  */
 package org.neo4j.graphalgo;
 
+import com.carrotsearch.hppc.LongLongMap;
+import org.HdrHistogram.Histogram;
 import org.neo4j.graphalgo.api.*;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
@@ -27,12 +29,14 @@ import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.louvain.*;
-import org.neo4j.graphalgo.results.AbstractCommunityResult;
+import org.neo4j.graphalgo.results.AbstractCommunityResultBuilder;
+import org.neo4j.graphalgo.results.DefaultCommunityResult;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +77,8 @@ public class LouvainProc {
                 .overrideNodeLabelOrQuery(label)
                 .overrideRelationshipTypeOrQuery(relationship);
 
-        final AbstractCommunityResult.CommunityResultBuilder<LouvainResult> builder = new AbstractCommunityResult.CommunityResultBuilder<>();
+
+        final Builder builder = new Builder();
 
         final Graph graph;
         try (ProgressTimer timer = builder.timeLoad()) {
@@ -105,7 +110,7 @@ public class LouvainProc {
         }
 
         final int[] communityIds = louvain.getCommunityIds();
-        return Stream.of(builder.build(graph.nodeCount(), n -> (long) communityIds[(int) n]));
+        return Stream.of(builder.build(graph, n -> (long) communityIds[(int) n]));
     }
 
     @Procedure(value = "algo.louvain.stream")
@@ -177,13 +182,15 @@ public class LouvainProc {
                 .export(allCommunities, finalCommunities, includeIntermediateCommunities);
     }
 
-    private static class LouvainResult extends AbstractCommunityResult {
-
-        public LouvainResult(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodes, long communityCount, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> top) {
-            super(loadMillis, computeMillis, writeMillis, postProcessingMillis, nodes, communityCount, p99, p95, p90, p75, p50, p25, p10, p05, p01, top);
-        }
+    public static class LouvainResult {
 
         public static final LouvainResult EMPTY = new LouvainResult(
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
                 -1,
                 -1,
                 -1,
@@ -193,13 +200,104 @@ public class LouvainProc {
                 -1,
                 -1,
                 -1,
-                -1,
-                -1,
-                -1,
-                -1,
-                -1,
-                -1,
-                Collections.emptyList()
+                Collections.emptyList(),
+                0
         );
+
+        public final long loadMillis;
+        public final long computeMillis;
+        public final long postProcessingMillis;
+        public final long writeMillis;
+        public final long nodes;
+        public final long communityCount;
+        public final long p99;
+        public final long p95;
+        public final long p90;
+        public final long p75;
+        public final long p50;
+        public final long p25;
+        public final long p10;
+        public final long p05;
+        public final long p01;
+        public final List<Long> top3;
+        public final long iterations;
+
+        public LouvainResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> top3, long iterations) {
+            this.loadMillis = loadMillis;
+            this.computeMillis = computeMillis;
+            this.postProcessingMillis = postProcessingMillis;
+            this.writeMillis = writeMillis;
+            this.nodes = nodes;
+            this.communityCount = communityCount;
+            this.p99 = p99;
+            this.p95 = p95;
+            this.p90 = p90;
+            this.p75 = p75;
+            this.p50 = p50;
+            this.p25 = p25;
+            this.p10 = p10;
+            this.p05 = p05;
+            this.p01 = p01;
+            this.top3 = top3;
+            this.iterations = iterations;
+        }
+
+        @Override
+        public String toString() {
+            return "LouvainResult{" +
+                    "loadMillis=" + loadMillis +
+                    ", computeMillis=" + computeMillis +
+                    ", postProcessingMillis=" + postProcessingMillis +
+                    ", writeMillis=" + writeMillis +
+                    ", nodes=" + nodes +
+                    ", communityCount=" + communityCount +
+                    ", p99=" + p99 +
+                    ", p95=" + p95 +
+                    ", p90=" + p90 +
+                    ", p75=" + p75 +
+                    ", p50=" + p50 +
+                    ", p25=" + p25 +
+                    ", p10=" + p10 +
+                    ", p05=" + p05 +
+                    ", p01=" + p01 +
+                    ", top3=" + top3 +
+                    ", iterations=" + iterations +
+                    '}';
+        }
     }
+
+    public static class Builder extends AbstractCommunityResultBuilder<LouvainResult> {
+
+        private long iterations = -1;
+
+        public Builder withIterations(long iterations) {
+            this.iterations = iterations;
+            return this;
+        }
+
+        @Override
+        protected LouvainResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, List<Long> top3Communities) {
+            return new LouvainResult(
+                    loadMillis,
+                    computeMillis,
+                    postProcessingMillis,
+                    writeMillis,
+                    nodeCount,
+                    communityCount,
+                    communityHistogram.getValueAtPercentile(.99),
+                    communityHistogram.getValueAtPercentile(.95),
+                    communityHistogram.getValueAtPercentile(.9),
+                    communityHistogram.getValueAtPercentile(.75),
+                    communityHistogram.getValueAtPercentile(.5),
+                    communityHistogram.getValueAtPercentile(.25),
+                    communityHistogram.getValueAtPercentile(.1),
+                    communityHistogram.getValueAtPercentile(.05),
+                    communityHistogram.getValueAtPercentile(.01),
+                    top3Communities,
+                    iterations
+            );
+        }
+    }
+
+
 }
