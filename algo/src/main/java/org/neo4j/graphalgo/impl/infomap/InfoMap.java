@@ -20,8 +20,6 @@ package org.neo4j.graphalgo.impl.infomap;
 
 import com.carrotsearch.hppc.*;
 import com.carrotsearch.hppc.cursors.IntDoubleCursor;
-import com.carrotsearch.hppc.cursors.IntObjectCursor;
-import com.carrotsearch.hppc.procedures.IntProcedure;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
@@ -65,10 +63,6 @@ public class InfoMap extends Algorithm<InfoMap> {
     private final double tau;
     // minimum difference in deltaL for merging 2 modules together
     private final double threshold;
-    // an undirected graph
-    private Graph graph;
-    // page rank weights
-    private NodeWeights pageRank;
     // normalized relationship weights
     private RelationshipWeights weights;
     // helper vars
@@ -84,11 +78,11 @@ public class InfoMap extends Algorithm<InfoMap> {
     // number of iterations the last computation took
     private int iterations = 0;
     // module map
-    private IntObjectMap<Module> modules;
+    private IndexMap<Module> modules;
     // community assignment helper array
     private int[] communities;
     // sum of exit probs.
-    private double sQi = 0.;
+    private double sQi;
 
     /**
      * create a weighted InfoMap algo instance
@@ -167,8 +161,6 @@ public class InfoMap extends Algorithm<InfoMap> {
      * @param terminationFlag   running flag
      */
     private InfoMap(Graph graph, NodeWeights pageRank, RelationshipWeights normalizedWeights, double threshold, double tau, ForkJoinPool pool, int concurrency, ProgressLogger logger, TerminationFlag terminationFlag) {
-        this.graph = graph;
-        this.pageRank = pageRank;
         this.weights = normalizedWeights;
         this.nodeCount = Math.toIntExact(graph.nodeCount());
         this.tau = tau;
@@ -177,19 +169,18 @@ public class InfoMap extends Algorithm<InfoMap> {
         this.concurrency = concurrency;
         this.logger = logger;
         this.terminationFlag = terminationFlag;
-        this.modules = new IntObjectScatterMap<>(nodeCount);
+        this.modules = new IndexMap<>(MODULE_POS, Module.class, nodeCount);
         this.communities = new int[nodeCount];
         this.tau1 = 1. - tau;
         this.n1 = nodeCount - 1.;
+        this.sQi = 0.0;
         Arrays.setAll(communities, i -> i);
-        final double[] d = {0.};
         graph.forEachNode(node -> {
-            final Module module = new Module(node);
+            Module module = new Module(node, graph, pageRank);
             modules.put(node, module);
-            d[0] += module.q;
+            sQi += module.q;
             return true;
         });
-        this.sQi = d[0];
     }
 
     /**
@@ -220,12 +211,8 @@ public class InfoMap extends Algorithm<InfoMap> {
      */
     @Override
     public InfoMap release() {
-        graph = null;
-        pageRank = null;
-        weights = null;
-        for (IntObjectCursor<Module> cursor : modules) {
-            cursor.value.release();
-        }
+        modules.forEach(Module::release);
+        modules.release();
         modules = null;
         communities = null;
         return this;
@@ -268,8 +255,7 @@ public class InfoMap extends Algorithm<InfoMap> {
      */
     private boolean optimize() {
 
-        Module[] modules = this.modules.values().toArray(Module.class);
-        final MergePair pair = pool.invoke(new Task(modules, 0, modules.length, new BitSet()));
+        final MergePair pair = pool.invoke(new Task(modules.array(), 0, modules.size(), new BitSet()));
 
         if (null == pair) {
             return false;
@@ -324,13 +310,7 @@ public class InfoMap extends Algorithm<InfoMap> {
                 final Task taskB = new Task(m, half, to, visited);
                 final MergePair mpA = taskB.compute();
                 final MergePair mpB = taskA.join();
-                MergePair competitivePair = compare(mpA, mpB);
-                MergePair uncompetitivePair = competitivePair == mpA ? mpB : mpA;
-                if (uncompetitivePair != null) {
-                    uncompetitivePair.modA.freeTemporarily();
-                    uncompetitivePair.modB.freeTemporarily();
-                }
-                return competitivePair;
+                return compare(mpA, mpB);
             }
 
             final Pointer.DoublePointer min = Pointer.wrap(-1 * threshold);
@@ -348,11 +328,8 @@ public class InfoMap extends Algorithm<InfoMap> {
                         min.v = v;
                         best[0] = module;
                         best[1] = l;
-                    } else {
-                        // module wont be merged for now
-                        module.freeTemporarily();
                     }
-                }, visited);
+                }, visited, modules);
             }
 
             if (null == best[0] || best[0] == best[1]) {
@@ -381,10 +358,10 @@ public class InfoMap extends Algorithm<InfoMap> {
      * a module represents a community
      */
     private class Module {
+        // position from where this was deleted from `Modules`
+        int initialPosition = -1;
         // module id (first node in the set)
         final int index;
-        // nodes
-        BitSet nodes;
         // set size (number of nodes)
         int n = 1;
         // ergodic frequency
@@ -393,14 +370,12 @@ public class InfoMap extends Algorithm<InfoMap> {
         double w = .0;
         // exit probability with teleport
         double q;
+        // nodes
+        private BitSet nodes;
         // precalculated weights into other communities
-        IntDoubleMap wi;
-        // visited
-        BitSet visited;
+        private IntDoubleMap wi;
 
-        Module(int startNode) {
-            this.nodes = null;
-            this.visited = null;
+        Module(int startNode, Graph graph, NodeWeights pageRank) {
             this.index = startNode;
             this.wi = new IntDoubleScatterMap();
             graph.forEachRelationship(startNode, D, (s, t, r) -> {
@@ -416,7 +391,10 @@ public class InfoMap extends Algorithm<InfoMap> {
             q = tau * p + tau1 * w;
         }
 
-        void forEachNeighbor(Consumer<Module> consumer, BitSet visited) {
+        void forEachNeighbor(
+                Consumer<Module> consumer,
+                BitSet visited,
+                IndexMap<Module> modules) {
             visited.clear();
             for (final IntDoubleCursor cursor : this.wi) {
                 final int node = cursor.key;
@@ -471,14 +449,9 @@ public class InfoMap extends Algorithm<InfoMap> {
             l.release();
         }
 
-        void freeTemporarily() {
-            visited = null;
-        }
-
         void release() {
             wi = null;
             nodes = null;
-            visited = null;
         }
     }
 
@@ -502,4 +475,16 @@ public class InfoMap extends Algorithm<InfoMap> {
     private static double log2(double v) {
         return Math.log(v) / LOG2;
     }
+
+    private static final IndexMap.PositionMarker<Module> MODULE_POS = new IndexMap.PositionMarker<Module>() {
+        @Override
+        public int position(final Module item) {
+            return item.initialPosition;
+        }
+
+        @Override
+        public void setPosition(final Module item, final int position) {
+            item.initialPosition = position;
+        }
+    };
 }
