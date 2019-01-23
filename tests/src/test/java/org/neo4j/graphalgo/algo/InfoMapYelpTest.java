@@ -26,6 +26,7 @@ import org.neo4j.graphalgo.GetNodeFunc;
 import org.neo4j.graphalgo.InfoMapProc;
 import org.neo4j.graphalgo.LabelPropagationProc;
 import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.bench.LdbcDownloader;
 import org.neo4j.graphalgo.impl.infomap.InfoMap;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -38,6 +39,7 @@ import org.neo4j.test.TestGraphDatabaseFactory;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
 
 import static org.mockito.Matchers.anyString;
@@ -48,21 +50,15 @@ import static org.mockito.Mockito.*;
  *
  * @author mknblch
  */
-@Ignore("local test data")
 public class InfoMapYelpTest {
 
     private static GraphDatabaseService db;
 
-    private static File storeDir = Paths.get(
-            "/Users/mknobloch/data/neo4j",
-            "yelp.photo.db"
-    ).toFile();
-
     private static Graph graph;
 
     @BeforeClass
-    public static void setupGraph() throws KernelException {
-        db = new GraphDatabaseFactory().newEmbeddedDatabase(storeDir);
+    public static void setupGraph() throws KernelException, IOException {
+        db = LdbcDownloader.openDb("Yelp");
         Procedures proceduresService = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency(Procedures.class);
         proceduresService.registerProcedure(InfoMapProc.class, true);
     }

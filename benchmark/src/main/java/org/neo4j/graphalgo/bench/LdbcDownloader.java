@@ -61,11 +61,11 @@ public final class LdbcDownloader {
         FILES.put("Yelp", new S3Location("https://www.dropbox.com/s/srinq7sg5unt4vp/yelp.photo.db.tgz?dl=1"));
     }
 
-    static synchronized GraphDatabaseAPI openDb() throws IOException {
+    public static synchronized GraphDatabaseAPI openDb() throws IOException {
         return openDb("L01");
     }
 
-    static synchronized GraphDatabaseAPI openDb(String graphId) throws IOException {
+    public static synchronized GraphDatabaseAPI openDb(String graphId) throws IOException {
         S3Location location = FILES.get(graphId);
         if (location == null) {
             throw new IllegalArgumentException("Unknown graph: " + graphId);
