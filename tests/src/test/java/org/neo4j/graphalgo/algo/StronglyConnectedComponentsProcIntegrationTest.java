@@ -97,22 +97,18 @@ public class StronglyConnectedComponentsProcIntegrationTest {
     @Test
     public void testScc() throws Exception {
 
-        db.execute("CALL algo.scc('Node', 'TYPE', {write:true, graph:'"+graphImpl+"'}) YIELD loadMillis, computeMillis, writeMillis, setCount, maxSetSize, minSetSize")
+        db.execute("CALL algo.scc('Node', 'TYPE', {write:true, graph:'"+graphImpl+"'}) YIELD loadMillis, computeMillis, writeMillis, setCount, top3")
                 .accept(row -> {
 
                     System.out.println(row.getNumber("loadMillis").longValue());
                     System.out.println(row.getNumber("computeMillis").longValue());
                     System.out.println(row.getNumber("writeMillis").longValue());
                     System.out.println(row.getNumber("setCount").longValue());
-                    System.out.println(row.getNumber("maxSetSize").longValue());
-                    System.out.println(row.getNumber("minSetSize").longValue());
+                    System.out.println(row.get("top3"));
 
                     assertNotEquals(-1L, row.getNumber("computeMillis").longValue());
                     assertNotEquals(-1L, row.getNumber("writeMillis").longValue());
                     assertEquals(2, row.getNumber("setCount").longValue());
-                    assertEquals(2, row.getNumber("minSetSize").longValue());
-                    assertEquals(3, row.getNumber("maxSetSize").longValue());
-
                     return true;
                 });
     }

@@ -241,29 +241,6 @@ public class LouvainProc {
             this.top3 = top3;
             this.iterations = iterations;
         }
-
-        @Override
-        public String toString() {
-            return "LouvainResult{" +
-                    "loadMillis=" + loadMillis +
-                    ", computeMillis=" + computeMillis +
-                    ", postProcessingMillis=" + postProcessingMillis +
-                    ", writeMillis=" + writeMillis +
-                    ", nodes=" + nodes +
-                    ", communityCount=" + communityCount +
-                    ", p99=" + p99 +
-                    ", p95=" + p95 +
-                    ", p90=" + p90 +
-                    ", p75=" + p75 +
-                    ", p50=" + p50 +
-                    ", p25=" + p25 +
-                    ", p10=" + p10 +
-                    ", p05=" + p05 +
-                    ", p01=" + p01 +
-                    ", top3=" + top3 +
-                    ", iterations=" + iterations +
-                    '}';
-        }
     }
 
     public static class Builder extends AbstractCommunityResultBuilder<LouvainResult> {
