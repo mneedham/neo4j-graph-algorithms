@@ -3,13 +3,17 @@ package org.neo4j.graphalgo.results;
 import com.carrotsearch.hppc.LongLongMap;
 import com.carrotsearch.hppc.LongLongScatterMap;
 import com.carrotsearch.hppc.cursors.LongLongCursor;
+import com.carrotsearch.hppc.procedures.IntIntProcedure;
 import org.HdrHistogram.Histogram;
 import org.neo4j.graphalgo.api.IdMapping;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntFunction;
+import java.util.function.IntToLongFunction;
 import java.util.function.LongFunction;
+import java.util.function.LongToIntFunction;
 
 /**
  * @author mknblch
@@ -107,6 +111,18 @@ public abstract class AbstractCommunityResultBuilder<T> {
         try (ProgressTimer timer = timeWrite()) {
             runnable.run();
         }
+    }
+
+    public T buildII(IdMapping nodes, IntFunction<Integer> fun) {
+        return build(nodes, value -> (long) fun.apply((int) value));
+    }
+
+    public T buildLI(IdMapping nodes, LongToIntFunction fun) {
+        return build(nodes, value -> (long) fun.applyAsInt(value));
+    }
+
+    public T buildIL(IdMapping nodes, IntToLongFunction fun) {
+        return build(nodes, value -> fun.applyAsLong((int) value));
     }
 
     /**
