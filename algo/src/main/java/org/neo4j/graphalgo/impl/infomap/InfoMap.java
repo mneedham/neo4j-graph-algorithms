@@ -394,6 +394,7 @@ public class InfoMap extends Algorithm<InfoMap> {
             erdogicFrequency = pageRank.weightOf(startNode);
             w *= erdogicFrequency;
             q = tau * erdogicFrequency + tau1 * w;
+            this.communityWeights = new IntDoubleHashMap();
             computeCommunityWeights();
         }
 
@@ -427,13 +428,10 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
 
         void computeCommunityWeights() {
-            IntDoubleMap communityWeights = new IntDoubleHashMap();
-
+            communityWeights.clear();
             for (final IntDoubleCursor cursor : this.wi) {
                 communityWeights.putOrAdd(communities[cursor.key], cursor.value, cursor.value);
             }
-
-            this.communityWeights = communityWeights;
         }
 
         void computeCommunityWeights(int removedCommunityId) {
