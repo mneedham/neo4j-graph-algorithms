@@ -20,6 +20,7 @@ package org.neo4j.graphalgo.impl.infomap;
 
 import com.carrotsearch.hppc.*;
 import com.carrotsearch.hppc.cursors.IntDoubleCursor;
+import com.carrotsearch.hppc.cursors.LongDoubleCursor;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
@@ -361,7 +362,7 @@ public class InfoMap extends Algorithm<InfoMap> {
      * a module represents a community
      */
     private class Module {
-        private LongDoubleMap communityWeights;
+        private IntDoubleMap communityWeights;
         // position from where this was deleted from `Modules`
         int initialPosition = -1;
         // module id (first node in the set)
@@ -400,25 +401,35 @@ public class InfoMap extends Algorithm<InfoMap> {
                 Consumer<Module> consumer,
                 BitSet visited,
                 IndexMap<Module> modules) {
-            visited.clear();
-            for (final IntDoubleCursor cursor : this.wi) {
-                final int nodeId = cursor.key;
-                final int communityId = communities[nodeId];
+//            visited.clear();
+
+            for (IntDoubleCursor cursor : communityWeights) {
+                int communityId = cursor.key;
                 if (communityId == this.communityId) {
                     return;
                 }
-                // already visited
-                if (visited.get(communityId)) {
-                    return;
-                }
-                // do visit
-                visited.set(communityId);
+
                 consumer.accept(modules.get(communityId));
             }
+//
+//            for (final IntDoubleCursor cursor : this.wi) {
+//                final int nodeId = cursor.key;
+//                final int communityId = communities[nodeId];
+//                if (communityId == this.communityId) {
+//                    return;
+//                }
+//                // already visited
+//                if (visited.get(communityId)) {
+//                    return;
+//                }
+//                // do visit
+//                visited.set(communityId);
+//                consumer.accept(modules.get(communityId));
+//            }
         }
 
         void computeCommunityWeights() {
-            LongDoubleMap communityWeights = new LongDoubleHashMap();
+            IntDoubleMap communityWeights = new IntDoubleHashMap();
 
             for (final IntDoubleCursor cursor : this.wi) {
 //                System.out.println("*" + communities[cursor.key] + "* -> " + cursor.key + ":" + cursor.value);
