@@ -83,7 +83,7 @@ public class LouvainCommunityExporter extends StatementApi {
 
         @Override
         public void run() {
-            if (includeIntermediateCommunities) {
+                if (includeIntermediateCommunities) {
                 writeEverything();
             } else {
                 onlyWriteFinalCommunities();
