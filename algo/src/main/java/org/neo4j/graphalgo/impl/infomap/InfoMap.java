@@ -20,7 +20,6 @@ package org.neo4j.graphalgo.impl.infomap;
 
 import com.carrotsearch.hppc.*;
 import com.carrotsearch.hppc.cursors.IntDoubleCursor;
-import com.carrotsearch.hppc.cursors.LongDoubleCursor;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.NodeWeights;
 import org.neo4j.graphalgo.api.RelationshipWeights;
@@ -264,8 +263,9 @@ public class InfoMap extends Algorithm<InfoMap> {
 
         pair.modA.merge(pair.modB);
         this.modules.remove(pair.modB.communityId);
-
-        this.modules.forEach(Module::computeCommunityWeights);
+        this.modules.forEach(module -> {
+            module.computeCommunityWeights(pair.modA.communityId, pair.modB.communityId);
+        });
 
         return true;
     }
@@ -430,12 +430,16 @@ public class InfoMap extends Algorithm<InfoMap> {
             IntDoubleMap communityWeights = new IntDoubleHashMap();
 
             for (final IntDoubleCursor cursor : this.wi) {
-//                System.out.println("*" + communities[cursor.key] + "* -> " + cursor.key + ":" + cursor.value);
                 communityWeights.putOrAdd(communities[cursor.key], cursor.value, cursor.value);
             }
-//            System.out.println(this.communityId + " -> " + communityWeights);
 
             this.communityWeights =  communityWeights;
+        }
+
+        void computeCommunityWeights(int mergedCommunityId, int removedCommunityId) {
+            if(communityWeights.containsKey(mergedCommunityId) || communityWeights.containsKey(removedCommunityId)) {
+                computeCommunityWeights();
+            }
         }
 
         double wil(Module module) {
@@ -468,9 +472,9 @@ public class InfoMap extends Algorithm<InfoMap> {
             if (module.nodes != null) {
                 nodes.or(module.nodes);
                 BitSetIterator iterator = module.nodes.iterator();
-                int lNode;
-                while ((lNode = iterator.nextSetBit()) != BitSetIterator.NO_MORE) {
-                    communities[lNode] = communityId;
+                int nodeId;
+                while ((nodeId = iterator.nextSetBit()) != BitSetIterator.NO_MORE) {
+                    communities[nodeId] = communityId;
                 }
             } else {
                 nodes.set(module.communityId);
