@@ -405,11 +405,9 @@ public class InfoMap extends Algorithm<InfoMap> {
 
             for (IntDoubleCursor cursor : communityWeights) {
                 int communityId = cursor.key;
-                if (communityId == this.communityId) {
-                    return;
+                if (communityId != this.communityId) {
+                    consumer.accept(modules.get(communityId));
                 }
-
-                consumer.accept(modules.get(communityId));
             }
 //
 //            for (final IntDoubleCursor cursor : this.wi) {
