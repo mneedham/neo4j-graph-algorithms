@@ -262,7 +262,10 @@ public class InfoMap extends Algorithm<InfoMap> {
         }
 
         pair.modA.merge(pair.modB);
-        this.modules.remove(pair.modB.index);
+        this.modules.remove(pair.modB.communityId);
+
+        this.modules.forEach(Module::computeCommunityWeights);
+
         return true;
     }
 
@@ -272,16 +275,16 @@ public class InfoMap extends Algorithm<InfoMap> {
      * @return delta L
      */
     private double delta(Module j, Module k) {
-        double pi = j.p + k.p;
-        double qi = tau * pi * (nodeCount - ((double) (j.n + k.n))) / n1 + tau1 * (j.w + k.w - j.wil(k));
+        double pi = j.erdogicFrequency + k.erdogicFrequency;
+        double qi = tau * pi * (nodeCount - ((double) (j.numberOfNodes + k.numberOfNodes))) / n1 + tau1 * (j.w + k.w - j.wil(k));
         return plogp(qi - j.q - k.q + sQi)
                 - plogp(sQi)
                 - 2 * plogp(qi)
                 + 2 * plogp(j.q)
                 + 2 * plogp(k.q)
                 + plogp(pi + qi)
-                - plogp(j.p + j.q)
-                - plogp(k.p + k.q);
+                - plogp(j.erdogicFrequency + j.q)
+                - plogp(k.erdogicFrequency + k.q);
     }
 
     private class Task extends RecursiveTask<MergePair> {
@@ -322,12 +325,12 @@ public class InfoMap extends Algorithm<InfoMap> {
             }
             for (int i = from; i < to; i++) {
                 final Module module = m[i];
-                module.forEachNeighbor(l -> {
-                    final double v = delta(module, l);
+                module.forEachNeighbor(targetCommunity -> {
+                    final double v = delta(module, targetCommunity);
                     if (v < min.v) {
                         min.v = v;
                         best[0] = module;
-                        best[1] = l;
+                        best[1] = targetCommunity;
                     }
                 }, visited, modules);
             }
@@ -358,14 +361,15 @@ public class InfoMap extends Algorithm<InfoMap> {
      * a module represents a community
      */
     private class Module {
+        private LongDoubleMap communityWeights;
         // position from where this was deleted from `Modules`
         int initialPosition = -1;
         // module id (first node in the set)
-        final int index;
+        final int communityId;
         // set size (number of nodes)
-        int n = 1;
+        int numberOfNodes = 1;
         // ergodic frequency
-        double p;
+        double erdogicFrequency;
         // exit probability without teleport
         double w = .0;
         // exit probability with teleport
@@ -376,7 +380,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         private IntDoubleMap wi;
 
         Module(int startNode, Graph graph, NodeWeights pageRank) {
-            this.index = startNode;
+            this.communityId = startNode;
             this.wi = new IntDoubleScatterMap();
             graph.forEachRelationship(startNode, D, (s, t, r) -> {
                 if (s != t) {
@@ -386,9 +390,10 @@ public class InfoMap extends Algorithm<InfoMap> {
                 }
                 return true;
             });
-            p = pageRank.weightOf(startNode);
-            w *= p;
-            q = tau * p + tau1 * w;
+            erdogicFrequency = pageRank.weightOf(startNode);
+            w *= erdogicFrequency;
+            q = tau * erdogicFrequency + tau1 * w;
+            computeCommunityWeights();
         }
 
         void forEachNeighbor(
@@ -397,61 +402,90 @@ public class InfoMap extends Algorithm<InfoMap> {
                 IndexMap<Module> modules) {
             visited.clear();
             for (final IntDoubleCursor cursor : this.wi) {
-                final int node = cursor.key;
-                final int c = communities[node];
-                if (c == index) {
+                final int nodeId = cursor.key;
+                final int communityId = communities[nodeId];
+                if (communityId == this.communityId) {
                     return;
                 }
                 // already visited
-                if (visited.get(c)) {
+                if (visited.get(communityId)) {
                     return;
                 }
                 // do visit
-                visited.set(c);
-                consumer.accept(modules.get(c));
+                visited.set(communityId);
+                consumer.accept(modules.get(communityId));
             }
         }
 
-        double wil(Module l) {
-            double wi = 0.;
+        void computeCommunityWeights() {
+            LongDoubleMap communityWeights = new LongDoubleHashMap();
+
             for (final IntDoubleCursor cursor : this.wi) {
-                if (communities[cursor.key] == l.index) {
-                    wi += cursor.value;
-                }
+//                System.out.println("*" + communities[cursor.key] + "* -> " + cursor.key + ":" + cursor.value);
+                communityWeights.putOrAdd(communities[cursor.key], cursor.value, cursor.value);
             }
-            return wi;
+//            System.out.println(this.communityId + " -> " + communityWeights);
+
+            this.communityWeights =  communityWeights;
         }
 
-        void merge(Module l) {
-            n += l.n;
-            p += l.p;
-            w += l.w - wil(l);
+        double wil(Module module) {
+//            double wi = 0.;
+//            for (final IntDoubleCursor cursor : this.wi) {
+//                if (communities[cursor.key] == module.communityId) {
+////                    System.out.println("++" + communities[cursor.key] + "++ -> " + cursor.key + ":" + cursor.value);
+//                    wi += cursor.value;
+//                }
+//            }
+//
+////            if(wi != communityWeights.get(module.communityId)) {
+////                System.out.println("DIFFERENT [" + this.communityId + "]: "  + module.communityId + " -> " + wi + " [" + communityWeights.get(module.communityId) + "]");
+////            }
+//
+//            return wi;
+
+            return communityWeights.get(module.communityId);
+
+        }
+
+        void merge(Module module) {
+            numberOfNodes += module.numberOfNodes;
+            erdogicFrequency += module.erdogicFrequency;
+            w += module.w - wil(module);
             if (nodes == null) {
-                nodes = new BitSet(index);
-                nodes.set(index);
+                nodes = new BitSet(communityId);
+                nodes.set(communityId);
             }
-            if (l.nodes != null) {
-                nodes.or(l.nodes);
-                BitSetIterator iterator = l.nodes.iterator();
+            if (module.nodes != null) {
+                nodes.or(module.nodes);
+                BitSetIterator iterator = module.nodes.iterator();
                 int lNode;
                 while ((lNode = iterator.nextSetBit()) != BitSetIterator.NO_MORE) {
-                    communities[lNode] = index;
+                    communities[lNode] = communityId;
                 }
             } else {
-                nodes.set(l.index);
-                communities[l.index] = index;
+                nodes.set(module.communityId);
+                communities[module.communityId] = communityId;
             }
-            wi.putAll(l.wi);
+            wi.putAll(module.wi);
             wi.removeAll(nodes.asIntLookupContainer());
-            sQi -= q + l.q;
-            q = tau * p * (nodeCount - n) / n1 + tau1 * w;
+
+//            System.out.println("[" + this.communityId + "] about to recompute...");
+//            System.out.println("[" + this.communityId + "] communities = " + Arrays.toString(communities));
+//            communityWeights = computeCommunityWeights();
+//            System.out.println("[" + this.communityId + "] new community weights: " + communityWeights);
+
+            sQi -= q + module.q;
+            q = tau * erdogicFrequency * (nodeCount - numberOfNodes) / n1 + tau1 * w;
             sQi += q;
-            l.release();
+//            System.out.println("[" + this.communityId + "] releasing module " + module.communityId);
+            module.release();
         }
 
         void release() {
             wi = null;
             nodes = null;
+            communityWeights = null;
         }
     }
 

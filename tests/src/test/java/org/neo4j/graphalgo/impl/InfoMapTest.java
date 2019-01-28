@@ -162,4 +162,28 @@ public class InfoMapTest {
                 algo.getIterations());
     }
 
+    @Test
+    public void testClusteringConcurrency1() throws Exception {
+
+        // trigger parallel exec on small set size
+        InfoMap.MIN_MODS_PARALLEL_EXEC = 2;
+
+        // do it!
+        final InfoMap algo = InfoMap.unweighted(
+                graph,
+                10,
+                InfoMap.THRESHOLD,
+                InfoMap.TAU,
+                Pools.FJ_POOL,
+                1, TestProgressLogger.INSTANCE, TerminationFlag.RUNNING_TRUE
+        ).compute();
+
+        // should be 3 communities in each graph
+        assertEquals(3, algo.getCommunityCount());
+
+        System.out.printf("%27s | %d iterations%n",
+                Arrays.toString(algo.getCommunities()),
+                algo.getIterations());
+    }
+
 }
