@@ -264,7 +264,7 @@ public class InfoMap extends Algorithm<InfoMap> {
         pair.modA.merge(pair.modB);
         this.modules.remove(pair.modB.communityId);
         this.modules.forEach(module -> {
-            module.computeCommunityWeights(pair.modA.communityId, pair.modB.communityId);
+            module.computeCommunityWeights(pair.modB.communityId);
         });
 
         return true;
@@ -433,11 +433,11 @@ public class InfoMap extends Algorithm<InfoMap> {
                 communityWeights.putOrAdd(communities[cursor.key], cursor.value, cursor.value);
             }
 
-            this.communityWeights =  communityWeights;
+            this.communityWeights = communityWeights;
         }
 
-        void computeCommunityWeights(int mergedCommunityId, int removedCommunityId) {
-            if(communityWeights.containsKey(mergedCommunityId) || communityWeights.containsKey(removedCommunityId)) {
+        void computeCommunityWeights(int removedCommunityId) {
+            if(communityWeights.containsKey(removedCommunityId)) {
                 computeCommunityWeights();
             }
         }
