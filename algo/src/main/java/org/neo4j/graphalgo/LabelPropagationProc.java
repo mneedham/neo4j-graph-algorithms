@@ -113,7 +113,7 @@ public final class LabelPropagationProc {
             write(concurrency, partitionProperty, graph, labels, stats);
         }
 
-        return Stream.of(stats.build(graph, l -> (long) labels[(int) l]));
+        return Stream.of(stats.build(graph.nodeCount(), l -> (long) labels[(int) l]));
     }
 
     @Procedure(value = "algo.labelPropagation.stream")

@@ -137,7 +137,7 @@ public class StronglyConnectedComponentsProc {
                         );
             });
         }
-        return Stream.of(builder.build(graph, l -> (long) connectedComponents[((int) l)]));
+        return Stream.of(builder.build(graph.nodeCount(), l -> (long) connectedComponents[((int) l)]));
     }
 
     // algo.scc.tunedTarjan
@@ -186,7 +186,7 @@ public class StronglyConnectedComponentsProc {
         }
 
         final int[] connectedComponents = tarjan.getConnectedComponents();
-        return Stream.of(builder.build(graph, l -> (long) connectedComponents[((int) l)]));
+        return Stream.of(builder.build(graph.nodeCount(), l -> (long) connectedComponents[((int) l)]));
     }
 
     // algo.scc.tunedTarjan.stream
@@ -256,11 +256,11 @@ public class StronglyConnectedComponentsProc {
 
         if (graph instanceof HugeGraph) {
             final HugeLongArray connectedComponents = tarjan.getConnectedComponents();
-            return Stream.of(builder.build(graph, connectedComponents::get));
+            return Stream.of(builder.build(graph.nodeCount(), connectedComponents::get));
         }
         final int[] connectedComponents = tarjan.getConnectedComponents();
         tarjan.release();
-        return Stream.of(builder.build(graph, l -> (long) connectedComponents[((int) l)]));
+        return Stream.of(builder.build(graph.nodeCount(), l -> (long) connectedComponents[((int) l)]));
     }
 
     private void write(ProcedureConfiguration configuration, Graph graph, TerminationFlag terminationFlag, SCCAlgorithm tarjan) {
@@ -379,7 +379,7 @@ public class StronglyConnectedComponentsProc {
                     ));
         }
 
-        return Stream.of(builder.build(graph, l -> (long) connectedComponents[((int) l)]));
+        return Stream.of(builder.build(graph.nodeCount(), l -> (long) connectedComponents[((int) l)]));
     }
 
     // algo.scc.multistep.stream

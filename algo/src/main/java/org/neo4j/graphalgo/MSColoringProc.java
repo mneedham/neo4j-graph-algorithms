@@ -88,7 +88,7 @@ public class MSColoringProc {
                     write(graph, struct, configuration));
         }
 
-        return Stream.of(builder.build(graph, n -> (long) struct.get((int) n)));
+        return Stream.of(builder.build(graph.nodeCount(), n -> (long) struct.get((int) n)));
     }
 
     @Procedure(value = "algo.unionFind.mscoloring.stream")

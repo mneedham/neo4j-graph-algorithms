@@ -236,10 +236,10 @@ public class TriangleProc {
 
         if (algorithm instanceof IntersectingTriangleCount) {
             final PagedAtomicIntegerArray triangles = ((IntersectingTriangleCount) algorithm).getTriangles();
-            return Stream.of(builder.buildLI(graph, triangles::get));
+            return Stream.of(builder.buildLI(graph.nodeCount(), triangles::get));
         } else if (algorithm instanceof TriangleCountQueue){
             final AtomicIntegerArray triangles = ((TriangleCountQueue) algorithm).getTriangles();
-            return Stream.of(builder.buildII(graph, triangles::get));
+            return Stream.of(builder.buildII(graph.nodeCount(), triangles::get));
         }
         throw new UnsupportedOperationException("unknown algorithm");
     }
@@ -384,7 +384,7 @@ public class TriangleProc {
                 .withTriangleCount(triangleCount.getTriangleCount());
 
         final AtomicIntegerArray triangles = triangleCount.getTriangles();
-        return Stream.of(builder.buildII(graph, triangles::get));
+        return Stream.of(builder.buildII(graph.nodeCount(), triangles::get));
     }
 
 

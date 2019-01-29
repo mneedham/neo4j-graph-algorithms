@@ -7,6 +7,7 @@ import org.HdrHistogram.Histogram;
 import org.neo4j.graphalgo.api.IdMapping;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -102,26 +103,21 @@ public abstract class AbstractCommunityResultBuilder<T> {
         }
     }
 
-    public T buildII(IdMapping nodes, IntFunction<Integer> fun) {
+    public T buildII(long nodes, IntFunction<Integer> fun) {
         return build(nodes, value -> (long) fun.apply((int) value));
     }
 
-    public T buildLI(IdMapping nodes, LongToIntFunction fun) {
+    public T buildLI(long nodes, LongToIntFunction fun) {
         return build(nodes, value -> (long) fun.applyAsInt(value));
     }
 
     /**
      * build result
-     *
-     * @param nodes number of nodes in the graph
-     * @param fun   nodeId to communityId mapping function
-     * @return result
      */
-    public T build(IdMapping nodes, LongFunction<Long> fun) {
+    public T build(long nodeCount, LongFunction<Long> fun) {
 
         final Histogram histogram = new Histogram(2);
         final LongLongMap communitySizeMap = new LongLongScatterMap();
-        final long nodeCount = nodes.nodeCount();
         final ProgressTimer timer = ProgressTimer.start();
         for (int i = 0; i < nodeCount; i++) {
             // map to community id
@@ -131,7 +127,7 @@ public abstract class AbstractCommunityResultBuilder<T> {
             // fill histogram
             histogram.recordValue(cId);
         }
-        final List<Long> top3Communities = top3(nodes, communitySizeMap);
+        final List<Long> top3Communities = top3(communitySizeMap);
         timer.stop();
 
         return build(loadDuration,
@@ -156,9 +152,9 @@ public abstract class AbstractCommunityResultBuilder<T> {
             Histogram communityHistogram,
             List<Long> top3Communities);
 
-    private List<Long> top3(IdMapping idMapping, LongLongMap assignment) {
+    private List<Long> top3(LongLongMap assignment) {
         // index of top 3 biggest communities
-        final long[] t3idx = new long[]{-1L, -1L, -1L};
+        final Long[] t3idx = new Long[]{-1L, -1L, -1L};
         // size of the top 3 communities
         final long[] top3 = new long[]{-1L, -1L, -1L};
 
@@ -180,16 +176,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
                 t3idx[2] = cursor.key;
             }
         }
-        return new LinkedList<Long>() {{
-            if (t3idx[0] != -1) {
-                add(idMapping.toOriginalNodeId(((int) t3idx[0])));
-            }
-            if (t3idx[1] != -1) {
-                add(idMapping.toOriginalNodeId(((int) t3idx[1])));
-            }
-            if (t3idx[2] != -1) {
-                add(idMapping.toOriginalNodeId(((int) t3idx[2])));
-            }
-        }};
+        return Arrays.asList(t3idx);
     }
 }

@@ -110,7 +110,7 @@ public class LouvainProc {
         }
 
         final int[] communityIds = louvain.getCommunityIds();
-        return Stream.of(builder.build(graph, n -> (long) communityIds[(int) n]));
+        return Stream.of(builder.build(graph.nodeCount(), n -> (long) communityIds[(int) n]));
     }
 
     @Procedure(value = "algo.louvain.stream")
