@@ -3,15 +3,13 @@ package org.neo4j.graphalgo.results;
 import com.carrotsearch.hppc.LongLongMap;
 import com.carrotsearch.hppc.LongLongScatterMap;
 import com.carrotsearch.hppc.cursors.LongLongCursor;
-import com.carrotsearch.hppc.procedures.IntIntProcedure;
 import org.HdrHistogram.Histogram;
 import org.neo4j.graphalgo.api.IdMapping;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 
-import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.IntFunction;
-import java.util.function.IntToLongFunction;
 import java.util.function.LongFunction;
 import java.util.function.LongToIntFunction;
 
@@ -25,21 +23,18 @@ public abstract class AbstractCommunityResultBuilder<T> {
     protected long writeDuration = -1;
 
     public AbstractCommunityResultBuilder<T> withLoadDuration(long loadDuration) {
-
         this.loadDuration = loadDuration;
         return this;
     }
 
 
     public AbstractCommunityResultBuilder<T> withEvalDuration(long evalDuration) {
-
         this.evalDuration = evalDuration;
         return this;
     }
 
 
     public AbstractCommunityResultBuilder<T> withWriteDuration(long writeDuration) {
-
         this.writeDuration = writeDuration;
         return this;
     }
@@ -51,7 +46,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
      * @return
      */
     public ProgressTimer timeLoad() {
-
         return ProgressTimer.start(this::withLoadDuration);
     }
 
@@ -62,7 +56,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
      * @return
      */
     public ProgressTimer timeEval() {
-
         return ProgressTimer.start(this::withEvalDuration);
     }
 
@@ -73,7 +66,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
      * @return
      */
     public ProgressTimer timeWrite() {
-
         return ProgressTimer.start(this::withWriteDuration);
     }
 
@@ -83,7 +75,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
      * @param runnable
      */
     public void timeLoad(Runnable runnable) {
-
         try (ProgressTimer timer = timeLoad()) {
             runnable.run();
         }
@@ -95,7 +86,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
      * @param runnable
      */
     public void timeEval(Runnable runnable) {
-
         try (ProgressTimer timer = timeEval()) {
             runnable.run();
         }
@@ -107,7 +97,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
      * @param runnable
      */
     public void timeWrite(Runnable runnable) {
-
         try (ProgressTimer timer = timeWrite()) {
             runnable.run();
         }
@@ -121,10 +110,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
         return build(nodes, value -> (long) fun.applyAsInt(value));
     }
 
-    public T buildIL(IdMapping nodes, IntToLongFunction fun) {
-        return build(nodes, value -> fun.applyAsLong((int) value));
-    }
-
     /**
      * build result
      *
@@ -135,18 +120,18 @@ public abstract class AbstractCommunityResultBuilder<T> {
     public T build(IdMapping nodes, LongFunction<Long> fun) {
 
         final Histogram histogram = new Histogram(2);
-        final LongLongMap communityMap = new LongLongScatterMap();
+        final LongLongMap communitySizeMap = new LongLongScatterMap();
         final long nodeCount = nodes.nodeCount();
         final ProgressTimer timer = ProgressTimer.start();
         for (int i = 0; i < nodeCount; i++) {
             // map to community id
-            final long r = fun.apply(i);
+            final long cId = fun.apply(i);
             // aggregate community size
-            communityMap.addTo(r, 1);
+            communitySizeMap.addTo(cId, 1);
             // fill histogram
-            histogram.recordValue(r);
+            histogram.recordValue(cId);
         }
-        final List<Long> top3Communities = top3(nodes, communityMap);
+        final List<Long> top3Communities = top3(nodes, communitySizeMap);
         timer.stop();
 
         return build(loadDuration,
@@ -154,8 +139,8 @@ public abstract class AbstractCommunityResultBuilder<T> {
                 writeDuration,
                 timer.getDuration(),
                 nodeCount,
-                communityMap.size(),
-                communityMap,
+                communitySizeMap.size(),
+                communitySizeMap,
                 histogram,
                 top3Communities);
     }
@@ -173,9 +158,10 @@ public abstract class AbstractCommunityResultBuilder<T> {
 
     private List<Long> top3(IdMapping idMapping, LongLongMap assignment) {
         // index of top 3 biggest communities
-        final Long[] t3idx = new Long[]{-1L, -1L, -1L};
+        final long[] t3idx = new long[]{-1L, -1L, -1L};
         // size of the top 3 communities
         final long[] top3 = new long[]{-1L, -1L, -1L};
+
         for (LongLongCursor cursor : assignment) {
             if (cursor.value > top3[0]) {
                 top3[2] = top3[1];
@@ -194,6 +180,16 @@ public abstract class AbstractCommunityResultBuilder<T> {
                 t3idx[2] = cursor.key;
             }
         }
-        return Arrays.asList(t3idx);
+        return new LinkedList<Long>() {{
+            if (t3idx[0] != -1) {
+                add(idMapping.toOriginalNodeId(((int) t3idx[0])));
+            }
+            if (t3idx[1] != -1) {
+                add(idMapping.toOriginalNodeId(((int) t3idx[1])));
+            }
+            if (t3idx[2] != -1) {
+                add(idMapping.toOriginalNodeId(((int) t3idx[2])));
+            }
+        }};
     }
 }
