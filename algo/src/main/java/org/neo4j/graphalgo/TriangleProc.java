@@ -410,6 +410,7 @@ public class TriangleProc {
                 -1,
                 -1,
                 -1,
+                -1,
                 Collections.emptyList(),
                 .0);
 
@@ -419,6 +420,7 @@ public class TriangleProc {
         public final long writeMillis;
         public final long nodeCount;
         public final long triangleCount;
+        public final long p100;
         public final long p99;
         public final long p95;
         public final long p90;
@@ -431,7 +433,7 @@ public class TriangleProc {
         public final List<Long> top3;
         public final double averageClusteringCoefficient;
 
-        public Result(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodeCount, long triangleCount, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> top3, double averageClusteringCoefficient) {
+        public Result(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodeCount, long triangleCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> top3, double averageClusteringCoefficient) {
             this.loadMillis = loadMillis;
             this.computeMillis = computeMillis;
             this.postProcessingMillis = postProcessingMillis;
@@ -439,6 +441,7 @@ public class TriangleProc {
             this.nodeCount = nodeCount;
             this.averageClusteringCoefficient = averageClusteringCoefficient;
             this.triangleCount = triangleCount;
+            this.p100 = p100;
             this.p99 = p99;
             this.p95 = p95;
             this.p90 = p90;
@@ -478,15 +481,16 @@ public class TriangleProc {
                     postProcessingMillis,
                     nodeCount,
                     triangleCount,
-                    communityHistogram.getValueAtPercentile(.99),
-                    communityHistogram.getValueAtPercentile(.95),
-                    communityHistogram.getValueAtPercentile(.9),
-                    communityHistogram.getValueAtPercentile(.75),
-                    communityHistogram.getValueAtPercentile(.5),
-                    communityHistogram.getValueAtPercentile(.25),
-                    communityHistogram.getValueAtPercentile(.1),
-                    communityHistogram.getValueAtPercentile(.05),
-                    communityHistogram.getValueAtPercentile(.01),
+                    communityHistogram.getValueAtPercentile(100),
+                    communityHistogram.getValueAtPercentile(99),
+                    communityHistogram.getValueAtPercentile(95),
+                    communityHistogram.getValueAtPercentile(90),
+                    communityHistogram.getValueAtPercentile(75),
+                    communityHistogram.getValueAtPercentile(50),
+                    communityHistogram.getValueAtPercentile(25),
+                    communityHistogram.getValueAtPercentile(10),
+                    communityHistogram.getValueAtPercentile(5),
+                    communityHistogram.getValueAtPercentile(1),
                     top3Communities,
                     avergaeClusteringCoefficient
             );
