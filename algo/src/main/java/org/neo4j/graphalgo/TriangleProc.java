@@ -38,7 +38,6 @@ import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -411,7 +410,6 @@ public class TriangleProc {
                 -1,
                 -1,
                 -1,
-                Collections.emptyList(),
                 .0);
 
         public final long loadMillis;
@@ -430,10 +428,9 @@ public class TriangleProc {
         public final long p10;
         public final long p05;
         public final long p01;
-        public final List<Long> top3;
         public final double averageClusteringCoefficient;
 
-        public Result(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodeCount, long triangleCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> top3, double averageClusteringCoefficient) {
+        public Result(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodeCount, long triangleCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, double averageClusteringCoefficient) {
             this.loadMillis = loadMillis;
             this.computeMillis = computeMillis;
             this.postProcessingMillis = postProcessingMillis;
@@ -451,7 +448,6 @@ public class TriangleProc {
             this.p10 = p10;
             this.p05 = p05;
             this.p01 = p01;
-            this.top3 = top3;
         }
     }
 
@@ -473,7 +469,7 @@ public class TriangleProc {
 
         // communityCount is not used here
         @Override
-        protected Result build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, List<Long> top3Communities) {
+        protected Result build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram) {
             return new Result(
                     loadMillis,
                     computeMillis,
@@ -491,7 +487,6 @@ public class TriangleProc {
                     communityHistogram.getValueAtPercentile(10),
                     communityHistogram.getValueAtPercentile(5),
                     communityHistogram.getValueAtPercentile(1),
-                    top3Communities,
                     avergaeClusteringCoefficient
             );
         }

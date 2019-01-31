@@ -4,11 +4,9 @@ import com.carrotsearch.hppc.LongLongMap;
 import com.carrotsearch.hppc.LongLongScatterMap;
 import com.carrotsearch.hppc.cursors.LongLongCursor;
 import org.HdrHistogram.Histogram;
-import org.neo4j.graphalgo.api.IdMapping;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.function.IntFunction;
 import java.util.function.LongFunction;
@@ -127,7 +125,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
 
         Histogram histogram = CommunityHistogram.buildFrom(communitySizeMap);
 
-        final List<Long> top3Communities = top3(communitySizeMap);
         timer.stop();
 
         return build(loadDuration,
@@ -137,8 +134,8 @@ public abstract class AbstractCommunityResultBuilder<T> {
                 nodeCount,
                 communitySizeMap.size(),
                 communitySizeMap,
-                histogram,
-                top3Communities);
+                histogram
+        );
     }
 
     protected abstract T build(
@@ -149,33 +146,6 @@ public abstract class AbstractCommunityResultBuilder<T> {
             long nodeCount,
             long communityCount,
             LongLongMap communitySizeMap,
-            Histogram communityHistogram,
-            List<Long> top3Communities);
+            Histogram communityHistogram);
 
-    private List<Long> top3(LongLongMap assignment) {
-        // index of top 3 biggest communities
-        final Long[] t3idx = new Long[]{-1L, -1L, -1L};
-        // size of the top 3 communities
-        final long[] top3 = new long[]{-1L, -1L, -1L};
-
-        for (LongLongCursor cursor : assignment) {
-            if (cursor.value > top3[0]) {
-                top3[2] = top3[1];
-                top3[1] = top3[0];
-                top3[0] = cursor.value;
-                t3idx[2] = t3idx[1];
-                t3idx[1] = t3idx[0];
-                t3idx[0] = cursor.key;
-            } else if (cursor.value > top3[1]) {
-                top3[2] = top3[1];
-                top3[1] = cursor.value;
-                t3idx[2] = t3idx[1];
-                t3idx[1] = cursor.key;
-            } else if (cursor.value > top3[2]) {
-                top3[2] = cursor.value;
-                t3idx[2] = cursor.key;
-            }
-        }
-        return Arrays.asList(t3idx);
-    }
 }

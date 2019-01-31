@@ -12,7 +12,7 @@ import java.util.List;
 public class DefaultCommunityResult {
 
     public static final DefaultCommunityResult EMPTY = new DefaultCommunityResult(
-            0, 0,0,0, 0, 0, -1,-1, -1, -1, -1, -1, -1, -1, -1, -1, Collections.emptyList()
+            0, 0,0,0, 0, 0, -1,-1, -1, -1, -1, -1, -1, -1, -1, -1
     );
 
     public final long loadMillis;
@@ -31,7 +31,6 @@ public class DefaultCommunityResult {
     public final long p10;
     public final long p05;
     public final long p01;
-    public final List<Long> top3;
 
     public DefaultCommunityResult(long loadMillis,
                                   long computeMillis,
@@ -48,8 +47,7 @@ public class DefaultCommunityResult {
                                   long p25,
                                   long p10,
                                   long p05,
-                                  long p01,
-                                  List<Long> top3) {
+                                  long p01) {
         this.loadMillis = loadMillis;
         this.computeMillis = computeMillis;
         this.postProcessingMillis = postProcessingMillis;
@@ -66,13 +64,12 @@ public class DefaultCommunityResult {
         this.p10 = p10;
         this.p05 = p05;
         this.p01 = p01;
-        this.top3 = top3;
     }
 
     public static class DefaultCommunityResultBuilder extends AbstractCommunityResultBuilder<DefaultCommunityResult> {
 
         @Override
-        protected DefaultCommunityResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, List<Long> top3Communities) {
+        protected DefaultCommunityResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram) {
             return new DefaultCommunityResult(
                     loadMillis,
                     evalDuration,
@@ -89,8 +86,7 @@ public class DefaultCommunityResult {
                     communityHistogram.getValueAtPercentile(25),
                     communityHistogram.getValueAtPercentile(10),
                     communityHistogram.getValueAtPercentile(5),
-                    communityHistogram.getValueAtPercentile(1),
-                    top3Communities);
+                    communityHistogram.getValueAtPercentile(1));
         }
     }
 }

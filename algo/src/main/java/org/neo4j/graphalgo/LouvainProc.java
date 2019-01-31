@@ -30,13 +30,11 @@ import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.louvain.*;
 import org.neo4j.graphalgo.results.AbstractCommunityResultBuilder;
-import org.neo4j.graphalgo.results.DefaultCommunityResult;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -201,7 +199,6 @@ public class LouvainProc {
                 -1,
                 -1,
                 -1,
-                Collections.emptyList(),
                 0
         );
 
@@ -221,10 +218,9 @@ public class LouvainProc {
         public final long p10;
         public final long p05;
         public final long p01;
-        public final List<Long> top3;
         public final long iterations;
 
-        public LouvainResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> top3, long iterations) {
+        public LouvainResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, long iterations) {
             this.loadMillis = loadMillis;
             this.computeMillis = computeMillis;
             this.postProcessingMillis = postProcessingMillis;
@@ -241,7 +237,6 @@ public class LouvainProc {
             this.p10 = p10;
             this.p05 = p05;
             this.p01 = p01;
-            this.top3 = top3;
             this.iterations = iterations;
         }
     }
@@ -256,7 +251,7 @@ public class LouvainProc {
         }
 
         @Override
-        protected LouvainResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, List<Long> top3Communities) {
+        protected LouvainResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram) {
             return new LouvainResult(
                     loadMillis,
                     computeMillis,
@@ -274,7 +269,6 @@ public class LouvainProc {
                     communityHistogram.getValueAtPercentile(10),
                     communityHistogram.getValueAtPercentile(5),
                     communityHistogram.getValueAtPercentile(1),
-                    top3Communities,
                     iterations
             );
         }

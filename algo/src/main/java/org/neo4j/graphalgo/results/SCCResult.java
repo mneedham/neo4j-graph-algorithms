@@ -21,16 +21,13 @@ package org.neo4j.graphalgo.results;
 import com.carrotsearch.hppc.LongLongMap;
 import org.HdrHistogram.Histogram;
 
-import java.util.Collections;
-import java.util.List;
-
 /**
  * @author mknblch
  */
 public class SCCResult {
 
     public static SCCResult EMPTY = new SCCResult(
-            0, 0, 0, 0,0, 0, -1,-1, -1, -1, -1, -1, -1, -1, -1, -1, Collections.emptyList(), 0
+            0, 0, 0, 0,0, 0, -1,-1, -1, -1, -1, -1, -1, -1, -1, -1, 0
     );
 
     public final long loadMillis;
@@ -50,10 +47,9 @@ public class SCCResult {
     public final long p10;
     public final long p05;
     public final long p01;
-    public final List<Long> top3;
     public final long iterations;
 
-    public SCCResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, List<Long> top3, long iterations) {
+    public SCCResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, long iterations) {
         this.loadMillis = loadMillis;
         this.computeMillis = computeMillis;
         this.postProcessingMillis = postProcessingMillis;
@@ -70,7 +66,6 @@ public class SCCResult {
         this.p10 = p10;
         this.p05 = p05;
         this.p01 = p01;
-        this.top3 = top3;
         this.iterations = iterations;
     }
 
@@ -88,7 +83,7 @@ public class SCCResult {
         }
 
         @Override
-        protected SCCResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, List<Long> top3Communities) {
+        protected SCCResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram) {
             return new SCCResult(
                     loadMillis,
                     computeMillis,
@@ -106,7 +101,6 @@ public class SCCResult {
                     communityHistogram.getValueAtPercentile(10),
                     communityHistogram.getValueAtPercentile(5),
                     communityHistogram.getValueAtPercentile(1),
-                    top3Communities,
                     iterations
             );
         }
