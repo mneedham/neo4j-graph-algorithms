@@ -90,15 +90,16 @@ public class Similarities {
             throw new RuntimeException("Vectors must be non-empty and of the same size");
         }
 
-        double distance = 0.0;
-        for (int i = 0; i < vector1.size(); i++) {
-            double sqOfDiff = vector1.get(i).doubleValue() - vector2.get(i).doubleValue();
-            sqOfDiff *= sqOfDiff;
-            distance += sqOfDiff;
-        }
-        distance = Math.sqrt(distance);
+        int len = Math.min(vector1.size(), vector2.size());
+        double[] weights1 = new double[len];
+        double[] weights2 = new double[len];
 
-        return distance;
+        for (int i = 0; i < len; i++) {
+            weights1[i] = vector1.get(i).doubleValue();
+            weights2[i] = vector2.get(i).doubleValue();
+        }
+
+        return Math.sqrt(Intersections.sumSquareDelta(weights1, weights2, len));
     }
 
     @UserFunction("algo.similarity.euclidean")
