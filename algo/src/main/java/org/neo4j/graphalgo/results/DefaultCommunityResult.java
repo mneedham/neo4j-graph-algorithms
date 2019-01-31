@@ -12,7 +12,7 @@ import java.util.List;
 public class DefaultCommunityResult {
 
     public static final DefaultCommunityResult EMPTY = new DefaultCommunityResult(
-            0, 0,0,0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, Collections.emptyList()
+            0, 0,0,0, 0, 0, -1,-1, -1, -1, -1, -1, -1, -1, -1, -1, Collections.emptyList()
     );
 
     public final long loadMillis;
@@ -21,6 +21,7 @@ public class DefaultCommunityResult {
     public final long writeMillis;
     public final long nodes;
     public final long communityCount;
+    public final long p100;
     public final long p99;
     public final long p95;
     public final long p90;
@@ -38,6 +39,7 @@ public class DefaultCommunityResult {
                                   long writeMillis,
                                   long nodes,
                                   long communityCount,
+                                  long p100,
                                   long p99,
                                   long p95,
                                   long p90,
@@ -54,6 +56,7 @@ public class DefaultCommunityResult {
         this.writeMillis = writeMillis;
         this.nodes = nodes;
         this.communityCount = communityCount;
+        this.p100 = p100;
         this.p99 = p99;
         this.p95 = p95;
         this.p90 = p90;
@@ -77,15 +80,16 @@ public class DefaultCommunityResult {
                     writeMillis,
                     nodeCount,
                     communityCount,
-                    communityHistogram.getValueAtPercentile(.99),
-                    communityHistogram.getValueAtPercentile(.95),
-                    communityHistogram.getValueAtPercentile(.9),
-                    communityHistogram.getValueAtPercentile(.75),
-                    communityHistogram.getValueAtPercentile(.5),
-                    communityHistogram.getValueAtPercentile(.25),
-                    communityHistogram.getValueAtPercentile(.1),
-                    communityHistogram.getValueAtPercentile(.05),
-                    communityHistogram.getValueAtPercentile(.01),
+                    communityHistogram.getValueAtPercentile(100),
+                    communityHistogram.getValueAtPercentile(99),
+                    communityHistogram.getValueAtPercentile(95),
+                    communityHistogram.getValueAtPercentile(90),
+                    communityHistogram.getValueAtPercentile(75),
+                    communityHistogram.getValueAtPercentile(50),
+                    communityHistogram.getValueAtPercentile(25),
+                    communityHistogram.getValueAtPercentile(10),
+                    communityHistogram.getValueAtPercentile(5),
+                    communityHistogram.getValueAtPercentile(1),
                     top3Communities);
         }
     }
