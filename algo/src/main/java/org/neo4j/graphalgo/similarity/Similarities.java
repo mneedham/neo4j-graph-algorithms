@@ -50,22 +50,16 @@ public class Similarities {
             throw new RuntimeException("Vectors must be non-empty and of the same size");
         }
 
-        double dotProduct = 0d;
-        double xLength = 0d;
-        double yLength = 0d;
-        for (int i = 0; i < vector1.size(); i++) {
-            double weight1 = vector1.get(i).doubleValue();
-            double weight2 = vector2.get(i).doubleValue();
+        int len = Math.min(vector1.size(), vector2.size());
+        double[] weights1 = new double[len];
+        double[] weights2 = new double[len];
 
-            dotProduct += weight1 * weight2;
-            xLength += weight1 * weight1;
-            yLength += weight2 * weight2;
+        for (int i = 0; i < len; i++) {
+            weights1[i] = vector1.get(i).doubleValue();
+            weights2[i] = vector2.get(i).doubleValue();
         }
 
-        xLength = Math.sqrt(xLength);
-        yLength = Math.sqrt(yLength);
-
-        return dotProduct / (xLength * yLength);
+        return Math.sqrt( Intersections.cosineSquare(weights1, weights2, len) );
     }
 
     @UserFunction("algo.similarity.pearson")
@@ -77,7 +71,6 @@ public class Similarities {
         }
 
         int len = Math.min(vector1.size(), vector2.size());
-
         double[] weights1 = new double[len];
         double[] weights2 = new double[len];
 
