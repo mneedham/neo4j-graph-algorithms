@@ -18,11 +18,19 @@
  */
 package org.neo4j.graphalgo.similarity;
 
+import com.carrotsearch.hppc.LongDoubleHashMap;
+import com.carrotsearch.hppc.LongDoubleMap;
+import com.carrotsearch.hppc.LongHashSet;
+import com.carrotsearch.hppc.LongSet;
+import com.carrotsearch.hppc.cursors.LongCursor;
+import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.utils.Intersections;
 import org.neo4j.procedure.*;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 public class Similarities {
 
@@ -57,35 +65,95 @@ public class Similarities {
             weights2[i] = vector2.get(i).doubleValue();
         }
 
-        return Math.sqrt( Intersections.cosineSquare(weights1, weights2, len) );
+        return Math.sqrt(Intersections.cosineSquare(weights1, weights2, len));
     }
 
     @UserAggregationFunction("algo.similarity.buildSimilarityVector")
-    @Description( "algo.similarity.buildSimilarityVector - aggregates the longest string found" )
-    public SimilarityVectorAggregator buildSimilarityVector()
-    {
+    @Description("algo.similarity.buildSimilarityVector - aggregates the longest string found")
+    public SimilarityVectorAggregator buildSimilarityVector() {
         return new SimilarityVectorAggregator();
     }
 
 
+//    @UserFunction("algo.similarity.pearson")
+//    @Description("algo.similarity.pearson([vector1], [vector2]) " +
+//            "given two collection vectors, calculate pearson similarity")
+//    public double pearsonSimilarity(@Name("vector1") List<Number> vector1, @Name("vector2") List<Number> vector2) {
+//        if (vector1.size() != vector2.size() || vector1.size() == 0) {
+//            throw new RuntimeException("Vectors must be non-empty and of the same size");
+//        }
+//
+//        int len = Math.min(vector1.size(), vector2.size());
+//        double[] weights1 = new double[len];
+//        double[] weights2 = new double[len];
+//
+//        for (int i = 0; i < len; i++) {
+//            weights1[i] = vector1.get(i).doubleValue();
+//            weights2[i] = vector2.get(i).doubleValue();
+//        }
+//
+//        return Intersections.pearson(weights1, weights2, len);
+//    }
+
     @UserFunction("algo.similarity.pearson")
     @Description("algo.similarity.pearson([vector1], [vector2]) " +
             "given two collection vectors, calculate pearson similarity")
-    public double pearsonSimilarity(@Name("vector1") List<Number> vector1, @Name("vector2") List<Number> vector2) {
-        if (vector1.size() != vector2.size() || vector1.size() == 0) {
-            throw new RuntimeException("Vectors must be non-empty and of the same size");
+    public double pearsonSimilarity(@Name("vector1") Object rawVector1, @Name("vector2") Object rawVector2, @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
+
+        String blah = configuration.get("blah", "numbers");
+
+        if (blah.equalsIgnoreCase("numbers")) {
+            List<Number> vector1 = (List<Number>) rawVector1;
+            List<Number> vector2 = (List<Number>) rawVector2;
+
+            if (vector1.size() != vector2.size() || vector1.size() == 0) {
+                throw new RuntimeException("Vectors must be non-empty and of the same size");
+            }
+
+            int len = vector1.size();
+            double[] weights1 = new double[len];
+            double[] weights2 = new double[len];
+
+            for (int i = 0; i < len; i++) {
+                weights1[i] = vector1.get(i).doubleValue();
+                weights2[i] = vector2.get(i).doubleValue();
+            }
+            return Intersections.pearson(weights1, weights2, len);
+        } else {
+            List<Map<String, Object>> vector1 = (List<Map<String, Object>>) rawVector1;
+            List<Map<String, Object>> vector2 = (List<Map<String, Object>>) rawVector2;
+
+            LongSet ids = new LongHashSet();
+
+            LongDoubleMap v1Mappings = new LongDoubleHashMap();
+            for (Map<String, Object> entry : vector1) {
+                Long id = (Long) entry.get("id");
+                ids.add(id);
+                v1Mappings.put(id, (Double) entry.get("weight"));
+            }
+
+            LongDoubleMap v2Mappings = new LongDoubleHashMap();
+            for (Map<String, Object> entry : vector2) {
+                Long id = (Long) entry.get("id");
+                ids.add(id);
+                v2Mappings.put(id, (Double) entry.get("weight"));
+            }
+
+            double[] weights1 = new double[ids.size()];
+            double[] weights2 = new double[ids.size()];
+
+            double skipValue = Double.NaN;
+            int index = 0;
+            for (long id : ids.toArray()) {
+                weights1[index] = v1Mappings.getOrDefault(id, skipValue);
+                weights2[index] = v2Mappings.getOrDefault(id, skipValue);
+                index++;
+            }
+
+            return Intersections.pearsonSkip(weights1, weights2, ids.size(), skipValue);
         }
 
-        int len = Math.min(vector1.size(), vector2.size());
-        double[] weights1 = new double[len];
-        double[] weights2 = new double[len];
-
-        for (int i = 0; i < len; i++) {
-            weights1[i] = vector1.get(i).doubleValue();
-            weights2[i] = vector2.get(i).doubleValue();
-        }
-
-        return Intersections.pearson(weights1, weights2, len);
     }
 
     @UserFunction("algo.similarity.euclideanDistance")
