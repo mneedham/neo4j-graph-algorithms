@@ -68,32 +68,11 @@ public class Similarities {
         return Math.sqrt(Intersections.cosineSquare(weights1, weights2, len));
     }
 
-    @UserAggregationFunction("algo.similarity.buildSimilarityVector")
-    @Description("algo.similarity.buildSimilarityVector - aggregates the longest string found")
-    public SimilarityVectorAggregator buildSimilarityVector() {
+    @UserAggregationFunction("algo.similarity.asVector")
+    @Description("algo.similarity.asVector - builds a vector of maps containing items and weights")
+    public SimilarityVectorAggregator asVector() {
         return new SimilarityVectorAggregator();
     }
-
-
-//    @UserFunction("algo.similarity.pearson")
-//    @Description("algo.similarity.pearson([vector1], [vector2]) " +
-//            "given two collection vectors, calculate pearson similarity")
-//    public double pearsonSimilarity(@Name("vector1") List<Number> vector1, @Name("vector2") List<Number> vector2) {
-//        if (vector1.size() != vector2.size() || vector1.size() == 0) {
-//            throw new RuntimeException("Vectors must be non-empty and of the same size");
-//        }
-//
-//        int len = Math.min(vector1.size(), vector2.size());
-//        double[] weights1 = new double[len];
-//        double[] weights2 = new double[len];
-//
-//        for (int i = 0; i < len; i++) {
-//            weights1[i] = vector1.get(i).doubleValue();
-//            weights2[i] = vector2.get(i).doubleValue();
-//        }
-//
-//        return Intersections.pearson(weights1, weights2, len);
-//    }
 
     @UserFunction("algo.similarity.pearson")
     @Description("algo.similarity.pearson([vector1], [vector2]) " +
@@ -101,7 +80,7 @@ public class Similarities {
     public double pearsonSimilarity(@Name("vector1") Object rawVector1, @Name("vector2") Object rawVector2, @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
 
-        String listType = configuration.get("listType", "numbers");
+        String listType = configuration.get("vectorType", "numbers");
 
         if (listType.equalsIgnoreCase("maps")) {
             List<Map<String, Object>> vector1 = (List<Map<String, Object>>) rawVector1;

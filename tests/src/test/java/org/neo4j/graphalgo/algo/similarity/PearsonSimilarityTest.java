@@ -69,9 +69,8 @@ public class PearsonSimilarityTest {
 
         List<Map<String, Object>> vectorMap = aggregator.result();
 
-        double similarity = similarities.pearsonSimilarity(vectorMap, vectorMap, MapUtil.map("blah", "map"));
+        double similarity = similarities.pearsonSimilarity(vectorMap, vectorMap, MapUtil.map("listType", "maps"));
         assertEquals(1.0, similarity, 0.01);
-
     }
 
     @Test
@@ -94,7 +93,7 @@ public class PearsonSimilarityTest {
         aggregator2.next(node2, 1.0);
         List<Map<String, Object>> v2Map = aggregator2.result();
 
-        double similarity = similarities.pearsonSimilarity(v1Map, v2Map, MapUtil.map("blah", "map"));
+        double similarity = similarities.pearsonSimilarity(v1Map, v2Map, MapUtil.map("listType", "maps"));
         assertEquals(-1.0, similarity, 0.01);
     }
 
@@ -121,9 +120,8 @@ public class PearsonSimilarityTest {
         List<Map<String, Object>> v2Map = aggregator2.result();
 
 
-        double similarity = similarities.pearsonSimilarity(v1Map, v2Map, MapUtil.map("blah", "map"));
+        double similarity = similarities.pearsonSimilarity(v1Map, v2Map, MapUtil.map("listType", "maps"));
         assertEquals(1.0, similarity, 0.01);
-
     }
 
     @Test
@@ -148,7 +146,7 @@ public class PearsonSimilarityTest {
         aggregator2.next(node2, 4.0);
         List<Map<String, Object>> v2Map = aggregator2.result();
 
-        double similarity = similarities.pearsonSimilarity(v1Map, v2Map, MapUtil.map("blah", "map"));
+        double similarity = similarities.pearsonSimilarity(v1Map, v2Map, MapUtil.map("listType", "maps"));
         assertEquals(0.0, similarity, 0.01);
     }
 
