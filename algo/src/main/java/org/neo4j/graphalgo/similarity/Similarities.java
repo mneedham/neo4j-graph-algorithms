@@ -101,26 +101,9 @@ public class Similarities {
     public double pearsonSimilarity(@Name("vector1") Object rawVector1, @Name("vector2") Object rawVector2, @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
 
-        String blah = configuration.get("blah", "numbers");
+        String listType = configuration.get("listType", "numbers");
 
-        if (blah.equalsIgnoreCase("numbers")) {
-            List<Number> vector1 = (List<Number>) rawVector1;
-            List<Number> vector2 = (List<Number>) rawVector2;
-
-            if (vector1.size() != vector2.size() || vector1.size() == 0) {
-                throw new RuntimeException("Vectors must be non-empty and of the same size");
-            }
-
-            int len = vector1.size();
-            double[] weights1 = new double[len];
-            double[] weights2 = new double[len];
-
-            for (int i = 0; i < len; i++) {
-                weights1[i] = vector1.get(i).doubleValue();
-                weights2[i] = vector2.get(i).doubleValue();
-            }
-            return Intersections.pearson(weights1, weights2, len);
-        } else {
+        if (listType.equalsIgnoreCase("maps")) {
             List<Map<String, Object>> vector1 = (List<Map<String, Object>>) rawVector1;
             List<Map<String, Object>> vector2 = (List<Map<String, Object>>) rawVector2;
 
@@ -152,6 +135,23 @@ public class Similarities {
             }
 
             return Intersections.pearsonSkip(weights1, weights2, ids.size(), skipValue);
+        } else {
+            List<Number> vector1 = (List<Number>) rawVector1;
+            List<Number> vector2 = (List<Number>) rawVector2;
+
+            if (vector1.size() != vector2.size() || vector1.size() == 0) {
+                throw new RuntimeException("Vectors must be non-empty and of the same size");
+            }
+
+            int len = vector1.size();
+            double[] weights1 = new double[len];
+            double[] weights2 = new double[len];
+
+            for (int i = 0; i < len; i++) {
+                weights1[i] = vector1.get(i).doubleValue();
+                weights2[i] = vector2.get(i).doubleValue();
+            }
+            return Intersections.pearson(weights1, weights2, len);
         }
 
     }
