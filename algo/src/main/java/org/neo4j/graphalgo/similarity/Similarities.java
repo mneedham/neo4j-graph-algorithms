@@ -32,6 +32,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import static org.neo4j.graphalgo.similarity.SimilarityVectorAggregator.CATEGORY_KEY;
+import static org.neo4j.graphalgo.similarity.SimilarityVectorAggregator.WEIGHT_KEY;
+
 public class Similarities {
 
     @UserFunction("algo.similarity.jaccard")
@@ -90,16 +93,16 @@ public class Similarities {
 
             LongDoubleMap v1Mappings = new LongDoubleHashMap();
             for (Map<String, Object> entry : vector1) {
-                Long id = (Long) entry.get("id");
+                Long id = (Long) entry.get(CATEGORY_KEY);
                 ids.add(id);
-                v1Mappings.put(id, (Double) entry.get("weight"));
+                v1Mappings.put(id, (Double) entry.get(WEIGHT_KEY));
             }
 
             LongDoubleMap v2Mappings = new LongDoubleHashMap();
             for (Map<String, Object> entry : vector2) {
-                Long id = (Long) entry.get("id");
+                Long id = (Long) entry.get(CATEGORY_KEY);
                 ids.add(id);
-                v2Mappings.put(id, (Double) entry.get("weight"));
+                v2Mappings.put(id, (Double) entry.get(WEIGHT_KEY));
             }
 
             double[] weights1 = new double[ids.size()];

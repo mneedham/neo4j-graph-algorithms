@@ -12,11 +12,13 @@ import java.util.Map;
 
 public class SimilarityVectorAggregator {
     private List<Map<String, Object>> vector = new ArrayList<>();
+    public static String CATEGORY_KEY = "category";
+    public static String WEIGHT_KEY = "weight";
 
     @UserAggregationUpdate
     public void next(
             @Name("node") Node node, @Name("weight") double weight) {
-        vector.add(MapUtil.map("id", node.getId(), "weight", weight));
+        vector.add(MapUtil.map(CATEGORY_KEY, node.getId(), WEIGHT_KEY, weight));
     }
 
     @UserAggregationResult

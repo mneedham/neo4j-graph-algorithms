@@ -13,6 +13,8 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.neo4j.graphalgo.similarity.SimilarityVectorAggregator.CATEGORY_KEY;
+import static org.neo4j.graphalgo.similarity.SimilarityVectorAggregator.WEIGHT_KEY;
 
 public class SimilarityVectorAggregatorTest {
 
@@ -26,7 +28,7 @@ public class SimilarityVectorAggregatorTest {
         aggregator.next(node, 3.0);
 
         List<Map<String, Object>> expected = Collections.singletonList(
-                MapUtil.map("id", 1L, "weight", 3.0)
+                MapUtil.map(CATEGORY_KEY, 1L, WEIGHT_KEY, 3.0)
         );
 
         assertThat(aggregator.result(), is(expected));
@@ -44,9 +46,9 @@ public class SimilarityVectorAggregatorTest {
         aggregator.next(node, 1.0);
 
         List<Map<String, Object>> expected = Arrays.asList(
-                MapUtil.map("id", 1L, "weight", 3.0),
-                MapUtil.map("id", 2L, "weight", 2.0),
-                MapUtil.map("id", 3L, "weight", 1.0)
+                MapUtil.map(CATEGORY_KEY, 1L, WEIGHT_KEY, 3.0),
+                MapUtil.map(CATEGORY_KEY, 2L, WEIGHT_KEY, 2.0),
+                MapUtil.map(CATEGORY_KEY, 3L, WEIGHT_KEY, 1.0)
         );
 
         assertThat(aggregator.result(), is(expected));
