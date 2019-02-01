@@ -19,9 +19,7 @@
 package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.utils.Intersections;
-import org.neo4j.procedure.Description;
-import org.neo4j.procedure.Name;
-import org.neo4j.procedure.UserFunction;
+import org.neo4j.procedure.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +59,14 @@ public class Similarities {
 
         return Math.sqrt( Intersections.cosineSquare(weights1, weights2, len) );
     }
+
+    @UserAggregationFunction("algo.similarity.buildSimilarityVector")
+    @Description( "algo.similarity.buildSimilarityVector - aggregates the longest string found" )
+    public SimilarityVectorAggregator buildSimilarityVector()
+    {
+        return new SimilarityVectorAggregator();
+    }
+
 
     @UserFunction("algo.similarity.pearson")
     @Description("algo.similarity.pearson([vector1], [vector2]) " +
