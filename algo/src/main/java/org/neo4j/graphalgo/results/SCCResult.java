@@ -27,7 +27,7 @@ import org.HdrHistogram.Histogram;
 public class SCCResult {
 
     public static SCCResult EMPTY = new SCCResult(
-            0, 0, 0, 0,0, 0, -1,-1, -1, -1, -1, -1, -1, -1, -1, -1, 0
+            0, 0, 0, 0,0, 0, -1,-1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0
     );
 
     public final long loadMillis;
@@ -48,8 +48,10 @@ public class SCCResult {
     public final long p05;
     public final long p01;
     public final long iterations;
+    public final long minSetSize;
+    public final long maxSetSize;
 
-    public SCCResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, long iterations) {
+    public SCCResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, long iterations, long minSetSize, long maxSetSize) {
         this.loadMillis = loadMillis;
         this.computeMillis = computeMillis;
         this.postProcessingMillis = postProcessingMillis;
@@ -67,6 +69,8 @@ public class SCCResult {
         this.p05 = p05;
         this.p01 = p01;
         this.iterations = iterations;
+        this.minSetSize = minSetSize;
+        this.maxSetSize = maxSetSize;
     }
 
     public static Builder builder() {
@@ -74,13 +78,7 @@ public class SCCResult {
     }
 
     public static final class Builder extends AbstractCommunityResultBuilder<SCCResult> {
-
         private int iterations = -1;
-
-        public Builder withIterations(int iterations) {
-            this.iterations = iterations;
-            return this;
-        }
 
         @Override
         protected SCCResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram) {
@@ -101,7 +99,9 @@ public class SCCResult {
                     communityHistogram.getValueAtPercentile(10),
                     communityHistogram.getValueAtPercentile(5),
                     communityHistogram.getValueAtPercentile(1),
-                    iterations
+                    iterations,
+                    communityHistogram.getMinNonZeroValue(),
+                    communityHistogram.getMaxValue()
             );
         }
     }

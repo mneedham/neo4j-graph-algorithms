@@ -137,6 +137,7 @@ public class StronglyConnectedComponentsProc {
                         );
             });
         }
+
         return Stream.of(builder.build(graph.nodeCount(), l -> (long) connectedComponents[((int) l)]));
     }
 
