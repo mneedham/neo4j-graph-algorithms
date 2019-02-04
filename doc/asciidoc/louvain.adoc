@@ -258,11 +258,19 @@ YIELD nodes, communityCount, iterations, loadMillis, computeMillis, writeMillis
 | computeMillis  | int  | Milliseconds for running the algorithm
 | writeMillis    | int  | Milliseconds for writing result data back
 | postProcessingMillis    | int  | Milliseconds for computing percentiles and community count
+
+| write | boolean | Specifies if the result was written back as a node property
+| writeProperty | string | The property name written back to
+
+| includeIntermediateCommunities | boolean | Specifies if the intermediate communities were written back as a node property
+| intermediateCommunitiesWriteProperty | string | The property name written back to for intermediate communities
+
 | nodes          | int  | The number of nodes considered
 | communityCount | int  | The number of communities found
 | iterations     | int  | The number of iterations run
 | modularities     | list of double  | List of modularities at each iteration
 | modularity    | double  | Modularity after final iteration
+
 | p1                   | double  | The 1 percentile of community size.
 | p5                   | double  | The 5 percentile of community size.
 | p10                   | double  | The 10 percentile of community size.

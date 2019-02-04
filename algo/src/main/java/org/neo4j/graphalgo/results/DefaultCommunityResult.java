@@ -3,9 +3,6 @@ package org.neo4j.graphalgo.results;
 import com.carrotsearch.hppc.LongLongMap;
 import org.HdrHistogram.Histogram;
 
-import java.util.Collections;
-import java.util.List;
-
 /**
  * @author mknblch
  */

@@ -158,14 +158,15 @@ YIELD nodes, iterations, didConverge, loadMillis, computeMillis, writeMillis, wr
 [opts="header",cols="1,1,6"]
 |===
 | Name | Type | Description
-
 | loadMillis | int | Milliseconds for loading data
 | computeMillis | int | Milliseconds for running the algorithm
 | writeMillis | int | Milliseconds for writing result data back
 | postProcessingMillis    | int  | Milliseconds for computing percentiles and community count
+
 | weightProperty | string | The property name that contains weight
-| partitionProperty | string | The property name written back to
+
 | write | boolean | Specifies if the result was written back as a node property
+| partitionProperty | string | The property name written back to
 
 | nodes | int | The number of nodes considered
 | communityCount | int  | The number of communities found

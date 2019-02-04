@@ -2,12 +2,9 @@ package org.neo4j.graphalgo.results;
 
 import com.carrotsearch.hppc.LongLongMap;
 import com.carrotsearch.hppc.LongLongScatterMap;
-import com.carrotsearch.hppc.cursors.LongLongCursor;
 import org.HdrHistogram.Histogram;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.IntFunction;
 import java.util.function.LongFunction;
 import java.util.function.LongToIntFunction;

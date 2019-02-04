@@ -66,7 +66,9 @@ public class LabelPropagationStats {
     public final boolean write, didConverge;
     public final String weightProperty, partitionProperty;
 
-    public LabelPropagationStats(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p5, long p1, long iterations, boolean write, boolean didConverge, String weightProperty, String partitionProperty) {
+    public LabelPropagationStats(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes,
+                                 long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p5, long p1, long iterations, boolean write, boolean didConverge,
+                                 String weightProperty, String partitionProperty) {
         this.loadMillis = loadMillis;
         this.computeMillis = computeMillis;
         this.postProcessingMillis = postProcessingMillis;
