@@ -79,8 +79,7 @@ image::cosine-similarity2.png[role="middle"]
 include::scripts/similarity-cosine.cypher[tag=create-sample-graph]
 ----
 
-
-.The following will return the Cosinee similarity of Michael and Arya:
+.The following will return the Cosine similarity of Michael and Arya:
 [source, cypher]
 ----
 include::scripts/similarity-cosine.cypher[tag=function-cypher]
