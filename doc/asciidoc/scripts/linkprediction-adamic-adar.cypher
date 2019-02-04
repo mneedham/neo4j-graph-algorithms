@@ -18,11 +18,11 @@ MERGE (arya)-[:FRIENDS]-(karin)
 // tag::all-rels[]
 MATCH (p1:Person {name: 'Michael'})
 MATCH (p2:Person {name: 'Karin'})
-RETURN algo.similarity.adamicAdar(p1, p2) AS similarity
+RETURN algo.linkprediction.adamicAdar(p1, p2) AS similarity
 // end::all-rels[]
 
 // tag::only-friends[]
 MATCH (p1:Person {name: 'Michael'})
 MATCH (p2:Person {name: 'Karin'})
-RETURN algo.similarity.adamicAdar(p1, p2, {relationshipQuery: "FRIENDS"}) AS score
+RETURN algo.linkprediction.adamicAdar(p1, p2, {relationshipQuery: "FRIENDS"}) AS score
 // end::only-friends[]

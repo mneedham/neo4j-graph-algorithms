@@ -33,8 +33,8 @@ public class LinkPrediction {
     @Context
     public GraphDatabaseAPI api;
 
-    @UserFunction("algo.similarity.adamicAdar")
-    @Description("algo.similarity.adamicAdar([vector]) " +
+    @UserFunction("algo.linkprediction.adamicAdar")
+    @Description("algo.linkprediction.adamicAdar([vector]) " +
             "given two nodes, calculate Adamic Adar similarity")
     public double adamicAdarSimilarity(@Name("node1") Node node1, @Name("node2") Node node2,
                                        @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
@@ -59,8 +59,8 @@ public class LinkPrediction {
         return sumInverseLog(vector);
     }
 
-    @UserFunction("algo.similarity.resourceAllocation")
-    @Description("algo.similarity.resourceAllocation([vector]) " +
+    @UserFunction("algo.linkprediction.resourceAllocation")
+    @Description("algo.linkprediction.resourceAllocation([vector]) " +
             "given two nodes, calculate Resource Allocation similarity")
     public double resourceAllocationSimilarity(@Name("node1") Node node1, @Name("node2") Node node2,
                                        @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {

@@ -16,12 +16,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.graphalgo.algo.similarity;
+package org.neo4j.graphalgo.algo.linkprediction;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.neo4j.graphalgo.TestDatabaseCreator;
 import org.neo4j.graphalgo.similarity.LinkPrediction;
 import org.neo4j.graphalgo.similarity.Similarities;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -36,7 +35,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class AdamicAdarProcIntegrationTest {
+public class ResourceAllocationSimilarityIntegrationTest {
     private static final String SETUP =
             "CREATE (mark:Person {name: 'Mark'})\n" +
             "CREATE (michael:Person {name: 'Michael'})\n" +
@@ -82,8 +81,8 @@ public class AdamicAdarProcIntegrationTest {
         String controlQuery =
                 "MATCH (p1:Person {name: 'Mark'})\n" +
                 "MATCH (p2:Person {name: 'Praveena'})\n" +
-                "RETURN algo.similarity.adamicAdar(p1, p2) AS score, " +
-                "       1/log(3) AS cypherScore";
+                "RETURN algo.linkprediction.resourceAllocation(p1, p2) AS score, " +
+                "       1/3.0 AS cypherScore";
 
         try (Transaction tx = db.beginTx()) {
             Result result = db.execute(controlQuery);
@@ -97,9 +96,9 @@ public class AdamicAdarProcIntegrationTest {
         String controlQuery =
                 "MATCH (p1:Person {name: 'Mark'})\n" +
                         "MATCH (p2:Person {name: 'Praveena'})\n" +
-                        "RETURN algo.similarity.adamicAdar(p1, p2, " +
+                        "RETURN algo.linkprediction.resourceAllocation(p1, p2, " +
                         "{relationshipQuery: 'FRIENDS', direction: 'BOTH'}) AS score," +
-                        "1/log(2) AS cypherScore";
+                        "1/2.0 AS cypherScore";
 
         try (Transaction tx = db.beginTx()) {
             Result result = db.execute(controlQuery);
@@ -113,8 +112,8 @@ public class AdamicAdarProcIntegrationTest {
         String controlQuery =
                 "MATCH (p1:Person {name: 'Jennifer'})\n" +
                         "MATCH (p2:Person {name: 'Elaine'})\n" +
-                        "RETURN algo.similarity.adamicAdar(p1, p2) AS score, " +
-                        "       1/log(2) + 1/log(2) AS cypherScore";
+                        "RETURN algo.linkprediction.resourceAllocation(p1, p2) AS score, " +
+                        "       1/2.0 + 1/2.0 AS cypherScore";
 
         try (Transaction tx = db.beginTx()) {
             Result result = db.execute(controlQuery);
@@ -128,7 +127,7 @@ public class AdamicAdarProcIntegrationTest {
         String controlQuery =
                 "MATCH (p1:Person {name: 'Jennifer'})\n" +
                         "MATCH (p2:Person {name: 'Ryan'})\n" +
-                        "RETURN algo.similarity.adamicAdar(p1, p2) AS score, " +
+                        "RETURN algo.linkprediction.resourceAllocation(p1, p2) AS score, " +
                         "       0.0 AS cypherScore";
 
         try (Transaction tx = db.beginTx()) {
