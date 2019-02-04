@@ -38,7 +38,6 @@ import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
@@ -225,7 +224,7 @@ public class TriangleProc {
         }
 
 
-        builder.withAvergaeClusteringCoefficient(triangleCount.getAverageCoefficient())
+        builder.withAverageClusteringCoefficient(triangleCount.getAverageCoefficient())
                 .withTriangleCount(triangleCount.getTriangleCount());
 
         return buildResult(builder, graph, triangleCount);
@@ -379,7 +378,7 @@ public class TriangleProc {
             }
         }
 
-        builder.withAvergaeClusteringCoefficient(triangleCount.getAverageClusteringCoefficient())
+        builder.withAverageClusteringCoefficient(triangleCount.getAverageClusteringCoefficient())
                 .withTriangleCount(triangleCount.getTriangleCount());
 
         final AtomicIntegerArray triangles = triangleCount.getTriangles();
@@ -453,11 +452,11 @@ public class TriangleProc {
 
     public class TriangleCountResultBuilder extends AbstractCommunityResultBuilder<Result> {
 
-        private double avergaeClusteringCoefficient = .0;
+        private double averageClusteringCoefficient = .0;
         private long triangleCount = 0;
 
-        public TriangleCountResultBuilder withAvergaeClusteringCoefficient(double avergaeClusteringCoefficient) {
-            this.avergaeClusteringCoefficient = avergaeClusteringCoefficient;
+        public TriangleCountResultBuilder withAverageClusteringCoefficient(double averageClusteringCoefficient) {
+            this.averageClusteringCoefficient = averageClusteringCoefficient;
             return this;
         }
 
@@ -487,7 +486,7 @@ public class TriangleProc {
                     communityHistogram.getValueAtPercentile(10),
                     communityHistogram.getValueAtPercentile(5),
                     communityHistogram.getValueAtPercentile(1),
-                    avergaeClusteringCoefficient
+                    averageClusteringCoefficient
             );
         }
     }
