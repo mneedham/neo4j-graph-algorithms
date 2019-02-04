@@ -34,7 +34,7 @@ public class LinkPrediction {
     public GraphDatabaseAPI api;
 
     @UserFunction("algo.linkprediction.adamicAdar")
-    @Description("algo.linkprediction.adamicAdar([vector]) " +
+    @Description("algo.linkprediction.adamicAdar(node1:Node, node2:Node, {relationshipQuery:'relationshipName', direction:'BOTH'}) " +
             "given two nodes, calculate Adamic Adar similarity")
     public double adamicAdarSimilarity(@Name("node1") Node node1, @Name("node2") Node node2,
                                        @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
@@ -60,7 +60,7 @@ public class LinkPrediction {
     }
 
     @UserFunction("algo.linkprediction.resourceAllocation")
-    @Description("algo.linkprediction.resourceAllocation([vector]) " +
+    @Description("algo.linkprediction.resourceAllocation(node1:Node, node2:Node, {relationshipQuery:'relationshipName', direction:'BOTH'}) " +
             "given two nodes, calculate Resource Allocation similarity")
     public double resourceAllocationSimilarity(@Name("node1") Node node1, @Name("node2") Node node2,
                                        @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
