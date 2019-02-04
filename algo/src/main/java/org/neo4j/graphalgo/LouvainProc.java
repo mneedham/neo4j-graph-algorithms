@@ -35,7 +35,7 @@ import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -93,19 +93,24 @@ public class LouvainProc {
                 .withTerminationFlag(TerminationFlag.wrap(transaction));
 
         // evaluation
+        int iterations = configuration.getIterations(10);
         try (ProgressTimer timer = builder.timeEval()) {
             if (configuration.getString(DEFAULT_CLUSTER_PROPERTY).isPresent()) {
                 // use predefined clustering
                 final WeightMapping communityMap = ((NodeProperties) graph).nodeProperties(CLUSTERING_IDENTIFIER);
-                louvain.compute(communityMap, configuration.getIterations(10), configuration.get("innerIterations", 10));
+                louvain.compute(communityMap, iterations, configuration.get("innerIterations", 10));
             } else {
-                louvain.compute(configuration.getIterations(10), configuration.get("innerIterations", 10));
+                louvain.compute(iterations, configuration.get("innerIterations", 10));
             }
         }
 
         if (configuration.isWriteFlag()) {
             builder.timeWrite(() -> write(graph, louvain.getDendrogram(), louvain.getCommunityIds(), configuration));
         }
+
+        builder.withIterations(louvain.getLevel());
+        builder.withModularities(louvain.getModularities()  );
+        builder.withFinalModularity(louvain.getFinalModularity());
 
         final int[] communityIds = louvain.getCommunityIds();
         return Stream.of(builder.build(graph.nodeCount(), n -> (long) communityIds[(int) n]));
@@ -199,8 +204,8 @@ public class LouvainProc {
                 -1,
                 -1,
                 -1,
-                0
-        );
+                0,
+                new double[] {}, -1);
 
         public final long loadMillis;
         public final long computeMillis;
@@ -219,8 +224,10 @@ public class LouvainProc {
         public final long p05;
         public final long p01;
         public final long iterations;
+        public final List<Double> modularities;
+        public final double modularity;
 
-        public LouvainResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, long iterations) {
+        public LouvainResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, long iterations, double[] modularities, double finalModularity) {
             this.loadMillis = loadMillis;
             this.computeMillis = computeMillis;
             this.postProcessingMillis = postProcessingMillis;
@@ -238,12 +245,17 @@ public class LouvainProc {
             this.p05 = p05;
             this.p01 = p01;
             this.iterations = iterations;
+            this.modularities = new ArrayList<>(modularities.length);
+            for (double mod : modularities) this.modularities.add(mod);
+            this.modularity = finalModularity;
         }
     }
 
     public static class Builder extends AbstractCommunityResultBuilder<LouvainResult> {
 
         private long iterations = -1;
+        private double[] modularities = new double[] {};
+        private double finalModularity = -1;
 
         public Builder withIterations(long iterations) {
             this.iterations = iterations;
@@ -269,8 +281,18 @@ public class LouvainProc {
                     communityHistogram.getValueAtPercentile(10),
                     communityHistogram.getValueAtPercentile(5),
                     communityHistogram.getValueAtPercentile(1),
-                    iterations
+                    iterations, modularities, finalModularity
             );
+        }
+
+        public Builder withModularities(double[] modularities) {
+            this.modularities = modularities;
+            return this;
+        }
+
+        public Builder withFinalModularity(double finalModularity) {
+            this.finalModularity = finalModularity;
+            return null;
         }
     }
 
