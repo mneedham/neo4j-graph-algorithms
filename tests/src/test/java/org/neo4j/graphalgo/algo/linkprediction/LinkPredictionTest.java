@@ -16,11 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.graphalgo.algo.similarity;
+package org.neo4j.graphalgo.algo.linkprediction;
 
 import org.junit.Test;
-import org.neo4j.graphalgo.similarity.LinkPrediction;
-import org.neo4j.graphalgo.similarity.Similarities;
+import org.neo4j.graphalgo.linkprediction.LinkPrediction;
 
 import java.util.Arrays;
 import java.util.Collections;
