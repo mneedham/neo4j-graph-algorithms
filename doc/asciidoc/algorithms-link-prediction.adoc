@@ -1,4 +1,4 @@
-[[algorithms-link-prediction]]
+[[algorithms-linkprediction]]
 = Link Prediction algorithms
 
 ifdef::env-docs[]
