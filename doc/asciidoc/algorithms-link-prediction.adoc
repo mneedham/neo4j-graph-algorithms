@@ -8,7 +8,7 @@ This chapter provides explanations and examples for each of the link prediction 
 --
 endif::env-docs[]
 
-These algorithms help calculate the similarity of nodes:
+These algorithms help determine the closeness of a pair of nodes:
 
 * <<algorithms-linkprediction-adamic-adar, Adamic Adar Similarity>> (`algo.linkprediction.adamicAdar`)
 * <<algorithms-linkprediction-resource-allocation, Resource Allocation Similarity>> (`algo.linkprediction.resourceAllocation`)
