@@ -24,8 +24,10 @@ import com.carrotsearch.hppc.LongHashSet;
 import com.carrotsearch.hppc.LongSet;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.utils.Intersections;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.neo4j.procedure.*;
+import org.neo4j.procedure.Description;
+import org.neo4j.procedure.Name;
+import org.neo4j.procedure.UserAggregationFunction;
+import org.neo4j.procedure.UserFunction;
 
 import java.util.HashSet;
 import java.util.List;
@@ -35,9 +37,6 @@ import static org.neo4j.graphalgo.similarity.SimilarityVectorAggregator.CATEGORY
 import static org.neo4j.graphalgo.similarity.SimilarityVectorAggregator.WEIGHT_KEY;
 
 public class Similarities {
-
-    @Context
-    public GraphDatabaseAPI api;
 
     @UserFunction("algo.similarity.jaccard")
     @Description("algo.similarity.jaccard([vector1], [vector2]) " +
