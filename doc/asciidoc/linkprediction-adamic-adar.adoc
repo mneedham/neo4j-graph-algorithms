@@ -1,4 +1,4 @@
-[[algorithms-similarity-adamic-adar]]
+[[algorithms-linkprediction-adamic-adar]]
 = The Adamic Adar algorithm
 
 [abstract]
@@ -11,7 +11,7 @@ link:https://en.wikipedia.org/wiki/Adamic/Adar_index[Adamic Adar similarity] is 
 // end::introduction[]
 
 
-[[algorithms-similarity-adamic-adar-context]]
+[[algorithms-linkprediction-adamic-adar-context]]
 == History and explanation
 
 // tag::explanation[]
@@ -29,7 +29,7 @@ The library contains a function to calculate similarity between two nodes.
 
 // end::explanation[]
 
-[[algorithms-similarity-adamic-adar-usecase]]
+[[algorithms-linkprediction-adamic-adar-usecase]]
 == Use-cases - when to use the Adamic Adar Similarity algorithm
 
 // tag::use-case[]
@@ -38,19 +38,19 @@ We might then use the computed similarity as part of a link prediction solution.
 // end::use-case[]
 
 
-[[algorithms-similarity-adamic-adar-sample]]
+[[algorithms-linkprediction-adamic-adar-sample]]
 == Adamic Adar algorithm sample
 
 .The following will create a sample graph:
 [source, cypher]
 ----
-include::scripts/similarity-adamic-adar.cypher[tag=create-sample-graph]
+include::scripts/linkprediction-adamic-adar.cypher[tag=create-sample-graph]
 ----
 
 .The following will return the similarity of Michael and Karin:
 [source, cypher]
 ----
-include::scripts/similarity-adamic-adar.cypher[tag=all-rels]
+include::scripts/linkprediction-adamic-adar.cypher[tag=all-rels]
 ----
 
 // tag::function[]
@@ -68,7 +68,7 @@ We can also compute the similarity between a pair of nodes based on a specific r
 .The following will return the similarity of Michael and Karin based only on `FRIENDS` relationships:
 [source, cypher]
 ----
-include::scripts/similarity-adamic-adar.cypher[tag=only-friends]
+include::scripts/linkprediction-adamic-adar.cypher[tag=only-friends]
 ----
 
 // tag::function[]
@@ -81,13 +81,13 @@ include::scripts/similarity-adamic-adar.cypher[tag=only-friends]
 // end::function[]
 
 
-[[algorithms-similarity-adamic-adar-syntax]]
+[[algorithms-linkprediction-adamic-adar-syntax]]
 == Syntax
 
 .The following will run the algorithm and return the result:
 [source, cypher]
 ----
-RETURN algo.similarity.adamicAdar(node1:Node, node2:Node, {
+RETURN algo.linkprediction.adamicAdar(node1:Node, node2:Node, {
     relationshipQuery: null,
     direction: "BOTH"
 })
