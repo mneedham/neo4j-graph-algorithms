@@ -52,7 +52,7 @@ public class UnionFindProc3 {
     @Description("CALL algo.unionFind(label:String, relationship:String, " +
             "{property:'weight', threshold:0.42, defaultValue:1.0, write: true, partitionProperty:'partition', concurrency:4}) " +
             "YIELD nodes, setCount, loadMillis, computeMillis, writeMillis")
-    public Stream<DefaultCommunityResult> unionFind(
+    public Stream<UnionFindProcExec.UnionFindResult> unionFind(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
