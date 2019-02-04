@@ -97,7 +97,7 @@ public class LouvainClusteringIntegrationTest {
     @Test
     public void test() {
         final String cypher = "CALL algo.louvain('', '', {concurrency:1}) " +
-                "YIELD nodes, communityCount, loadMillis, computeMillis, writeMillis, postProcessingMillis, top3, p99";
+                "YIELD nodes, communityCount, loadMillis, computeMillis, writeMillis, postProcessingMillis, p99";
 
         DB.execute(cypher).accept(row -> {
             final long nodes = row.getNumber("nodes").longValue();
@@ -109,7 +109,6 @@ public class LouvainClusteringIntegrationTest {
             System.out.println("nodes = " + nodes);
             System.out.println("communityCount = " + communityCount);
             System.out.println("p99 = " + row.get("p99"));
-            System.out.println("top3 = " + row.get("top3"));
 
             assertEquals("invalid node count",9, nodes);
             assertEquals("wrong community count", 3, communityCount);
