@@ -21,8 +21,6 @@ package org.neo4j.graphalgo.results;
 import com.carrotsearch.hppc.LongLongMap;
 import org.HdrHistogram.Histogram;
 
-import java.util.List;
-
 public class LabelPropagationStats {
 
     public static final LabelPropagationStats EMPTY = new LabelPropagationStats(
@@ -62,13 +60,13 @@ public class LabelPropagationStats {
     public final long p50;
     public final long p25;
     public final long p10;
-    public final long p05;
-    public final long p01;
+    public final long p5;
+    public final long p1;
     public final long iterations;
     public final boolean write, didConverge;
     public final String weightProperty, partitionProperty;
 
-    public LabelPropagationStats(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01, long iterations, boolean write, boolean didConverge, String weightProperty, String partitionProperty) {
+    public LabelPropagationStats(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p5, long p1, long iterations, boolean write, boolean didConverge, String weightProperty, String partitionProperty) {
         this.loadMillis = loadMillis;
         this.computeMillis = computeMillis;
         this.postProcessingMillis = postProcessingMillis;
@@ -83,8 +81,8 @@ public class LabelPropagationStats {
         this.p50 = p50;
         this.p25 = p25;
         this.p10 = p10;
-        this.p05 = p05;
-        this.p01 = p01;
+        this.p5 = p5;
+        this.p1 = p1;
         this.iterations = iterations;
         this.write = write;
         this.didConverge = didConverge;
