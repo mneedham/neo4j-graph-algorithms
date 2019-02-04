@@ -95,7 +95,7 @@ include::scripts/similarity-cosine.cypher[tag=function-cypher]
 |===
 // end::function-cypher[]
 
-.The following will return the Cosine similarity of Michael and all other people:
+.The following will return the Cosine similarity of Michael and the other people that have a cuisine in common:
 [source, cypher]
 ----
 include::scripts/similarity-cosine.cypher[tag=function-cypher-all]

@@ -95,7 +95,7 @@ include::scripts/similarity-jaccard.cypher[tag=function-cypher]
 |===
 // end::function-cypher[]
 
-.The following will return the Jaccard similarity of Karin and all other people:
+.The following will return the Jaccard similarity of Karin and the other people that have a cuisine in common:
 [source, cypher]
 ----
 include::scripts/similarity-jaccard.cypher[tag=function-cypher-all]
