@@ -90,7 +90,7 @@ include::scripts/similarity-jaccard.cypher[tag=function-cypher]
 [opts="header"]
 |===
 | `from`       | `to`         | `similarity`
-| "Karin" | "Arya" | 0.75
+| "Karin" | "Arya" | 0.66
 
 |===
 // end::function-cypher[]
@@ -106,9 +106,9 @@ include::scripts/similarity-jaccard.cypher[tag=function-cypher-all]
 [opts="header"]
 |===
 | `from`       | `to`         | `similarity`
-| "Karin" | "Arya"     | 0.75
-| "Karin" | "Michael"  | 0.4
-| "Karin" | "Praveena" | 0.16666666666666666
+| "Karin" | "Arya"     | 0.66
+| "Karin" | "Michael"  | 0.25
+| "Karin" | "Praveena" | 0.0
 | "Karin" | "Zhen"     | 0.0
 
 |===
