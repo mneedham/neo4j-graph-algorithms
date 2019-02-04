@@ -1,0 +1,17 @@
+[[algorithms-link-prediction]]
+= Link Prediction algorithms
+
+ifdef::env-docs[]
+[abstract]
+--
+This chapter provides explanations and examples for each of the link prediction algorithms in the Neo4j Graph Algorithms library.
+--
+endif::env-docs[]
+
+These algorithms help calculate the similarity of nodes:
+
+* <<algorithms-similarity-adamic-adar, Adamic Adar Similarity>> (`algo.similarity.adamicAdar`)
+* <<algorithms-similarity-resource-allocation, Resource Allocation Similarity>> (`algo.similarity.resourceAllocation`)
+
+include::similarity-adamic-adar.adoc[leveloffset=2]
+include::similarity-resource-allocation.adoc[leveloffset=2]

@@ -22,6 +22,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.neo4j.graphalgo.TestDatabaseCreator;
+import org.neo4j.graphalgo.similarity.LinkPrediction;
 import org.neo4j.graphalgo.similarity.Similarities;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
@@ -66,7 +67,7 @@ public class AdamicAdarProcIntegrationTest {
 
         ((GraphDatabaseAPI) db).getDependencyResolver()
                 .resolveDependency(Procedures.class)
-                .registerFunction(Similarities.class);
+                .registerFunction(LinkPrediction.class);
 
         db.execute(SETUP).close();
     }

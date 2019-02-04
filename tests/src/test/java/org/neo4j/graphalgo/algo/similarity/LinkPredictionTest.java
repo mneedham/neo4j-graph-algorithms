@@ -19,6 +19,7 @@
 package org.neo4j.graphalgo.algo.similarity;
 
 import org.junit.Test;
+import org.neo4j.graphalgo.similarity.LinkPrediction;
 import org.neo4j.graphalgo.similarity.Similarities;
 
 import java.util.Arrays;
@@ -26,17 +27,29 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
-public class ResourceAllocationSimilarityTest {
+public class LinkPredictionTest {
     @Test
-    public void uniqueCommonNeighbour() {
-        assertEquals(0.5, new Similarities().sumInverse(Collections.singletonList(2)), 0.01);
-        assertEquals(1.0, new Similarities().sumInverse(Arrays.asList(2,2 )), 0.01);
+    public void sumInverseLogUniqueCommonNeighbour() {
+        assertEquals(1.44, new LinkPrediction().sumInverseLog(Collections.singletonList(2)), 0.01);
+        assertEquals(2.88, new LinkPrediction().sumInverseLog(Arrays.asList(2,2 )), 0.01);
     }
 
     @Test
-    public void veryWellLinkedNeighbours() {
-        assertEquals(0.2, new Similarities().sumInverse(Collections.singletonList(5)), 0.01);
-        assertEquals(0.4, new Similarities().sumInverse(Arrays.asList(5,5)), 0.01);
+    public void sumInverseLogVeryWellLinkedNeighbours() {
+        assertEquals(0.62, new LinkPrediction().sumInverseLog(Collections.singletonList(5)), 0.01);
+        assertEquals(1.24, new LinkPrediction().sumInverseLog(Arrays.asList(5,5)), 0.01);
+    }
+
+       @Test
+    public void sumInverseUniqueCommonNeighbour() {
+        assertEquals(0.5, new LinkPrediction().sumInverse(Collections.singletonList(2)), 0.01);
+        assertEquals(1.0, new LinkPrediction().sumInverse(Arrays.asList(2,2 )), 0.01);
+    }
+
+    @Test
+    public void sumInverseVeryWellLinkedNeighbours() {
+        assertEquals(0.2, new LinkPrediction().sumInverse(Collections.singletonList(5)), 0.01);
+        assertEquals(0.4, new LinkPrediction().sumInverse(Arrays.asList(5,5)), 0.01);
     }
 
 }

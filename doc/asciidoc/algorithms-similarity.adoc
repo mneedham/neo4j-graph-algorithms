@@ -15,13 +15,9 @@ These algorithms help calculate the similarity of nodes:
 * <<algorithms-similarity-pearson, Pearson Similarity>> (`algo.similarity.pearson`)
 * <<algorithms-similarity-euclidean, Euclidean Distance>> (`algo.similarity.euclidean`)
 * <<algorithms-similarity-overlap, Overlap Similarity>> (`algo.similarity.overlap`)
-* <<algorithms-similarity-adamic-adar, Adamic Adar Similarity>> (`algo.similarity.adamicAdar`)
-* <<algorithms-similarity-resource-allocation, Resource Allocation Similarity>> (`algo.similarity.resourceAllocation`)
 
 include::similarity-jaccard.adoc[leveloffset=2]
 include::similarity-cosine.adoc[leveloffset=2]
 include::similarity-pearson.adoc[leveloffset=2]
 include::similarity-euclidean.adoc[leveloffset=2]
 include::similarity-overlap.adoc[leveloffset=2]
-include::similarity-adamic-adar.adoc[leveloffset=2]
-include::similarity-resource-allocation.adoc[leveloffset=2]
