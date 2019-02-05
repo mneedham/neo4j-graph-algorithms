@@ -48,23 +48,28 @@ public class LabelPropagationStats {
 
     public final long loadMillis;
     public final long computeMillis;
-    public final long postProcessingMillis;
     public final long writeMillis;
+    public final long postProcessingMillis;
+
     public final long nodes;
     public final long communityCount;
-    public final long p100;
-    public final long p99;
-    public final long p95;
-    public final long p90;
-    public final long p75;
-    public final long p50;
-    public final long p25;
-    public final long p10;
-    public final long p5;
-    public final long p1;
     public final long iterations;
-    public final boolean write, didConverge;
-    public final String weightProperty, partitionProperty;
+    public final boolean didConverge;
+
+    public final long p1;
+    public final long p5;
+    public final long p10;
+    public final long p25;
+    public final long p50;
+    public final long p75;
+    public final long p90;
+    public final long p95;
+    public final long p99;
+    public final long p100;
+
+    public final String weightProperty;
+    public final boolean write;
+    public final String partitionProperty;
 
     public LabelPropagationStats(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes,
                                  long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p5, long p1, long iterations, boolean write, boolean didConverge,
@@ -97,7 +102,6 @@ public class LabelPropagationStats {
 
         private long iterations = 0;
         private boolean didConverge = false;
-        private boolean write;
         private String weightProperty;
         private String partitionProperty;
 
