@@ -23,19 +23,11 @@ image::adamic-adar.svg[role="middle"]
 
 where `N(u)` is the set of nodes adjacent to `u`.
 
-A value of 0 indicates that two nodes are dissimilar, while higher values indicate nodes are more similar.
+A value of 0 indicates that two nodes are not close, while higher values indicate nodes are closer.
 
 The library contains a function to calculate closeness between two nodes.
 
 // end::explanation[]
-
-[[algorithms-linkprediction-adamic-adar-usecase]]
-== Use-cases - when to use the Adamic Adar algorithm
-
-// tag::use-case[]
-We can use the Adamic Adar algorithm to work out the closeness between two nodes.
-We might then use the computed score as part of a link prediction solution.
-// end::use-case[]
 
 
 [[algorithms-linkprediction-adamic-adar-sample]]
@@ -47,7 +39,7 @@ We might then use the computed score as part of a link prediction solution.
 include::scripts/linkprediction-adamic-adar.cypher[tag=create-sample-graph]
 ----
 
-.The following will return the closeness of Michael and Karin:
+.The following will return the Adamic Adar score for Michael and Karin:
 [source, cypher]
 ----
 include::scripts/linkprediction-adamic-adar.cypher[tag=all-rels]
@@ -65,7 +57,7 @@ include::scripts/linkprediction-adamic-adar.cypher[tag=all-rels]
 
 We can also compute the score of a pair of nodes based on a specific relationship type.
 
-.The following will return the Adamic Adar similarity of Michael and Karin based only on `FRIENDS` relationships:
+.The following will return the Adamic Adar score for Michael and Karin based only on the `FRIENDS` relationships:
 [source, cypher]
 ----
 include::scripts/linkprediction-adamic-adar.cypher[tag=only-friends]

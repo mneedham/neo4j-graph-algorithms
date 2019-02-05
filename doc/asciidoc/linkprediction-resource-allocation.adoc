@@ -7,7 +7,7 @@ This section describes the Resource Allocation algorithm in the Neo4j Graph Algo
 --
 
 // tag::introduction[]
-link:https://arxiv.org/pdf/0901.0553.pdf[Resource Allocation similarity] is a measure used to compute similarity between nodes based on their shared neighbors.
+link:https://arxiv.org/pdf/0901.0553.pdf[Resource Allocation] is a measure used to compute the closeness of nodes based on their shared neighbors.
 // end::introduction[]
 
 
@@ -16,26 +16,18 @@ link:https://arxiv.org/pdf/0901.0553.pdf[Resource Allocation similarity] is a me
 
 // tag::explanation[]
 
-Resource Allocation similarity was introduced in 2009 by Tao Zhou, Linyuan Lü, and Yi-Cheng Zhang as part of a study to predict links in various networks.
+The Resource Allocation  algorithm was introduced in 2009 by Tao Zhou, Linyuan Lü, and Yi-Cheng Zhang as part of a study to predict links in various networks.
 It is computed using the following formula:
 
-image::resource-allocation-similarity.svg[role="middle"]
+image::resource-allocation.svg[role="middle"]
 
 where `N(u)` is the set of nodes adjacent to `u`.
 
-A value of 0 indicates that two nodes are dissimilar, while higher values indicate nodes are more similar.
+A value of 0 indicates that two nodes are not close, while higher values indicate nodes are closer.
 
-The library contains a function to calculate similarity between two nodes.
+The library contains a function to calculate closeness between two nodes.
 
 // end::explanation[]
-
-[[algorithms-linkprediction-resource-allocation-usecase]]
-== Use-cases - when to use the Resource Allocation algorithm
-
-// tag::use-case[]
-We can use the Resource Allocation Similarity algorithm to work out the similarity between two nodes.
-We might then use the computed similarity as part of a link prediction solution.
-// end::use-case[]
 
 
 [[algorithms-linkprediction-resource-allocation-sample]]
@@ -47,7 +39,7 @@ We might then use the computed similarity as part of a link prediction solution.
 include::scripts/linkprediction-resource-allocation.cypher[tag=create-sample-graph]
 ----
 
-.The following will return the similarity of Michael and Karin:
+.The following will return the Resource Allocaiton score for Michael and Karin:
 [source, cypher]
 ----
 include::scripts/linkprediction-resource-allocation.cypher[tag=all-rels]
@@ -57,15 +49,15 @@ include::scripts/linkprediction-resource-allocation.cypher[tag=all-rels]
 .Results
 [opts="header",cols="1"]
 |===
-| `similarity`
+| `score`
 | 0.5
 |===
 // end::function[]
 
 
-We can also compute the similarity between a pair of nodes based on a specific relationship type.
+We can also compute the score of a pair of nodes based on a specific relationship type.
 
-.The following will return the similarity of Michael and Karin based only on `FRIENDS` relationships:
+.The following will return the Resource Allocaiton score for Michael and Karin based only on the `FRIENDS` relationships:
 [source, cypher]
 ----
 include::scripts/linkprediction-resource-allocation.cypher[tag=only-friends]
@@ -75,7 +67,7 @@ include::scripts/linkprediction-resource-allocation.cypher[tag=only-friends]
 .Results
 [opts="header",cols="1"]
 |===
-| `similarity`
+| `score`
 | 0.0
 |===
 // end::function[]
