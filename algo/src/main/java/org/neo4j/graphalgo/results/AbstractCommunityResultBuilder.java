@@ -119,11 +119,9 @@ public abstract class AbstractCommunityResultBuilder<T> {
 
         final LongLongMap communitySizeMap = new LongLongScatterMap();
         final ProgressTimer timer = ProgressTimer.start();
-        for (int i = 0; i < nodeCount; i++) {
-            // map to community id
-            final long cId = fun.apply(i);
-            // aggregate community size
-            communitySizeMap.addTo(cId, 1);
+        for (int nodeId = 0; nodeId < nodeCount; nodeId++) {
+            final long communityId = fun.apply(nodeId);
+            communitySizeMap.addTo(communityId, 1);
         }
 
         Histogram histogram = CommunityHistogram.buildFrom(communitySizeMap);

@@ -278,7 +278,6 @@ public class LouvainProc {
         private long iterations = -1;
         private double[] modularities = new double[] {};
         private double finalModularity = -1;
-        private boolean write;
         private String writeProperty;
         private String intermediateCommunitiesWriteProperty;
         private boolean includeIntermediateCommunities;
