@@ -29,12 +29,9 @@ import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.values.storable.Values;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Spliterator;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class SimilarityExporter extends StatementApi {
 
@@ -104,55 +101,19 @@ public class SimilarityExporter extends StatementApi {
         if (batchSize == 1) {
             similarityPairs.forEach(this::export);
         } else {
-            batchStream(similarityPairs, batchSize).forEach(this::export);
+            Iterator<SimilarityResult> iterator = similarityPairs.iterator();
+            do {
+                export(take(iterator, Math.toIntExact(batchSize)));
+            } while (iterator.hasNext());
         }
     }
 
-    public static Stream<List<SimilarityResult>> batchStream(Stream<SimilarityResult> stream, long batchSize) {
-        return batchSize <= 0
-                ? Stream.of(stream.collect(Collectors.toList()))
-                : StreamSupport.stream(new BatchSpliterator(stream.spliterator(), batchSize), stream.isParallel());
-    }
-
-    private static class BatchSpliterator implements Spliterator<List<SimilarityResult>> {
-        private final Spliterator<SimilarityResult> stream;
-        private final long batchSize;
-
-        public BatchSpliterator(Spliterator<SimilarityResult> stream, long batchSize) {
-            this.stream = stream;
-            this.batchSize = batchSize;
+    private static List<SimilarityResult> take(Iterator<SimilarityResult> iterator, int batchSize) {
+        List<SimilarityResult> result = new ArrayList<>(batchSize);
+        while (iterator.hasNext() && batchSize-- > 0) {
+            result.add(iterator.next());
         }
-
-        @Override
-        public boolean tryAdvance(Consumer<? super List<SimilarityResult>> action) {
-            final List<SimilarityResult> batch = new ArrayList<>(Math.toIntExact(batchSize));
-            for (int i = 0; i < batchSize && stream.tryAdvance(batch::add); i++)
-                ;
-            if (batch.isEmpty())
-                return false;
-            action.accept(batch);
-            return true;
-        }
-
-        @Override
-        public Spliterator<List<SimilarityResult>> trySplit() {
-            if (stream.estimateSize() <= batchSize)
-                return null;
-            final Spliterator<SimilarityResult> splitStream = this.stream.trySplit();
-            return splitStream == null ? null : new BatchSpliterator(splitStream, batchSize);
-        }
-
-        @Override
-        public long estimateSize() {
-            final double estimatedSize = stream.estimateSize();
-            return estimatedSize == 0 ? 0 : (long) Math.ceil(estimatedSize / (double) batchSize);
-        }
-
-        @Override
-        public int characteristics() {
-            return stream.characteristics();
-        }
-
+        return result;
     }
 
 
