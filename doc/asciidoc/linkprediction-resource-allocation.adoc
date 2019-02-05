@@ -3,7 +3,7 @@
 
 [abstract]
 --
-This section describes the Resource Allocation Similarity algorithm in the Neo4j Graph Algorithms library.
+This section describes the Resource Allocation algorithm in the Neo4j Graph Algorithms library.
 --
 
 // tag::introduction[]
@@ -30,7 +30,7 @@ The library contains a function to calculate similarity between two nodes.
 // end::explanation[]
 
 [[algorithms-linkprediction-resource-allocation-usecase]]
-== Use-cases - when to use the Resource Allocation Similarity algorithm
+== Use-cases - when to use the Resource Allocation algorithm
 
 // tag::use-case[]
 We can use the Resource Allocation Similarity algorithm to work out the similarity between two nodes.
