@@ -163,11 +163,6 @@ YIELD nodes, iterations, didConverge, loadMillis, computeMillis, writeMillis, wr
 | writeMillis | int | Milliseconds for writing result data back
 | postProcessingMillis    | int  | Milliseconds for computing percentiles and community count
 
-| weightProperty | string | The property name that contains weight
-
-| write | boolean | Specifies if the result was written back as a node property
-| partitionProperty | string | The property name written back to
-
 | nodes | int | The number of nodes considered
 | communityCount | int  | The number of communities found
 | iterations | int | The number of iterations that were executed
@@ -183,6 +178,10 @@ YIELD nodes, iterations, didConverge, loadMillis, computeMillis, writeMillis, wr
 | p95                   | double  | The 95 percentile of community size.
 | p99                   | double  | The 99 percentile of community size.
 | p100                  | double  | The 100 percentile of community size.
+
+| write | boolean | Specifies if the result was written back as a node property
+| partitionProperty | string | The property name written back to
+| weightProperty | string | The property name that contains weight
 
 |===
 
