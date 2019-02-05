@@ -132,6 +132,9 @@ YIELD loadMillis, computeMillis, writeMillis, setCount, maxSetSize, minSetSize
 | p99                   | double  | The 99 percentile of community size.
 | p100                  | double  | The 100 percentile of community size.
 
+| write | boolean | Specifies if the result was written back as a node property
+| partitionProperty | string | The property name written back to
+
 |===
 
 .The following will run the algorithm and stream results:
