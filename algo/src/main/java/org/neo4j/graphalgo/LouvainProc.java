@@ -283,11 +283,6 @@ public class LouvainProc {
         private String intermediateCommunitiesWriteProperty;
         private boolean includeIntermediateCommunities;
 
-        public Builder withWrite(boolean write) {
-            this.write = write;
-            return this;
-        }
-
         public Builder withWriteProperty(String writeProperty) {
             this.writeProperty = writeProperty;
             return this;
@@ -299,7 +294,7 @@ public class LouvainProc {
         }
 
         @Override
-        protected LouvainResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram) {
+        protected LouvainResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, boolean write) {
             return new LouvainResult(
                     loadMillis,
                     computeMillis,

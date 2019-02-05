@@ -111,11 +111,6 @@ public class LabelPropagationStats {
             return this;
         }
 
-        public Builder write(final boolean write) {
-            this.write = write;
-            return this;
-        }
-
         public Builder weightProperty(final String weightProperty) {
             this.weightProperty = weightProperty;
             return this;
@@ -127,7 +122,7 @@ public class LabelPropagationStats {
         }
 
         @Override
-        protected LabelPropagationStats build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram) {
+        protected LabelPropagationStats build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, boolean write) {
             return new LabelPropagationStats(
                     loadMillis,
                     computeMillis,

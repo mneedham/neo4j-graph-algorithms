@@ -139,10 +139,10 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
         public UnionFindResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p5, long p1) {
             this.loadMillis = loadMillis;
             this.computeMillis = computeMillis;
-            this.postProcessingMillis = postProcessingMillis;
             this.writeMillis = writeMillis;
+            this.postProcessingMillis = postProcessingMillis;
             this.nodes = nodes;
-            this.communityCount = communityCount;
+            this.communityCount = this.setCount = communityCount;
             this.p100 = p100;
             this.p99 = p99;
             this.p95 = p95;
@@ -153,13 +153,12 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
             this.p10 = p10;
             this.p5 = p5;
             this.p1 = p1;
-            this.setCount = communityCount;
         }
     }
 
     public static class Builder extends AbstractCommunityResultBuilder<UnionFindResult> {
         @Override
-        protected UnionFindResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram) {
+        protected UnionFindResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, boolean write) {
             return new UnionFindResult(
                     loadMillis,
                     computeMillis,

@@ -77,7 +77,7 @@ public class SCCResult {
 
     public static final class Builder extends AbstractCommunityResultBuilder<SCCResult> {
         @Override
-        protected SCCResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram) {
+        protected SCCResult build(long loadMillis, long computeMillis, long writeMillis, long postProcessingMillis, long nodeCount, long communityCount, LongLongMap communitySizeMap, Histogram communityHistogram, boolean write) {
             return new SCCResult(
                     loadMillis,
                     computeMillis,

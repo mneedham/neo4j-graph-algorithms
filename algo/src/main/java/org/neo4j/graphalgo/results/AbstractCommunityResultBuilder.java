@@ -17,6 +17,7 @@ public abstract class AbstractCommunityResultBuilder<T> {
     protected long loadDuration = -1;
     protected long evalDuration = -1;
     protected long writeDuration = -1;
+    protected boolean write = false;
 
     public AbstractCommunityResultBuilder<T> withLoadDuration(long loadDuration) {
         this.loadDuration = loadDuration;
@@ -32,6 +33,11 @@ public abstract class AbstractCommunityResultBuilder<T> {
 
     public AbstractCommunityResultBuilder<T> withWriteDuration(long writeDuration) {
         this.writeDuration = writeDuration;
+        return this;
+    }
+
+    public AbstractCommunityResultBuilder<T> withWrite(boolean write) {
+        this.write = write;
         return this;
     }
 
@@ -131,7 +137,8 @@ public abstract class AbstractCommunityResultBuilder<T> {
                 nodeCount,
                 communitySizeMap.size(),
                 communitySizeMap,
-                histogram
+                histogram,
+                write
         );
     }
 
@@ -143,6 +150,7 @@ public abstract class AbstractCommunityResultBuilder<T> {
             long nodeCount,
             long communityCount,
             LongLongMap communitySizeMap,
-            Histogram communityHistogram);
+            Histogram communityHistogram,
+            boolean write);
 
 }
