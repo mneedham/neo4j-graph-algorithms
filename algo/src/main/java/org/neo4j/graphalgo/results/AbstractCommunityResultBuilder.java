@@ -104,12 +104,53 @@ public abstract class AbstractCommunityResultBuilder<T> {
         }
     }
 
-    public T buildII(long nodes, IntFunction<Integer> fun) {
-        return build(nodes, value -> (long) fun.apply((int) value));
+    public T buildII(long nodeCount, IntFunction<Integer> fun) {
+        final ProgressTimer timer = ProgressTimer.start();
+        final Histogram histogram = new Histogram(2);
+        for (int nodeId = 0; nodeId < nodeCount; nodeId++) {
+            final long size = fun.apply(nodeId);
+            histogram.recordValue(size);
+        }
+
+        timer.stop();
+
+        final LongLongMap communitySizeMap = new LongLongScatterMap();
+        return build(loadDuration,
+                evalDuration,
+                writeDuration,
+                timer.getDuration(),
+                nodeCount,
+                communitySizeMap.size(),
+                communitySizeMap,
+                histogram,
+                write
+        );
+
+
     }
 
-    public T buildLI(long nodes, LongToIntFunction fun) {
-        return build(nodes, value -> (long) fun.applyAsInt(value));
+    public T buildLI(long nodeCount, LongToIntFunction fun) {
+
+        final Histogram histogram = new Histogram(2);
+        final ProgressTimer timer = ProgressTimer.start();
+        for (int nodeId = 0; nodeId < nodeCount; nodeId++) {
+            final long size = fun.applyAsInt(nodeId);
+            histogram.recordValue(size);
+        }
+
+        timer.stop();
+
+        final LongLongMap communitySizeMap = new LongLongScatterMap();
+        return build(loadDuration,
+                evalDuration,
+                writeDuration,
+                timer.getDuration(),
+                nodeCount,
+                communitySizeMap.size(),
+                communitySizeMap,
+                histogram,
+                write
+        );
     }
 
     /**
