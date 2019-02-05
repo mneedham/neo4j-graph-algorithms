@@ -119,23 +119,24 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
 
         public final long loadMillis;
         public final long computeMillis;
-        public final long postProcessingMillis;
         public final long writeMillis;
+        public final long postProcessingMillis;
         public final long nodes;
         public final long communityCount;
         public final long setCount;
-        public final long p100;
-        public final long p99;
-        public final long p95;
-        public final long p90;
-        public final long p75;
-        public final long p50;
-        public final long p25;
+        public final long p1;
+        public final long p5;
         public final long p10;
-        public final long p05;
-        public final long p01;
+        public final long p25;
+        public final long p50;
+        public final long p75;
+        public final long p90;
+        public final long p95;
+        public final long p99;
+        public final long p100;
 
-        public UnionFindResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p05, long p01) {
+
+        public UnionFindResult(long loadMillis, long computeMillis, long postProcessingMillis, long writeMillis, long nodes, long communityCount, long p100, long p99, long p95, long p90, long p75, long p50, long p25, long p10, long p5, long p1) {
             this.loadMillis = loadMillis;
             this.computeMillis = computeMillis;
             this.postProcessingMillis = postProcessingMillis;
@@ -150,8 +151,8 @@ public final class UnionFindProcExec implements BiConsumer<String, Algorithm<?>>
             this.p50 = p50;
             this.p25 = p25;
             this.p10 = p10;
-            this.p05 = p05;
-            this.p01 = p01;
+            this.p5 = p5;
+            this.p1 = p1;
             this.setCount = communityCount;
         }
     }
