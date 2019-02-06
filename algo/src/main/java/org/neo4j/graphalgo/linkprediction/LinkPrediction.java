@@ -19,9 +19,10 @@
 package org.neo4j.graphalgo.linkprediction;
 
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
-import org.neo4j.graphdb.*;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.neo4j.procedure.Context;
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.UserFunction;
@@ -29,9 +30,6 @@ import org.neo4j.procedure.UserFunction;
 import java.util.*;
 
 public class LinkPrediction {
-
-    @Context
-    public GraphDatabaseAPI api;
 
     @UserFunction("algo.linkprediction.adamicAdar")
     @Description("algo.linkprediction.adamicAdar(node1:Node, node2:Node, {relationshipQuery:'relationshipName', direction:'BOTH'}) " +
@@ -49,12 +47,9 @@ public class LinkPrediction {
         Direction direction = configuration.getDirection(Direction.BOTH);
 
         List<Number> vector = new ArrayList<>();
-        try(Transaction tx = api.beginTx()) {
-            Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
-            neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
-            neighbors.forEach(neighbor -> vector.add(degree(relationshipType, direction, neighbor)));
-            tx.success();
-        }
+        Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
+        neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
+        neighbors.forEach(neighbor -> vector.add(degree(relationshipType, direction, neighbor)));
 
         return sumInverseLog(vector);
     }
@@ -63,20 +58,14 @@ public class LinkPrediction {
     @Description("algo.linkprediction.resourceAllocation(node1:Node, node2:Node, {relationshipQuery:'relationshipName', direction:'BOTH'}) " +
             "given two nodes, calculate Resource Allocation similarity")
     public double resourceAllocationSimilarity(@Name("node1") Node node1, @Name("node2") Node node2,
-                                       @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
+                                               @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
 
-        List<Number> vector = new ArrayList<>();
-        try(Transaction tx = api.beginTx()) {
-            Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
-            neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
-            neighbors.forEach(neighbor -> vector.add(degree(relationshipType, direction, neighbor)));
-            tx.success();
-        }
-
-        return sumInverse(vector);
+        Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
+        neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
+        return neighbors.stream().mapToDouble(nb -> 1 / degree(relationshipType, direction, nb)).sum();
     }
 
 
@@ -85,8 +74,8 @@ public class LinkPrediction {
         if (vector == null) return 0;
 
         double score = 0.0;
-        for (int i = 0; i < vector.size(); i++) {
-            double value = vector.get(i).doubleValue();
+        for (Number number : vector) {
+            double value = number.doubleValue();
             score += 1 / value;
         }
         return score;
@@ -97,8 +86,8 @@ public class LinkPrediction {
         if (vector == null) return 0;
 
         double score = 0.0;
-        for (int i = 0; i < vector.size(); i++) {
-            double value = vector.get(i).doubleValue();
+        for (Number number : vector) {
+            double value = number.doubleValue();
             score += 1 / Math.log(value);
         }
         return score;
@@ -124,8 +113,8 @@ public class LinkPrediction {
     }
 
     private boolean noCommonNeighbors(Node node, RelationshipType relationshipType, Direction direction, Node node2) {
-        for(Relationship rel : loadRelationships(node, relationshipType, direction)) {
-            if(rel.getOtherNode(node).equals(node2)) {
+        for (Relationship rel : loadRelationships(node, relationshipType, direction)) {
+            if (rel.getOtherNode(node).equals(node2)) {
                 return false;
             }
         }
