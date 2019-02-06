@@ -46,12 +46,9 @@ public class LinkPrediction {
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
 
-        List<Number> vector = new ArrayList<>();
         Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
         neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
-        neighbors.forEach(neighbor -> vector.add(degree(relationshipType, direction, neighbor)));
-
-        return sumInverseLog(vector);
+        return neighbors.stream().mapToDouble(nb -> 1.0 / Math.log(degree(relationshipType, direction, nb))).sum();
     }
 
     @UserFunction("algo.linkprediction.resourceAllocation")
@@ -59,40 +56,20 @@ public class LinkPrediction {
             "given two nodes, calculate Resource Allocation similarity")
     public double resourceAllocationSimilarity(@Name("node1") Node node1, @Name("node2") Node node2,
                                                @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
+        // https://arxiv.org/pdf/0901.0553.pdf
+
+        if (node1 == null || node2 == null) {
+            throw new RuntimeException("Nodes must not be null");
+        }
+
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
 
         Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
         neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
-        return neighbors.stream().mapToDouble(nb -> 1 / degree(relationshipType, direction, nb)).sum();
+        return neighbors.stream().mapToDouble(nb -> 1.0 / degree(relationshipType, direction, nb)).sum();
     }
-
-
-    public double sumInverse(@Name("vector") List<Number> vector) {
-        // https://arxiv.org/pdf/0901.0553.pdf
-        if (vector == null) return 0;
-
-        double score = 0.0;
-        for (Number number : vector) {
-            double value = number.doubleValue();
-            score += 1 / value;
-        }
-        return score;
-    }
-
-    public double sumInverseLog(@Name("vector") List<Number> vector) {
-        // https://en.wikipedia.org/wiki/Adamic/Adar_index
-        if (vector == null) return 0;
-
-        double score = 0.0;
-        for (Number number : vector) {
-            double value = number.doubleValue();
-            score += 1 / Math.log(value);
-        }
-        return score;
-    }
-
 
     private Set<Node> findPotentialNeighbors(@Name("node1") Node node1, RelationshipType relationshipType, Direction direction) {
         Set<Node> neighbors = new HashSet<>();
