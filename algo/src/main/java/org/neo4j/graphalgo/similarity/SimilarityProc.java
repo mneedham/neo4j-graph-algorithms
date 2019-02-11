@@ -16,7 +16,7 @@ import org.neo4j.graphdb.Result;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
-import org.neo4j.procedure.*;
+import org.neo4j.procedure.Context;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -30,7 +30,6 @@ import java.util.stream.StreamSupport;
 
 import static org.neo4j.graphalgo.impl.util.TopKConsumer.topK;
 import static org.neo4j.graphalgo.similarity.Weights.REPEAT_CUTOFF;
-import static org.neo4j.helpers.collection.MapUtil.map;
 
 public class SimilarityProc {
     @Context
@@ -78,7 +77,7 @@ public class SimilarityProc {
         return configuration.get("writeBatchSize", 10000L);
     }
 
-    Stream<SimilaritySummaryResult> writeAndAggregateResults(Stream<SimilarityResult> stream, int length, ProcedureConfiguration configuration, boolean write, String writeRelationshipType, String writeProperty) {
+    Stream<SimilaritySummaryResult> writeAndAggregateResults(Stream<SimilarityResult> stream, int length, ProcedureConfiguration configuration, boolean write, String writeRelationshipType, String writeProperty, boolean writeParallel) {
         long writeBatchSize = getWriteBatchSize(configuration);
         AtomicLong similarityPairs = new AtomicLong();
         DoubleHistogram histogram = new DoubleHistogram(5);
@@ -88,8 +87,15 @@ public class SimilarityProc {
         };
 
         if (write) {
-            SimilarityExporter similarityExporter = new SimilarityExporter(api, writeRelationshipType, writeProperty);
-            similarityExporter.export(stream.peek(recorder), writeBatchSize);
+            if (writeParallel) {
+                ParallelSimilarityExporter parallelSimilarityExporter = new ParallelSimilarityExporter(api, log, writeRelationshipType, writeProperty, length);
+                parallelSimilarityExporter.export(stream.peek(recorder), writeBatchSize);
+
+            } else {
+                SimilarityExporter similarityExporter = new SimilarityExporter(api, log, writeRelationshipType, writeProperty);
+                similarityExporter.export(stream.peek(recorder), writeBatchSize);
+            }
+
         } else {
             stream.forEach(recorder);
         }
@@ -228,7 +234,7 @@ public class SimilarityProc {
 
     WeightedInput[] prepareWeights(Object rawData, ProcedureConfiguration configuration, Double skipValue) throws Exception {
         if (ProcedureConstants.CYPHER_QUERY.equals(configuration.getGraphName("dense"))) {
-            return prepareSparseWeights(api, (String) rawData,  skipValue, configuration);
+            return prepareSparseWeights(api, (String) rawData, skipValue, configuration);
         } else {
             List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
             return preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
@@ -336,7 +342,7 @@ public class SimilarityProc {
     }
 
     private Supplier<RleDecoder> createDecoderFactory(String graphType, int size) {
-        if(ProcedureConstants.CYPHER_QUERY.equals(graphType)) {
+        if (ProcedureConstants.CYPHER_QUERY.equals(graphType)) {
             return () -> new RleDecoder(size);
         }
 

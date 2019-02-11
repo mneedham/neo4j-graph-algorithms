@@ -26,6 +26,7 @@ import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.internal.kernel.api.exceptions.explicitindex.AutoIndexingKernelException;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.logging.Log;
 import org.neo4j.values.storable.Values;
 
 import java.util.ArrayList;
@@ -35,19 +36,22 @@ import java.util.stream.Stream;
 
 public class SimilarityExporter extends StatementApi {
 
+    private final Log log;
     private final int propertyId;
     private final int relationshipTypeId;
 
     public SimilarityExporter(GraphDatabaseAPI api,
-                              String relationshipType,
+                              Log log, String relationshipType,
                               String propertyName) {
         super(api);
+        this.log = log;
         propertyId = getOrCreatePropertyId(propertyName);
         relationshipTypeId = getOrCreateRelationshipId(relationshipType);
     }
 
     public void export(Stream<SimilarityResult> similarityPairs, long batchSize) {
-        writeSequential(similarityPairs, batchSize);
+        int batches = writeSequential(similarityPairs, batchSize);
+        log.info("ParallelSimilarityExporter: Batch Size: %d, Batches written - sequentially: %d", batchSize, batches);
     }
 
     private void export(SimilarityResult similarityResult) {
@@ -97,16 +101,28 @@ public class SimilarityExporter extends StatementApi {
                 .propertyKeyGetOrCreateForName(propertyName));
     }
 
-    private void writeSequential(Stream<SimilarityResult> similarityPairs, long batchSize) {
+    private int writeSequential(Stream<SimilarityResult> similarityPairs, long batchSize) {
+        log.info("SimilarityExporter: Writing relationships...");
+        int[] counter = {0};
         if (batchSize == 1) {
-            similarityPairs.forEach(this::export);
+            similarityPairs.forEach(similarityResult -> {
+                export(similarityResult);
+                counter[0]++;
+            });
         } else {
             Iterator<SimilarityResult> iterator = similarityPairs.iterator();
             do {
-                export(take(iterator, Math.toIntExact(batchSize)));
+                List<SimilarityResult> batch = take(iterator, Math.toIntExact(batchSize));
+                export(batch);
+                if(batch.size() > 0) {
+                    counter[0]++;
+                }
             } while (iterator.hasNext());
         }
+
+        return counter[0];
     }
+
 
     private static List<SimilarityResult> take(Iterator<SimilarityResult> iterator, int batchSize) {
         List<SimilarityResult> result = new ArrayList<>(batchSize);
