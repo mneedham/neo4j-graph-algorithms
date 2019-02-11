@@ -75,7 +75,7 @@ public class SimilarityProc {
     }
 
     Long getWriteBatchSize(ProcedureConfiguration configuration) {
-        return configuration.get("writeBatchSize", 1000L);
+        return configuration.get("writeBatchSize", 10000L);
     }
 
     Stream<SimilaritySummaryResult> writeAndAggregateResults(Stream<SimilarityResult> stream, int length, ProcedureConfiguration configuration, boolean write, String writeRelationshipType, String writeProperty) {
