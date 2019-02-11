@@ -94,51 +94,45 @@ public class ParallelSimilarityExporter extends StatementApi {
 
         ArrayBlockingQueue<List<SimilarityResult>> outQueue = new ArrayBlockingQueue<>(queueSize);
 
-        ExecutorService executor = Executors.newFixedThreadPool(1);
-        Future<Integer> inQueueBatchCountFuture = executor.submit(() -> {
-            AtomicInteger inQueueBatchCount = new AtomicInteger(0);
-            stream.parallel().forEach(partition -> {
-                IntSet nodesInPartition = new IntHashSet();
-                for (DisjointSetStruct.InternalResult internalResult : partition) {
-                    nodesInPartition.add(internalResult.internalNodeId);
-                }
 
-                List<SimilarityResult> inPartition = new ArrayList<>();
-                List<SimilarityResult> outPartition = new ArrayList<>();
+        AtomicInteger inQueueBatchCount = new AtomicInteger(0);
+        stream.parallel().forEach(partition -> {
+            IntSet nodesInPartition = new IntHashSet();
+            for (DisjointSetStruct.InternalResult internalResult : partition) {
+                nodesInPartition.add(internalResult.internalNodeId);
+            }
 
-                for (DisjointSetStruct.InternalResult result : partition) {
-                    int nodeId = result.internalNodeId;
-                    graph.forEachRelationship(nodeId, Direction.OUTGOING, (sourceNodeId, targetNodeId, relationId, weight) -> {
-                        SimilarityResult similarityRelationship = new SimilarityResult(idMap.toOriginalNodeId(sourceNodeId), idMap.toOriginalNodeId(targetNodeId), -1, -1, -1, weight);
+            List<SimilarityResult> inPartition = new ArrayList<>();
+            List<SimilarityResult> outPartition = new ArrayList<>();
 
-                        if (nodesInPartition.contains(targetNodeId)) {
-                            inPartition.add(similarityRelationship);
-                        } else {
-                            outPartition.add(similarityRelationship);
-                        }
+            for (DisjointSetStruct.InternalResult result : partition) {
+                int nodeId = result.internalNodeId;
+                graph.forEachRelationship(nodeId, Direction.OUTGOING, (sourceNodeId, targetNodeId, relationId, weight) -> {
+                    SimilarityResult similarityRelationship = new SimilarityResult(idMap.toOriginalNodeId(sourceNodeId),
+                            idMap.toOriginalNodeId(targetNodeId), -1, -1, -1, weight);
 
-                        return false;
-                    });
-                }
+                    if (nodesInPartition.contains(targetNodeId)) {
+                        inPartition.add(similarityRelationship);
+                    } else {
+                        outPartition.add(similarityRelationship);
+                    }
 
-                if (!inPartition.isEmpty()) {
-                    int inQueueBatches = writeSequential(inPartition.stream(), batchSize);
-                    inQueueBatchCount.addAndGet(inQueueBatches);
-                }
+                    return false;
+                });
+            }
 
-                if (!outPartition.isEmpty()) {
-                    put(outQueue, outPartition);
-                }
-            });
-            return inQueueBatchCount.get();
+            if (!inPartition.isEmpty()) {
+                int inQueueBatches = writeSequential(inPartition.stream(), batchSize);
+                inQueueBatchCount.addAndGet(inQueueBatches);
+            }
+
+            if (!outPartition.isEmpty()) {
+                put(outQueue, outPartition);
+            }
         });
 
-        Integer inQueueBatches = null;
-        try {
-            inQueueBatches = inQueueBatchCountFuture.get();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
+
+        int inQueueBatches = inQueueBatchCount.get();
 
 
         int outQueueBatches = writeSequential(outQueue.stream().flatMap(Collection::stream), batchSize);
