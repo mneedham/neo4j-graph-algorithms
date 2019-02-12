@@ -154,7 +154,4 @@ public class ParallelSimilarityExporter extends SimilarityExporter {
         return struct;
     }
 
-
-
-
 }

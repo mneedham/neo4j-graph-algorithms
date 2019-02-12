@@ -18,20 +18,9 @@
  */
 package org.neo4j.graphalgo.similarity;
 
-import org.neo4j.graphalgo.core.utils.ExceptionUtil;
-import org.neo4j.graphalgo.core.utils.StatementApi;
-import org.neo4j.internal.kernel.api.exceptions.EntityNotFoundException;
-import org.neo4j.internal.kernel.api.exceptions.InvalidTransactionTypeKernelException;
-import org.neo4j.internal.kernel.api.exceptions.KernelException;
-import org.neo4j.internal.kernel.api.exceptions.explicitindex.AutoIndexingKernelException;
-import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
-import org.neo4j.values.storable.Values;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.stream.Stream;
 
 public class SequentialSimilarityExporter extends SimilarityExporter {
@@ -48,6 +37,4 @@ public class SequentialSimilarityExporter extends SimilarityExporter {
         log.info("SequentialSimilarityExporter: Batch Size: %d, Batches written - sequentially: %d", batchSize, batches);
         return batches;
     }
-
-
 }
