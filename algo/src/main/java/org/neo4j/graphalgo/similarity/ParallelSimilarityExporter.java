@@ -42,7 +42,6 @@ import org.neo4j.values.storable.Values;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,7 +81,7 @@ public class ParallelSimilarityExporter extends StatementApi implements Similari
         idMap.buildMappedIds();
         HeavyGraph graph = new HeavyGraph(idMap, adjacencyMatrix, weightMap, Collections.emptyMap());
 
-        DSSResult dssResult = computePartitions(graph);
+        DisjointSetStruct dssResult = computePartitions(graph);
 
         Stream<List<DisjointSetStruct.InternalResult>> stream = dssResult.internalResultStream(graph)
                 .collect(Collectors.groupingBy(item -> item.setId))
@@ -153,11 +152,11 @@ public class ParallelSimilarityExporter extends StatementApi implements Similari
         }
     }
 
-    private DSSResult computePartitions(HeavyGraph graph) {
+    private DisjointSetStruct computePartitions(HeavyGraph graph) {
         GraphUnionFind algo = new GraphUnionFind(graph);
         DisjointSetStruct struct = algo.compute();
         algo.release();
-        return new DSSResult(struct);
+        return struct;
     }
 
     private void export(SimilarityResult similarityResult) {

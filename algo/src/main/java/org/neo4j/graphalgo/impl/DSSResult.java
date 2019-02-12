@@ -73,10 +73,6 @@ public final class DSSResult {
                 : hugeStruct.resultStream(((HugeIdMapping) idMapping));
     }
 
-    public Stream<DisjointSetStruct.InternalResult> internalResultStream(IdMapping idMapping) {
-        return struct.internalResultStream(idMapping);
-    }
-
     public void forEach(NodeIterator nodes, IntIntPredicate consumer) {
         if (struct != null) {
             nodes.forEachNode(nodeId -> consumer.apply(nodeId, struct.find(nodeId)));
