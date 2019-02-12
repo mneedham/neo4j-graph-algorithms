@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ParallelSimilarityExporter extends StatementApi {
+public class ParallelSimilarityExporter extends StatementApi implements SimilarityExporter {
 
     private final Log log;
     private final int propertyId;
@@ -64,7 +64,7 @@ public class ParallelSimilarityExporter extends StatementApi {
         this.nodeCount = nodeCount;
     }
 
-    public void export(Stream<SimilarityResult> similarityPairs, long batchSize) {
+    public int export(Stream<SimilarityResult> similarityPairs, long batchSize) {
         IdMap idMap = new IdMap(this.nodeCount);
         AdjacencyMatrix adjacencyMatrix = new AdjacencyMatrix(this.nodeCount, false, AllocationTracker.EMPTY);
         WeightMap weightMap = new WeightMap(nodeCount, 0, propertyId);
@@ -137,6 +137,7 @@ public class ParallelSimilarityExporter extends StatementApi {
 
         int outQueueBatches = writeSequential(outQueue.stream().flatMap(Collection::stream), batchSize);
         log.info("ParallelSimilarityExporter: Batch Size: %d, Batches written - in parallel: %d, sequentially: %d", batchSize, inQueueBatches, outQueueBatches);
+        return inQueueBatches + outQueueBatches;
     }
 
     private static <T> void put(BlockingQueue<T> queue, T items) {
@@ -213,7 +214,7 @@ public class ParallelSimilarityExporter extends StatementApi {
             do {
                 List<SimilarityResult> batch = take(iterator, Math.toIntExact(batchSize));
                 export(batch);
-                if(batch.size() > 0) {
+                if (batch.size() > 0) {
                     counter[0]++;
                 }
             } while (iterator.hasNext());
