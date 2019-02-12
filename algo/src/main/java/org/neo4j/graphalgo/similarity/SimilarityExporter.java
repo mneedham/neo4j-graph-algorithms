@@ -18,8 +18,49 @@ package org.neo4j.graphalgo.similarity;
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import org.neo4j.graphalgo.core.utils.StatementApi;
+import org.neo4j.internal.kernel.api.exceptions.EntityNotFoundException;
+import org.neo4j.internal.kernel.api.exceptions.InvalidTransactionTypeKernelException;
+import org.neo4j.internal.kernel.api.exceptions.explicitindex.AutoIndexingKernelException;
+import org.neo4j.kernel.api.KernelTransaction;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.logging.Log;
+import org.neo4j.values.storable.Values;
+
 import java.util.stream.Stream;
 
-public interface SimilarityExporter {
-    int export(Stream<SimilarityResult> similarityPairs, long batchSize);
+public abstract class SimilarityExporter extends StatementApi {
+    final Log log;
+    final int propertyId;
+    final int relationshipTypeId;
+
+    protected SimilarityExporter(GraphDatabaseAPI api, Log log, String propertyName, String relationshipType) {
+        super(api);
+        this.log = log;
+        propertyId = getOrCreatePropertyId(propertyName);
+        relationshipTypeId = getOrCreateRelationshipTypeId(relationshipType);
+    }
+
+    private int getOrCreateRelationshipTypeId(String relationshipType) {
+        return applyInTransaction(stmt -> stmt
+                .tokenWrite()
+                .relationshipTypeGetOrCreateForName(relationshipType));
+    }
+
+    private int getOrCreatePropertyId(String propertyName) {
+        return applyInTransaction(stmt -> stmt
+                .tokenWrite()
+                .propertyKeyGetOrCreateForName(propertyName));
+    }
+
+    protected void createRelationship(SimilarityResult similarityResult, KernelTransaction statement) throws EntityNotFoundException, InvalidTransactionTypeKernelException, AutoIndexingKernelException {
+        long node1 = similarityResult.item1;
+        long node2 = similarityResult.item2;
+        long relationshipId = statement.dataWrite().relationshipCreate(node1, relationshipTypeId, node2);
+
+        statement.dataWrite().relationshipSetProperty(
+                relationshipId, propertyId, Values.doubleValue(similarityResult.similarity));
+    }
+
+    abstract int export(Stream<SimilarityResult> similarityPairs, long batchSize);
 }

@@ -34,19 +34,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class SequentialSimilarityExporter extends StatementApi implements SimilarityExporter {
-
-    private final Log log;
-    private final int propertyId;
-    private final int relationshipTypeId;
+public class SequentialSimilarityExporter extends SimilarityExporter {
 
     public SequentialSimilarityExporter(GraphDatabaseAPI api,
                                         Log log, String relationshipType,
                                         String propertyName, int nodeCount) {
-        super(api);
-        this.log = log;
-        propertyId = getOrCreatePropertyId(propertyName);
-        relationshipTypeId = getOrCreateRelationshipId(relationshipType);
+        super(api, log, propertyName, relationshipType);
+
     }
 
     public int export(Stream<SimilarityResult> similarityPairs, long batchSize) {
@@ -79,27 +73,6 @@ public class SequentialSimilarityExporter extends StatementApi implements Simila
             return null;
         });
 
-    }
-
-    private void createRelationship(SimilarityResult similarityResult, KernelTransaction statement) throws EntityNotFoundException, InvalidTransactionTypeKernelException, AutoIndexingKernelException {
-        long node1 = similarityResult.item1;
-        long node2 = similarityResult.item2;
-        long relationshipId = statement.dataWrite().relationshipCreate(node1, relationshipTypeId, node2);
-
-        statement.dataWrite().relationshipSetProperty(
-                relationshipId, propertyId, Values.doubleValue(similarityResult.similarity));
-    }
-
-    private int getOrCreateRelationshipId(String relationshipType) {
-        return applyInTransaction(stmt -> stmt
-                .tokenWrite()
-                .relationshipTypeGetOrCreateForName(relationshipType));
-    }
-
-    private int getOrCreatePropertyId(String propertyName) {
-        return applyInTransaction(stmt -> stmt
-                .tokenWrite()
-                .propertyKeyGetOrCreateForName(propertyName));
     }
 
     private int writeSequential(Stream<SimilarityResult> similarityPairs, long batchSize) {

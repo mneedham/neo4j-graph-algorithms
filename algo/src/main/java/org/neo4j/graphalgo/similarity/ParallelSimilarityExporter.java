@@ -45,21 +45,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ParallelSimilarityExporter extends StatementApi implements SimilarityExporter {
+public class ParallelSimilarityExporter extends SimilarityExporter {
 
-    private final Log log;
-    private final int propertyId;
-    private final int relationshipTypeId;
     private final int nodeCount;
 
     public ParallelSimilarityExporter(GraphDatabaseAPI api,
                                       Log log,
                                       String relationshipType,
                                       String propertyName, int nodeCount) {
-        super(api);
-        this.log = log;
-        propertyId = getOrCreatePropertyId(propertyName);
-        relationshipTypeId = getOrCreateRelationshipId(relationshipType);
+        super(api, log, propertyName, relationshipType);
         this.nodeCount = nodeCount;
     }
 
@@ -83,24 +77,18 @@ public class ParallelSimilarityExporter extends StatementApi implements Similari
 
         DisjointSetStruct dssResult = computePartitions(graph);
 
-        Stream<List<DisjointSetStruct.InternalResult>> stream = dssResult.internalResultStream(graph)
-                .collect(Collectors.groupingBy(item -> item.setId))
-                .values()
-                .stream();
+        Stream<List<DisjointSetStruct.InternalResult>> partitions = groupPartitions(graph, dssResult);
 
-        int queueSize = dssResult.getSetCount();
-
-        if(queueSize == 0) {
+        int numberOfPartitions = dssResult.getSetCount();
+        if(numberOfPartitions == 0) {
             return 0;
         }
 
-        log.info("ParallelSimilarityExporter: Relationships to be created: %d, Partitions found: %d", numberOfRelationships[0], queueSize);
-
-        ArrayBlockingQueue<List<SimilarityResult>> outQueue = new ArrayBlockingQueue<>(queueSize);
-
+        log.info("ParallelSimilarityExporter: Relationships to be created: %d, Partitions found: %d", numberOfRelationships[0], numberOfPartitions);
+        ArrayBlockingQueue<List<SimilarityResult>> outQueue = new ArrayBlockingQueue<>(numberOfPartitions);
 
         AtomicInteger inQueueBatchCount = new AtomicInteger(0);
-        stream.parallel().forEach(partition -> {
+        partitions.parallel().forEach(partition -> {
             IntSet nodesInPartition = new IntHashSet();
             for (DisjointSetStruct.InternalResult internalResult : partition) {
                 nodesInPartition.add(internalResult.internalNodeId);
@@ -137,11 +125,18 @@ public class ParallelSimilarityExporter extends StatementApi implements Similari
 
 
         int inQueueBatches = inQueueBatchCount.get();
-
-
         int outQueueBatches = writeSequential(outQueue.stream().flatMap(Collection::stream), batchSize);
+
         log.info("ParallelSimilarityExporter: Batch Size: %d, Batches written - in parallel: %d, sequentially: %d", batchSize, inQueueBatches, outQueueBatches);
+
         return inQueueBatches + outQueueBatches;
+    }
+
+    private Stream<List<DisjointSetStruct.InternalResult>> groupPartitions(HeavyGraph graph, DisjointSetStruct dssResult) {
+        return dssResult.internalResultStream(graph)
+                .collect(Collectors.groupingBy(item -> item.setId))
+                .values()
+                .stream();
     }
 
     private static <T> void put(BlockingQueue<T> queue, T items) {
@@ -183,27 +178,6 @@ public class ParallelSimilarityExporter extends StatementApi implements Similari
             return null;
         });
 
-    }
-
-    private void createRelationship(SimilarityResult similarityResult, KernelTransaction statement) throws EntityNotFoundException, InvalidTransactionTypeKernelException, AutoIndexingKernelException {
-        long node1 = similarityResult.item1;
-        long node2 = similarityResult.item2;
-        long relationshipId = statement.dataWrite().relationshipCreate(node1, relationshipTypeId, node2);
-
-        statement.dataWrite().relationshipSetProperty(
-                relationshipId, propertyId, Values.doubleValue(similarityResult.similarity));
-    }
-
-    private int getOrCreateRelationshipId(String relationshipType) {
-        return applyInTransaction(stmt -> stmt
-                .tokenWrite()
-                .relationshipTypeGetOrCreateForName(relationshipType));
-    }
-
-    private int getOrCreatePropertyId(String propertyName) {
-        return applyInTransaction(stmt -> stmt
-                .tokenWrite()
-                .propertyKeyGetOrCreateForName(propertyName));
     }
 
     private int writeSequential(Stream<SimilarityResult> similarityPairs, long batchSize) {
