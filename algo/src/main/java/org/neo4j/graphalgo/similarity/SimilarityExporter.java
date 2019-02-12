@@ -37,9 +37,9 @@ import java.util.stream.Stream;
 public abstract class SimilarityExporter extends StatementApi {
     final Log log;
     final int propertyId;
-    final int relationshipTypeId;
+    private final int relationshipTypeId;
 
-    protected SimilarityExporter(GraphDatabaseAPI api, Log log, String propertyName, String relationshipType) {
+    SimilarityExporter(GraphDatabaseAPI api, Log log, String propertyName, String relationshipType) {
         super(api);
         this.log = log;
         propertyId = getOrCreatePropertyId(propertyName);
@@ -58,7 +58,7 @@ public abstract class SimilarityExporter extends StatementApi {
                 .propertyKeyGetOrCreateForName(propertyName));
     }
 
-    protected void createRelationship(SimilarityResult similarityResult, KernelTransaction statement) throws EntityNotFoundException, InvalidTransactionTypeKernelException, AutoIndexingKernelException {
+    private void createRelationship(SimilarityResult similarityResult, KernelTransaction statement) throws EntityNotFoundException, InvalidTransactionTypeKernelException, AutoIndexingKernelException {
         long node1 = similarityResult.item1;
         long node2 = similarityResult.item2;
         long relationshipId = statement.dataWrite().relationshipCreate(node1, relationshipTypeId, node2);
