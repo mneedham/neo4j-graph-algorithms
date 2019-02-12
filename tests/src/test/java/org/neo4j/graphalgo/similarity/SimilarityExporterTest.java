@@ -165,6 +165,30 @@ public class SimilarityExporterTest {
         }
     }
 
+    @Test
+    public void disconnectedUpdates() throws Throwable {
+        int nodeCount = 6;
+        createNodes(api, nodeCount);
+        exporter = load(similarityExporterFactory, nodeCount);
+
+        Stream<SimilarityResult> similarityPairs = Stream.of(
+                new SimilarityResult(0, 1, -1, -1, -1, 0.5),
+                new SimilarityResult(2, 3, -1, -1, -1, 0.7),
+                new SimilarityResult(4, 5, -1, -1, -1, 0.9)
+        );
+
+        exporter.export(similarityPairs, 10);
+
+        try (Transaction tx = api.beginTx()) {
+            List<SimilarityRelationship> allRelationships = getSimilarityRelationships(api);
+
+            assertThat(allRelationships, hasSize(3));
+            assertThat(allRelationships, hasItems(new SimilarityRelationship(0, 1, 0.5)));
+            assertThat(allRelationships, hasItems(new SimilarityRelationship(2, 3, 0.7)));
+            assertThat(allRelationships, hasItems(new SimilarityRelationship(4, 5, 0.9)));
+        }
+    }
+
     private List<SimilarityRelationship> getSimilarityRelationships(GraphDatabaseAPI api) {
         return api.getAllRelationships().stream()
                 .map(relationship -> new SimilarityRelationship(relationship.getStartNodeId(), relationship.getEndNodeId(), (double)relationship.getProperty(PROPERTY_NAME)))
