@@ -18,15 +18,20 @@ package org.neo4j.graphalgo.similarity;
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import org.neo4j.graphalgo.core.utils.ExceptionUtil;
 import org.neo4j.graphalgo.core.utils.StatementApi;
 import org.neo4j.internal.kernel.api.exceptions.EntityNotFoundException;
 import org.neo4j.internal.kernel.api.exceptions.InvalidTransactionTypeKernelException;
+import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.internal.kernel.api.exceptions.explicitindex.AutoIndexingKernelException;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.values.storable.Values;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Stream;
 
 public abstract class SimilarityExporter extends StatementApi {
@@ -60,6 +65,61 @@ public abstract class SimilarityExporter extends StatementApi {
 
         statement.dataWrite().relationshipSetProperty(
                 relationshipId, propertyId, Values.doubleValue(similarityResult.similarity));
+    }
+
+    private void export(SimilarityResult similarityResult) {
+        applyInTransaction(statement -> {
+            try {
+                createRelationship(similarityResult, statement);
+            } catch (KernelException e) {
+                ExceptionUtil.throwKernelException(e);
+            }
+            return null;
+        });
+
+    }
+
+    private void export(List<SimilarityResult> similarityResults) {
+        applyInTransaction(statement -> {
+            for (SimilarityResult similarityResult : similarityResults) {
+                try {
+                    createRelationship(similarityResult, statement);
+                } catch (KernelException e) {
+                    ExceptionUtil.throwKernelException(e);
+                }
+            }
+            return null;
+        });
+
+    }
+
+    int writeSequential(Stream<SimilarityResult> similarityPairs, long batchSize) {
+        int[] counter = {0};
+        if (batchSize == 1) {
+            similarityPairs.forEach(similarityResult -> {
+                export(similarityResult);
+                counter[0]++;
+            });
+        } else {
+            Iterator<SimilarityResult> iterator = similarityPairs.iterator();
+            do {
+                List<SimilarityResult> batch = take(iterator, Math.toIntExact(batchSize));
+                export(batch);
+                if (batch.size() > 0) {
+                    counter[0]++;
+                }
+            } while (iterator.hasNext());
+        }
+
+        return counter[0];
+    }
+
+    private static List<SimilarityResult> take(Iterator<SimilarityResult> iterator, int batchSize) {
+        List<SimilarityResult> result = new ArrayList<>(batchSize);
+        while (iterator.hasNext() && batchSize-- > 0) {
+            result.add(iterator.next());
+        }
+        return result;
     }
 
     abstract int export(Stream<SimilarityResult> similarityPairs, long batchSize);
