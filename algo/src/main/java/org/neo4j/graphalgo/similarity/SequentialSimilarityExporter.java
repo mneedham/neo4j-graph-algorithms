@@ -42,7 +42,7 @@ public class SequentialSimilarityExporter extends StatementApi implements Simila
 
     public SequentialSimilarityExporter(GraphDatabaseAPI api,
                                         Log log, String relationshipType,
-                                        String propertyName) {
+                                        String propertyName, int nodeCount) {
         super(api);
         this.log = log;
         propertyId = getOrCreatePropertyId(propertyName);

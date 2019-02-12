@@ -179,7 +179,7 @@ public class SimilarityProc {
 
             } else {
                 try (ProgressTimer timer = builder.timeWrite()) {
-                    SequentialSimilarityExporter similarityExporter = new SequentialSimilarityExporter(api, log, writeRelationshipType, writeProperty);
+                    SequentialSimilarityExporter similarityExporter = new SequentialSimilarityExporter(api, log, writeRelationshipType, writeProperty, length);
                     similarityExporter.export(stream.peek(recorder), writeBatchSize);
                 }
             }

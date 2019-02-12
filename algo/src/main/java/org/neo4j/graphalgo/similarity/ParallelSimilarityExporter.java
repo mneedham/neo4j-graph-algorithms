@@ -90,6 +90,11 @@ public class ParallelSimilarityExporter extends StatementApi implements Similari
                 .stream();
 
         int queueSize = dssResult.getSetCount();
+
+        if(queueSize == 0) {
+            return 0;
+        }
+
         log.info("ParallelSimilarityExporter: Relationships to be created: %d, Partitions found: %d", numberOfRelationships[0], queueSize);
 
         ArrayBlockingQueue<List<SimilarityResult>> outQueue = new ArrayBlockingQueue<>(queueSize);
