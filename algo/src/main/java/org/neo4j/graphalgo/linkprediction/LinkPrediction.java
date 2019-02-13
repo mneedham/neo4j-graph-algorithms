@@ -80,6 +80,10 @@ public class LinkPrediction {
             throw new RuntimeException("Nodes must not be null");
         }
 
+        if (node1.equals(node2)) {
+            return 0.0;
+        }
+
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
@@ -89,12 +93,15 @@ public class LinkPrediction {
         return neighbors.size();
     }
 
-    private Set<Node> findPotentialNeighbors(@Name("node1") Node node1, RelationshipType relationshipType, Direction direction) {
+    private Set<Node> findPotentialNeighbors(@Name("node1") Node node, RelationshipType relationshipType, Direction direction) {
         Set<Node> neighbors = new HashSet<>();
 
-        for (Relationship rel : loadRelationships(node1, relationshipType, direction)) {
+        for (Relationship rel : loadRelationships(node, relationshipType, direction)) {
             Node endNode = rel.getEndNode();
-            neighbors.add(endNode);
+
+            if (!endNode.equals(node)) {
+                neighbors.add(endNode);
+            }
         }
         return neighbors;
     }
