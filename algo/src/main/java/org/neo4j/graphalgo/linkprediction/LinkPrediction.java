@@ -46,16 +46,11 @@ public class LinkPrediction {
             throw new RuntimeException("Nodes must not be null");
         }
 
-        if (node1.equals(node2)) {
-            return 0.0;
-        }
-
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
 
-        Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
-        neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
+        Set<Node> neighbors = new CommonNeighborsFinder(api).findCommonNeighbors(node1, node2, relationshipType, direction);
         return neighbors.stream().mapToDouble(nb -> 1.0 / Math.log(degree(relationshipType, direction, nb))).sum();
     }
 
@@ -70,16 +65,11 @@ public class LinkPrediction {
             throw new RuntimeException("Nodes must not be null");
         }
 
-        if (node1.equals(node2)) {
-            return 0.0;
-        }
-
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
 
-        Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
-        neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
+        Set<Node> neighbors = new CommonNeighborsFinder(api).findCommonNeighbors(node1, node2, relationshipType, direction);
         return neighbors.stream().mapToDouble(nb -> 1.0 / degree(relationshipType, direction, nb)).sum();
     }
 
@@ -92,48 +82,17 @@ public class LinkPrediction {
             throw new RuntimeException("Nodes must not be null");
         }
 
-        if (node1.equals(node2)) {
-            return 0.0;
-        }
-
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
 
-        Set<Node> neighbors = findPotentialNeighbors(node1, relationshipType, direction);
-        neighbors.removeIf(node -> noCommonNeighbors(node, relationshipType, direction, node2));
+        Set<Node> neighbors = new CommonNeighborsFinder(api).findCommonNeighbors(node1, node2, relationshipType, direction);
         return neighbors.size();
     }
 
-    private Set<Node> findPotentialNeighbors(Node node, RelationshipType relationshipType, Direction direction) {
-        Set<Node> neighbors = new HashSet<>();
-
-        for (Relationship rel : loadRelationships(node, relationshipType, direction)) {
-            Node endNode = rel.getEndNode();
-
-            if (!endNode.equals(node)) {
-                neighbors.add(endNode);
-            }
-        }
-        return neighbors;
-    }
-
-    private boolean noCommonNeighbors(Node node, RelationshipType relationshipType, Direction direction, Node node2) {
-        for (Relationship rel : loadRelationships(node, relationshipType, direction)) {
-            if (rel.getOtherNode(node).equals(node2)) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     private int degree(RelationshipType relationshipType, Direction direction, Node node) {
         return relationshipType == null ? node.getDegree(direction) : node.getDegree(relationshipType, direction);
     }
-
-    private Iterable<Relationship> loadRelationships(Node node, RelationshipType relationshipType, Direction direction) {
-        return relationshipType == null ? node.getRelationships(direction) : node.getRelationships(relationshipType, direction);
-    }
-
 
 }
