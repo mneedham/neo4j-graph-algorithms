@@ -50,7 +50,7 @@ public class LinkPrediction {
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
 
-        Set<Node> neighbors = new CommonNeighborsFinder(api).findCommonNeighbors(node1, node2, relationshipType, direction);
+        Set<Node> neighbors = new NeighborsFinder(api).findCommonNeighbors(node1, node2, relationshipType, direction);
         return neighbors.stream().mapToDouble(nb -> 1.0 / Math.log(degree(relationshipType, direction, nb))).sum();
     }
 
@@ -69,7 +69,7 @@ public class LinkPrediction {
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
 
-        Set<Node> neighbors = new CommonNeighborsFinder(api).findCommonNeighbors(node1, node2, relationshipType, direction);
+        Set<Node> neighbors = new NeighborsFinder(api).findCommonNeighbors(node1, node2, relationshipType, direction);
         return neighbors.stream().mapToDouble(nb -> 1.0 / degree(relationshipType, direction, nb)).sum();
     }
 
@@ -86,7 +86,7 @@ public class LinkPrediction {
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
 
-        Set<Node> neighbors = new CommonNeighborsFinder(api).findCommonNeighbors(node1, node2, relationshipType, direction);
+        Set<Node> neighbors = new NeighborsFinder(api).findCommonNeighbors(node1, node2, relationshipType, direction);
         return neighbors.size();
     }
 
@@ -104,6 +104,23 @@ public class LinkPrediction {
         Direction direction = configuration.getDirection(Direction.BOTH);
 
         return getDegree(node1, relationshipType, direction) * getDegree(node2, relationshipType, direction);
+    }
+
+    @UserFunction("algo.linkprediction.totalNeighbors")
+    @Description("algo.linkprediction.totalNeighbors(node1:Node, node2:Node, {relationshipQuery:'relationshipName', direction:'BOTH'}) " +
+            "given two nodes, calculate Total Neighbors")
+    public double totalNeighbors(@Name("node1") Node node1, @Name("node2") Node node2,
+                                         @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
+        RelationshipType relationshipType = configuration.getRelationship();
+        Direction direction = configuration.getDirection(Direction.BOTH);
+
+        NeighborsFinder neighborsFinder = new NeighborsFinder(api);
+
+        Set<Node> neighbors = neighborsFinder.findNeighbors(node1, relationshipType, direction);
+        neighbors.addAll(neighborsFinder.findNeighbors(node2, relationshipType, direction));
+
+        return neighbors.size();
     }
 
     private int getDegree(Node node, RelationshipType relationshipType, Direction direction) {
