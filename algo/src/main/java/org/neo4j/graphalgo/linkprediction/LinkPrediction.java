@@ -42,6 +42,10 @@ public class LinkPrediction {
             throw new RuntimeException("Nodes must not be null");
         }
 
+        if (node1.equals(node2)) {
+            return 0.0;
+        }
+
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         RelationshipType relationshipType = configuration.getRelationship();
         Direction direction = configuration.getDirection(Direction.BOTH);
@@ -60,6 +64,10 @@ public class LinkPrediction {
 
         if (node1 == null || node2 == null) {
             throw new RuntimeException("Nodes must not be null");
+        }
+
+        if (node1.equals(node2)) {
+            return 0.0;
         }
 
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
