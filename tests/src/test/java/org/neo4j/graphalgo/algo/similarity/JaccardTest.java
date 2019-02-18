@@ -196,8 +196,6 @@ public class JaccardTest {
                 "targetIds", Collections.singletonList(1L),
                 "sourceIds", Collections.singletonList(0L))));
 
-        System.out.println(results.resultAsString());
-
         assertTrue(results.hasNext());
         assert01(results.next());
         assertFalse(results.hasNext());

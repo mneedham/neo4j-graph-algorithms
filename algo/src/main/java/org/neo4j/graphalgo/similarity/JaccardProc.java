@@ -20,12 +20,15 @@ package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.similarity.recorder.SimilarityRecorder;
-import org.neo4j.procedure.*;
+import org.neo4j.procedure.Description;
+import org.neo4j.procedure.Mode;
+import org.neo4j.procedure.Name;
+import org.neo4j.procedure.Procedure;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
-
-import static org.neo4j.graphalgo.impl.util.TopKConsumer.topK;
 
 public class JaccardProc extends SimilarityProc {
 
@@ -43,11 +46,17 @@ public class JaccardProc extends SimilarityProc {
             return Stream.empty();
         }
 
-        List<Long> sourceIds = configuration.get("sourceIds", Collections.emptyList());
-        List<Long> targetIds = configuration.get("targetIds", Collections.emptyList());
+        long[] inputIds = CategoricalInput.extractInputIds(inputs);
+        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
+        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
 
-        return topN(similarityStream(inputs, new int[] {}, new int[] {}, computer, configuration, () -> null,
+        return topN(similarityStream(inputs, sourceIndexIds, targetIndexIds, computer, configuration, () -> null,
                 getSimilarityCutoff(configuration), getTopK(configuration)), getTopN(configuration));
+    }
+
+    private int[] indexesFor(ProcedureConfiguration configuration, long[] inputIds, String key) {
+        List<Long> sourceIds = configuration.get(key, Collections.emptyList());
+        return CategoricalInput.indexes(inputIds, sourceIds);
     }
 
     @Procedure(name = "algo.similarity.jaccard", mode = Mode.WRITE)
@@ -65,11 +74,15 @@ public class JaccardProc extends SimilarityProc {
             return emptyStream(writeRelationshipType, writeProperty);
         }
 
+        long[] inputIds = CategoricalInput.extractInputIds(inputs);
+        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
+        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+
         SimilarityComputer<CategoricalInput> computer = similarityComputer();
         SimilarityRecorder<CategoricalInput> recorder = categoricalSimilarityRecorder(computer, configuration);
 
-        double similarityCutoff = getSimilarityCutoff(configuration);
-        Stream<SimilarityResult> stream = topN(similarityStream(inputs, recorder, configuration, () -> null,
+s        double similarityCutoff = getSimilarityCutoff(configuration);
+        Stream<SimilarityResult> stream = topN(similarityStream(inputs,sourceIndexIds, targetIndexIds, recorder, configuration, () -> null,
                 similarityCutoff, getTopK(configuration)), getTopN(configuration));
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
