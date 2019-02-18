@@ -46,7 +46,7 @@ public class JaccardProc extends SimilarityProc {
         List<Long> sourceIds = configuration.get("sourceIds", Collections.emptyList());
         List<Long> targetIds = configuration.get("targetIds", Collections.emptyList());
 
-        return topN(similarityStream(inputs, sourceIds, targetIds, computer, configuration, () -> null,
+        return topN(similarityStream(inputs, new int[] {}, new int[] {}, computer, configuration, () -> null,
                 getSimilarityCutoff(configuration), getTopK(configuration)), getTopN(configuration));
     }
 

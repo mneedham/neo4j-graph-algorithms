@@ -177,7 +177,7 @@ public class SimilarityProc {
         }
     }
 
-    <T> Stream<SimilarityResult> similarityStream(T[] inputs, List<Long> sourceIds, List<Long> targetIds,  SimilarityComputer<T> computer, ProcedureConfiguration configuration, Supplier<RleDecoder> decoderFactory, double cutoff, int topK) {
+    <T> Stream<SimilarityResult> similarityStream(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, SimilarityComputer<T> computer, ProcedureConfiguration configuration, Supplier<RleDecoder> decoderFactory, double cutoff, int topK) {
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
         int concurrency = configuration.getConcurrency();
 
@@ -186,7 +186,7 @@ public class SimilarityProc {
             if (topK != 0) {
                 return similarityStreamTopK(inputs, length, cutoff, topK, computer, decoderFactory);
             } else {
-                return similarityStream(inputs, sourceIds, targetIds, length, cutoff, computer, decoderFactory);
+                return similarityStream(inputs, sourceIndexIds, targetIndexIds, length, cutoff, computer, decoderFactory);
             }
         } else {
             if (topK != 0) {
@@ -197,26 +197,15 @@ public class SimilarityProc {
         }
     }
 
-    private <T> Stream<SimilarityResult> similarityStream(T[] inputs, List<Long> sourceIds, List<Long> targetIds, int length, double cutoff, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
-        Function<Integer, IntStream> targetRange = (sourceId) -> targetRange(sourceIds, targetIds, sourceId, length);
+    private <T> Stream<SimilarityResult> similarityStream(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, int length, double cutoff, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
         RleDecoder decoder = decoderFactory.get();
-        int size = sourceIds.size() == 0 ? length : sourceIds.size();
-        return IntStream.range(0, size)
-                .boxed().flatMap(sourceId -> targetRange.apply(sourceId)
+
+        IntStream sourceRange = sourceIndexIds.length > 0 ? Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
+        Function<Integer, IntStream> targetRange = (sourceId) -> targetIndexIds.length > 0 ? Arrays.stream(targetIndexIds) : IntStream.range(sourceId + 1, length);
+
+        return sourceRange.boxed().flatMap(sourceId -> targetRange.apply(sourceId)
                         .mapToObj(targetId -> sourceId == targetId ? null : computer.similarity(decoder, inputs[sourceId], inputs[targetId], cutoff))
                         .filter(Objects::nonNull));
-    }
-
-    private IntStream targetRange(List<Long> sourceIds, List<Long> targetIds, int sourceId, int length) {
-        if (sourceIds.size() > 0) {
-            if (targetIds.size() > 0) {
-                return IntStream.range(sourceIds.size(), length);
-            } else {
-                return IntStream.range(sourceId + 1, length);
-            }
-        } else {
-            return IntStream.range(length - targetIds.size(), length);
-        }
     }
 
     private <T> Stream<SimilarityResult> similarityStream(T[] inputs, int length, double cutoff, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
