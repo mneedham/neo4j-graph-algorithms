@@ -22,6 +22,10 @@ public class SimilarityProcTest {
         return new SimilarityResult(sourceId, targetId, -1, -1, -1, 0.7);
     }
 
+    private static SimilarityResult similarityResultReversed(long sourceId, long targetId) {
+        return new SimilarityResult(sourceId, targetId, -1, -1, -1, 0.7, true, true);
+    }
+
     public static final Supplier<RleDecoder> DECODER = () -> null;
 
     @Test
@@ -42,6 +46,30 @@ public class SimilarityProcTest {
         assertThat(rows, hasItems(similarityResult(0, 1)));
         assertThat(rows, hasItems(similarityResult(0, 2)));
         assertThat(rows, hasItems(similarityResult(1, 2)));
+    }
+
+    @Test
+    public void allPairsTopK() {
+        SimilarityProc similarityProc = new SimilarityProc();
+
+        CategoricalInput[] ids = new CategoricalInput[3];
+        ids[0] = new CategoricalInput(0, new long[]{});
+        ids[1] = new CategoricalInput(1, new long[]{});
+        ids[2] = new CategoricalInput(2, new long[]{});
+
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        Stream<SimilarityResult> stream = similarityProc.similarityStream(ids, COMPUTER, configuration, () -> null, -1.0, 1);
+
+        List<SimilarityResult> rows = stream.collect(Collectors.toList());
+        assertEquals(3, rows.size());
+
+        for (SimilarityResult row : rows) {
+            System.out.println(row);
+        }
+
+        assertThat(rows, hasItems(similarityResult(0, 1)));
+        assertThat(rows, hasItems(similarityResultReversed(1, 0)));
+        assertThat(rows, hasItems(similarityResultReversed(2, 0)));
     }
 
     @Test
