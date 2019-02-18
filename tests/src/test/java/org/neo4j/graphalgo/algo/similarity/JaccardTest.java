@@ -27,6 +27,8 @@ import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 
 import static java.lang.Math.sqrt;
@@ -120,7 +122,6 @@ public class JaccardTest {
         // b / c = 0 : 0/3 = 0
     }
 
-
     @Test
     public void jaccardSingleMultiThreadComparision() {
         int size = 333;
@@ -177,6 +178,28 @@ public class JaccardTest {
         assert01(results.next());
         assert02(results.next());
         assert12(results.next());
+        assertFalse(results.hasNext());
+    }
+
+    @Test
+    public void jaccardStreamTestSourceTargetIds() {
+
+        String statement = "MATCH (p:Person)-[:LIKES]->(i:Item) \n" +
+                "WITH {item:id(p), categories: collect(distinct id(i))} as userData\n" +
+                "WITH collect(userData) as data\n" +
+                "call algo.similarity.jaccard.stream(data,$config) " +
+                "yield item1, item2, count1, count2, intersection, similarity " +
+                "RETURN * ORDER BY item1,item2";
+
+        Result results = db.execute(statement, map("config",map(
+                "concurrency",1,
+                "targetIds", Collections.singletonList(1L),
+                "sourceIds", Collections.singletonList(0L))));
+
+        System.out.println(results.resultAsString());
+
+        assertTrue(results.hasNext());
+        assert01(results.next());
         assertFalse(results.hasNext());
     }
 

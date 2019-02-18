@@ -44,6 +44,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -173,6 +174,48 @@ public class SimilarityProc {
             } else {
                 return similarityParallelStream(inputs, length, terminationFlag, concurrency, cutoff, computer, decoderFactory);
             }
+        }
+    }
+
+    <T> Stream<SimilarityResult> similarityStream(T[] inputs, List<Long> sourceIds, List<Long> targetIds,  SimilarityComputer<T> computer, ProcedureConfiguration configuration, Supplier<RleDecoder> decoderFactory, double cutoff, int topK) {
+        TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
+        int concurrency = configuration.getConcurrency();
+
+        int length = inputs.length;
+        if (concurrency == 1) {
+            if (topK != 0) {
+                return similarityStreamTopK(inputs, length, cutoff, topK, computer, decoderFactory);
+            } else {
+                return similarityStream(inputs, sourceIds, targetIds, length, cutoff, computer, decoderFactory);
+            }
+        } else {
+            if (topK != 0) {
+                return similarityParallelStreamTopK(inputs, length, terminationFlag, concurrency, cutoff, topK, computer, decoderFactory);
+            } else {
+                return similarityParallelStream(inputs, length, terminationFlag, concurrency, cutoff, computer, decoderFactory);
+            }
+        }
+    }
+
+    private <T> Stream<SimilarityResult> similarityStream(T[] inputs, List<Long> sourceIds, List<Long> targetIds, int length, double cutoff, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
+        Function<Integer, IntStream> targetRange = (sourceId) -> targetRange(sourceIds, targetIds, sourceId, length);
+        RleDecoder decoder = decoderFactory.get();
+        int size = sourceIds.size() == 0 ? length : sourceIds.size();
+        return IntStream.range(0, size)
+                .boxed().flatMap(sourceId -> targetRange.apply(sourceId)
+                        .mapToObj(targetId -> sourceId == targetId ? null : computer.similarity(decoder, inputs[sourceId], inputs[targetId], cutoff))
+                        .filter(Objects::nonNull));
+    }
+
+    private IntStream targetRange(List<Long> sourceIds, List<Long> targetIds, int sourceId, int length) {
+        if (sourceIds.size() > 0) {
+            if (targetIds.size() > 0) {
+                return IntStream.range(sourceIds.size(), length);
+            } else {
+                return IntStream.range(sourceId + 1, length);
+            }
+        } else {
+            return IntStream.range(length - targetIds.size(), length);
         }
     }
 
