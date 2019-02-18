@@ -37,7 +37,7 @@ import org.neo4j.graphdb.Result;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
-import org.neo4j.procedure.*;
+import org.neo4j.procedure.Context;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -52,7 +52,6 @@ import java.util.stream.StreamSupport;
 
 import static org.neo4j.graphalgo.impl.util.TopKConsumer.topK;
 import static org.neo4j.graphalgo.similarity.Weights.REPEAT_CUTOFF;
-import static org.neo4j.helpers.collection.MapUtil.map;
 
 public class SimilarityProc {
     @Context
@@ -62,7 +61,7 @@ public class SimilarityProc {
     @Context
     public KernelTransaction transaction;
 
-    private static TopKConsumer<SimilarityResult>[] initializeTopKConsumers(int length, int topK) {
+    static TopKConsumer<SimilarityResult>[] initializeTopKConsumers(int length, int topK) {
         Comparator<SimilarityResult> comparator = topK > 0 ? SimilarityResult.DESCENDING : SimilarityResult.ASCENDING;
         topK = Math.abs(topK);
 
@@ -179,22 +178,24 @@ public class SimilarityProc {
 
     <T> Stream<SimilarityResult> similarityStream(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, SimilarityComputer<T> computer, ProcedureConfiguration configuration, Supplier<RleDecoder> decoderFactory, double cutoff, int topK) {
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        int concurrency = configuration.getConcurrency();
+//        int concurrency = configuration.getConcurrency();
+//
+//        int length = inputs.length;
+//        if (concurrency == 1) {
+//            if (topK != 0) {
+//                return similarityStreamTopK(inputs, sourceIndexIds, targetIndexIds, length, cutoff, topK, computer, decoderFactory);
+//            } else {
+//                return similarityStream(inputs, sourceIndexIds, targetIndexIds, length, cutoff, computer, decoderFactory);
+//            }
+//        } else {
+//            if (topK != 0) {
+//                return similarityParallelStreamTopK(inputs, length, terminationFlag, concurrency, cutoff, topK, computer, decoderFactory);
+//            } else {
+//                return similarityParallelStream(inputs, length, terminationFlag, concurrency, cutoff, computer, decoderFactory);
+//            }
+//        }
 
-        int length = inputs.length;
-        if (concurrency == 1) {
-            if (topK != 0) {
-                return similarityStreamTopK(inputs, sourceIndexIds, targetIndexIds, length, cutoff, topK, computer, decoderFactory);
-            } else {
-                return similarityStream(inputs, sourceIndexIds, targetIndexIds, length, cutoff, computer, decoderFactory);
-            }
-        } else {
-            if (topK != 0) {
-                return similarityParallelStreamTopK(inputs, length, terminationFlag, concurrency, cutoff, topK, computer, decoderFactory);
-            } else {
-                return similarityParallelStream(inputs, length, terminationFlag, concurrency, cutoff, computer, decoderFactory);
-            }
-        }
+        return new SimilarityStreamGenerator<>(terminationFlag, configuration, decoderFactory, computer).stream(inputs, sourceIndexIds, targetIndexIds, cutoff, topK);
     }
 
     private <T> Stream<SimilarityResult> similarityStream(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, int length, double cutoff, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
@@ -226,10 +227,6 @@ public class SimilarityProc {
 
         SimilarityConsumer consumer = assignSimilarityPairs(topKHolder);
         sourceRange.forEach(sourceId -> computeSimilarityForSourceIndex(sourceId, inputs, cutoff, consumer, computer, decoder, targetRange));
-
-//        for (int sourceId = 0; sourceId < length; sourceId++) {
-//            computeSimilarityForSourceIndex(sourceId, inputs, length, cutoff, consumer, computer, decoder);
-//        }
 
         return Arrays.stream(topKHolder).flatMap(TopKConsumer::stream);
     }
@@ -309,7 +306,7 @@ public class SimilarityProc {
         });
     }
 
-    private <T> void computeSimilarityForSourceIndex(int sourceId, T[] inputs, int length, double cutoff, SimilarityConsumer consumer, SimilarityComputer<T> computer, RleDecoder decoder) {
+    public static <T> void computeSimilarityForSourceIndex(int sourceId, T[] inputs, int length, double cutoff, SimilarityConsumer consumer, SimilarityComputer<T> computer, RleDecoder decoder) {
         for (int targetId = sourceId + 1; targetId < length; targetId++) {
             SimilarityResult similarity = computer.similarity(decoder, inputs[sourceId], inputs[targetId], cutoff);
             if (similarity != null) {
@@ -473,46 +470,4 @@ public class SimilarityProc {
         };
     }
 
-    private class TopKTask<T> implements Runnable {
-        private final int batchSize;
-        private final int taskOffset;
-        private final int multiplier;
-        private final int length;
-        private final T[] ids;
-        private final double similiarityCutoff;
-        private final SimilarityComputer<T> computer;
-        private RleDecoder decoder;
-        private final TopKConsumer<SimilarityResult>[] topKConsumers;
-
-        TopKTask(int batchSize, int taskOffset, int multiplier, int length, T[] ids, double similiarityCutoff, int topK, SimilarityComputer<T> computer, RleDecoder decoder) {
-            this.batchSize = batchSize;
-            this.taskOffset = taskOffset;
-            this.multiplier = multiplier;
-            this.length = length;
-            this.ids = ids;
-            this.similiarityCutoff = similiarityCutoff;
-            this.computer = computer;
-            this.decoder = decoder;
-            topKConsumers = initializeTopKConsumers(length, topK);
-        }
-
-        @Override
-        public void run() {
-            SimilarityConsumer consumer = assignSimilarityPairs(topKConsumers);
-            for (int offset = 0; offset < batchSize; offset++) {
-                int sourceId = taskOffset * multiplier + offset;
-                if (sourceId < length) {
-
-                    computeSimilarityForSourceIndex(sourceId, ids, length, similiarityCutoff, consumer, computer, decoder);
-                }
-            }
-        }
-
-
-        void mergeInto(TopKConsumer<SimilarityResult>[] target) {
-            for (int i = 0; i < target.length; i++) {
-                target[i].accept(topKConsumers[i]);
-            }
-        }
-    }
 }

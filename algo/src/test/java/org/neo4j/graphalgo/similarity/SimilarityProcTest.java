@@ -1,9 +1,13 @@
 package org.neo4j.graphalgo.similarity;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.helpers.collection.MapUtil;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -13,7 +17,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(Parameterized.class)
 public class SimilarityProcTest {
+
+    private final int concurrency;
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Integer> data() {
+        return Arrays.asList(
+                1, 2
+        );
+    }
+
+    public SimilarityProcTest(int concurrency) {
+        this.concurrency = concurrency;
+    }
 
     public static final SimilarityProc.SimilarityComputer<CategoricalInput> ALL_PAIRS_COMPUTER = (decoder, source, target, cutoff) ->
             similarityResult(source.id, target.id, true, false);
@@ -37,7 +55,7 @@ public class SimilarityProcTest {
         ids[1] = new CategoricalInput(1, new long[]{});
         ids[2] = new CategoricalInput(2, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
         Stream<SimilarityResult> stream = similarityProc.similarityStream(ids, ALL_PAIRS_COMPUTER, configuration, () -> null, -1.0, 0);
 
         List<SimilarityResult> rows = stream.collect(Collectors.toList());
@@ -57,7 +75,7 @@ public class SimilarityProcTest {
         ids[1] = new CategoricalInput(1, new long[]{});
         ids[2] = new CategoricalInput(2, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
         Stream<SimilarityResult> stream = similarityProc.similarityStream(ids, ALL_PAIRS_COMPUTER, configuration, () -> null, -1.0, 1);
 
         List<SimilarityResult> rows = stream.collect(Collectors.toList());
@@ -81,7 +99,7 @@ public class SimilarityProcTest {
         ids[1] = new CategoricalInput(1, new long[]{});
         ids[2] = new CategoricalInput(2, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
         int[] sourceIndexIds = new int[]{0};
         int[] targetIndexIds = new int[]{1, 2};
         Stream<SimilarityResult> stream = similarityProc.similarityStream(ids, sourceIndexIds, targetIndexIds, COMPUTER, configuration, DECODER, -1.0, 0);
@@ -102,7 +120,7 @@ public class SimilarityProcTest {
         ids[1] = new CategoricalInput(1, new long[]{});
         ids[2] = new CategoricalInput(2, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
         int[] sourceIndexIds = new int[]{0};
         int[] targetIndexIds = new int[]{1, 2};
         Stream<SimilarityResult> stream = similarityProc.similarityStream(ids, sourceIndexIds, targetIndexIds, COMPUTER, configuration, DECODER, -1.0, 1);
@@ -123,7 +141,7 @@ public class SimilarityProcTest {
         ids[2] = new CategoricalInput(2, new long[]{});
         ids[3] = new CategoricalInput(3, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
 
         int[] sourceIndexIds = new int[]{0, 1};
         int[] targetIndexIds = new int[]{};
@@ -151,7 +169,7 @@ public class SimilarityProcTest {
         ids[2] = new CategoricalInput(2, new long[]{});
         ids[3] = new CategoricalInput(3, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
 
         int[] sourceIndexIds = new int[]{0, 1};
         int[] targetIndexIds = new int[]{};
@@ -176,7 +194,7 @@ public class SimilarityProcTest {
         ids[2] = new CategoricalInput(2, new long[]{});
         ids[3] = new CategoricalInput(3, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
 
         int[] sourceIndexIds = new int[]{};
         int[] targetIndexIds = new int[]{2,3};
@@ -206,7 +224,7 @@ public class SimilarityProcTest {
         ids[2] = new CategoricalInput(2, new long[]{});
         ids[3] = new CategoricalInput(3, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
 
         int[] sourceIndexIds = new int[]{};
         int[] targetIndexIds = new int[]{2,3};
@@ -232,7 +250,7 @@ public class SimilarityProcTest {
         ids[2] = new CategoricalInput(7, new long[]{});
         ids[3] = new CategoricalInput(8, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
 
         int[] sourceIndexIds = new int[]{0,1,2};
         int[] targetIndexIds = new int[]{1,2};
@@ -259,7 +277,7 @@ public class SimilarityProcTest {
         ids[2] = new CategoricalInput(7, new long[]{});
         ids[3] = new CategoricalInput(8, new long[]{});
 
-        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", 1));
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
 
         int[] sourceIndexIds = new int[]{0,1,2};
         int[] targetIndexIds = new int[]{1,2};
