@@ -85,7 +85,7 @@ Papers 5 and 6 are not cited by any other papers, so their score doesn't increas
 
 == Huge graph projection
 
-If our projected graph contains more than 2 billion nodes or relationships, we need to use huge graph projection, as the default label and relationship-type projection has a limitation of 2 billion nodes and 2 billion relationships.
+include::huge-projection.adoc[tag=explanation]
 
 .Set `graph:'huge'` in the config:
 
