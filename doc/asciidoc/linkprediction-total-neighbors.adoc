@@ -7,7 +7,8 @@ This section describes the Total Neighbors algorithm in the Neo4j Graph Algorith
 --
 
 // tag::introduction[]
-link:https://arxiv.org/pdf/0901.0553.pdf[Total Neighbors] is a measure used to compute the closeness of nodes based on their shared neighbors.
+Total Neighbors computes the closeness of nodes based on the number of unique numbers that they have.
+It is based on the idea that the more connected a node is, the more likely it is to receive new links.
 // end::introduction[]
 
 
@@ -16,8 +17,7 @@ link:https://arxiv.org/pdf/0901.0553.pdf[Total Neighbors] is a measure used to c
 
 // tag::explanation[]
 
-The Resource Allocation  algorithm was introduced in 2009 by Tao Zhou, Linyuan Lü, and Yi-Cheng Zhang as part of a study to predict links in various networks.
-It is computed using the following formula:
+Total Neighbors is computed using the following formula:
 
 image::total-neighbors.svg[role="middle"]
 
