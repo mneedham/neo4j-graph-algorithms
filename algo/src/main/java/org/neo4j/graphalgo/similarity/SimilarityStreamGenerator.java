@@ -162,8 +162,7 @@ public class SimilarityStreamGenerator<T> {
     }
 
     private Stream<SimilarityResult> similarityStreamTopK(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, int length, double cutoff, int topK, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
-        int sourceIdCount = sourceIndexIds.length > 0 ? sourceIndexIds.length : length;
-        TopKConsumer<SimilarityResult>[] topKHolder = initializeTopKConsumers(sourceIdCount, topK);
+        TopKConsumer<SimilarityResult>[] topKHolder = initializeTopKConsumers(length, topK);
         RleDecoder decoder = decoderFactory.get();
 
         IntStream sourceRange = sourceIndexIds.length > 0 ? Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
@@ -190,7 +189,11 @@ public class SimilarityStreamGenerator<T> {
 
     private static SimilarityConsumer assignSimilarityPairs(TopKConsumer<SimilarityResult>[] topKConsumers) {
         return (s, t, result) -> {
-            topKConsumers[result.reversed ? t : s].accept(result);
+
+            int selectedIndex = result.reversed ? t : s;
+            System.out.println(selectedIndex + ":" + result);
+
+            topKConsumers[selectedIndex].accept(result);
 
             if (result.bidirectional) {
                 SimilarityResult reverse = result.reverse();
@@ -272,13 +275,13 @@ public class SimilarityStreamGenerator<T> {
         int taskCount = (sourceIdsLength / batchSize) + (sourceIdsLength % batchSize > 0 ? 1 : 0);
         Collection<NewTopKTask> tasks = new ArrayList<>(taskCount);
 
-        int multiplier = batchSize < length ? batchSize : 1;
+        int multiplier = batchSize < sourceIdsLength ? batchSize : 1;
         for (int taskId = 0; taskId < taskCount; taskId++) {
             tasks.add(new NewTopKTask(batchSize, taskId, multiplier, length, inputs, cutoff, topK, computer, decoderFactory.get(), sourceRange, targetRange));
         }
         ParallelUtil.runWithConcurrency(concurrency, tasks, terminationFlag, Pools.DEFAULT);
 
-        TopKConsumer<SimilarityResult>[] topKConsumers = initializeTopKConsumers(sourceIdsLength, topK);
+        TopKConsumer<SimilarityResult>[] topKConsumers = initializeTopKConsumers(length, topK);
         for (Runnable task : tasks) ((NewTopKTask) task).mergeInto(topKConsumers);
         return Arrays.stream(topKConsumers).flatMap(TopKConsumer::stream);
     }

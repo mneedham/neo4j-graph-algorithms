@@ -125,14 +125,14 @@ public class SimilarityStreamGeneratorTest {
         ids[1] = new CategoricalInput(1, new long[]{});
         ids[2] = new CategoricalInput(2, new long[]{});
 
-        int[] sourceIndexIds = new int[]{0};
-        int[] targetIndexIds = new int[]{1, 2};
+        int[] sourceIndexIds = new int[]{1};
+        int[] targetIndexIds = new int[]{0, 2};
         Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 1);
 
         List<SimilarityResult> rows = stream.collect(Collectors.toList());
         assertEquals(1, rows.size());
 
-        assertThat(rows, hasItems(similarityResult(0, 1, false, false)));
+        assertThat(rows, hasItems(similarityResult(1, 0, false, false)));
     }
 
     @Test
@@ -164,7 +164,6 @@ public class SimilarityStreamGeneratorTest {
         assertThat(rows, hasItems(similarityResult(1, 3, false, false)));
     }
 
-    //
     @Test
     public void sourceSpecifiedTargetNotSpecifiedTopK() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
