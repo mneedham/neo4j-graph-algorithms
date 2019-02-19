@@ -160,6 +160,7 @@ It is quite high, but not shocking, as we have a friendship social network where
 We can now move on to next step of analysis and run centralities on only the biggest components, so that our results will be more accurate.
 We will write back the results to the node, and use centralities with Cypher loading, or set a new label for the biggest component.
 
+
 == Huge graph projection
 
 include::huge-projection.adoc[tag=explanation]

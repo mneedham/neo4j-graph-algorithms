@@ -67,13 +67,13 @@ include::scripts/articlerank.cypher[tag=write-sample-graph]
 [opts="header",cols="1,1"]
 |===
 | Name    | ArticleRank
-| Paper 0 | 0.34616300000000005 
-| Paper 1 | 0.319422            
-| Paper 4 | 0.213733            
-| Paper 2 | 0.21089400000000003 
-| Paper 3 | 0.18026850000000003 
-| Paper 5 | 0.15000000000000002 
-| Paper 6 | 0.15000000000000002 
+| Paper 0 | 0.34616300000000005
+| Paper 1 | 0.319422
+| Paper 4 | 0.213733
+| Paper 2 | 0.21089400000000003
+| Paper 3 | 0.18026850000000003
+| Paper 5 | 0.15000000000000002
+| Paper 6 | 0.15000000000000002
 |===
 // end::stream-sample-graph-result[]
 
@@ -82,6 +82,7 @@ Paper 0 is the most important paper, but it's only the 2nd most cited paper - Pa
 However, Paper 1 cites Paper 0, which lets us see that it's not only the number of incoming links that is important, but also the importance of the papers behind those links.
 Papers 5 and 6 are not cited by any other papers, so their score doesn't increase above the initial score of `1 - dampingFactor`.
 // end::stream-sample-graph-explanation[]
+
 
 == Huge graph projection
 

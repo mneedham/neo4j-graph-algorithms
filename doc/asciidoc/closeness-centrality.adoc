@@ -131,6 +131,7 @@ Calculation:
 k/S| 0.4  0.57  0.67  0.57   0.4     // normalized closeness centrality
 ....
 
+
 == Huge graph projection
 
 include::huge-projection.adoc[tag=explanation]
