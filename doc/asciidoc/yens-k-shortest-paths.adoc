@@ -58,6 +58,28 @@ include::scripts/yens-k-shortest-paths.cypher[tag=create-sample-graph]
 include::scripts/yens-k-shortest-paths.cypher[tag=stream-sample-graph]
 ----
 
+// tag::stream[]
+.Results
+[opts="header"]
+|===
+| `places`                    | `costs`                    | `totalCost`
+| ["A", "B", "D", "E", "F"] | [50.0, 40.0, 30.0, 40.0] | 160.0
+| ["A", "C", "D", "E", "F"] | [50.0, 40.0, 30.0, 40.0] | 160.0
+| ["A", "B", "D", "F"]      | [50.0, 40.0, 80.0]       | 170.0
+|===
+// end::stream[]
+
+By default this procedure doesn't return paths, but we can have it return those by passing in the config `path: true`.
+
+.The following will run the algorithm and stream results, including paths:
+[source, cypher]
+----
+include::scripts/yens-k-shortest-paths.cypher[tag=stream-sample-with-path-graph]
+----
+
+
+image::yens-path.svg[]
+
 .The following will run the algorithm and write back results:
 [source, cypher]
 ----
