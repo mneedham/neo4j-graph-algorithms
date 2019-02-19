@@ -7,7 +7,7 @@ This section describes the Preferential Attachment algorithm in the Neo4j Graph 
 --
 
 // tag::introduction[]
-link:https://arxiv.org/pdf/0901.0553.pdf[Preferential Attachment] is a measure used to compute the closeness of nodes based on their shared neighbors.
+Preferential Attachment is a measure used to compute the closeness of nodes based on their shared neighbors.
 // end::introduction[]
 
 
