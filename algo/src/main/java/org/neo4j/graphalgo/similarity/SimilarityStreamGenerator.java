@@ -191,8 +191,6 @@ public class SimilarityStreamGenerator<T> {
         return (s, t, result) -> {
 
             int selectedIndex = result.reversed ? t : s;
-            System.out.println(selectedIndex + ":" + result);
-
             topKConsumers[selectedIndex].accept(result);
 
             if (result.bidirectional) {
