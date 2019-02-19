@@ -38,7 +38,6 @@ public class JaccardProc extends SimilarityProc {
     public Stream<SimilarityResult> similarityStream(
             @Name(value = "data", defaultValue = "null") List<Map<String,Object>> data,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
-        SimilarityComputer<CategoricalInput> computer = similarityComputer();
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         CategoricalInput[] inputs = prepareCategories(data, getDegreeCutoff(configuration));
 
@@ -49,6 +48,8 @@ public class JaccardProc extends SimilarityProc {
         long[] inputIds = CategoricalInput.extractInputIds(inputs);
         int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
         int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+
+        SimilarityComputer<CategoricalInput> computer = similarityComputer(sourceIndexIds, targetIndexIds);
 
         return topN(similarityStream(inputs, sourceIndexIds, targetIndexIds, computer, configuration, () -> null,
                 getSimilarityCutoff(configuration), getTopK(configuration)), getTopN(configuration));
@@ -78,18 +79,22 @@ public class JaccardProc extends SimilarityProc {
         int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
         int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
 
-        SimilarityComputer<CategoricalInput> computer = similarityComputer();
+        SimilarityComputer<CategoricalInput> computer = similarityComputer(sourceIndexIds, targetIndexIds);
         SimilarityRecorder<CategoricalInput> recorder = categoricalSimilarityRecorder(computer, configuration);
 
-s        double similarityCutoff = getSimilarityCutoff(configuration);
+        double similarityCutoff = getSimilarityCutoff(configuration);
         Stream<SimilarityResult> stream = topN(similarityStream(inputs,sourceIndexIds, targetIndexIds, recorder, configuration, () -> null,
+
                 similarityCutoff, getTopK(configuration)), getTopN(configuration));
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
         return writeAndAggregateResults(stream, inputs.length, configuration, write, writeRelationshipType, writeProperty, recorder);
     }
 
-    private SimilarityComputer<CategoricalInput> similarityComputer() {
-        return (decoder, s, t, cutoff) -> s.jaccard(cutoff, t);
+    private SimilarityComputer<CategoricalInput> similarityComputer(int[] sourceIndexIds, int[] targetIndexIds) {
+        if(sourceIndexIds.length > 0 || targetIndexIds.length > 0 ) {
+            return (decoder, s, t, cutoff) -> s.jaccard(cutoff, t, false);
+        }
+        return (decoder, s, t, cutoff) -> s.jaccard(cutoff, t, true);
     }
 }

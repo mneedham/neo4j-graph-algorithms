@@ -183,17 +183,21 @@ public class JaccardTest {
 
     @Test
     public void jaccardStreamTestSourceTargetIds() {
-
-        String statement = "MATCH (p:Person)-[:LIKES]->(i:Item) \n" +
-                "WITH {item:id(p), categories: collect(distinct id(i))} as userData\n" +
-                "WITH collect(userData) as data\n" +
-                "call algo.similarity.jaccard.stream(data,$config) " +
-                "yield item1, item2, count1, count2, intersection, similarity " +
-                "RETURN * ORDER BY item1,item2";
-
-        Result results = db.execute(statement, map("config",map(
+        Result results = db.execute(STATEMENT_STREAM, map("config",map(
                 "concurrency",1,
                 "targetIds", Collections.singletonList(1L),
+                "sourceIds", Collections.singletonList(0L))));
+
+        assertTrue(results.hasNext());
+        assert01(results.next());
+        assertFalse(results.hasNext());
+    }
+
+    @Test
+    public void jaccardStreamTestSourceTargetIdsTopK() {
+        Result results = db.execute(STATEMENT_STREAM, map("config",map(
+                "concurrency",1,
+                "topK", 1,
                 "sourceIds", Collections.singletonList(0L))));
 
         assertTrue(results.hasNext());

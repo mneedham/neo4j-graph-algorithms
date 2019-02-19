@@ -56,7 +56,7 @@ class CategoricalInput implements Comparable<CategoricalInput> {
         return Long.compare(id, o.id);
     }
 
-    SimilarityResult jaccard(double similarityCutoff, CategoricalInput e2) {
+    SimilarityResult jaccard(double similarityCutoff, CategoricalInput e2, boolean bidirectional) {
         long intersection = Intersections.intersection3(targets, e2.targets);
         if (similarityCutoff >= 0d && intersection == 0) return null;
         int count1 = targets.length;
@@ -64,7 +64,7 @@ class CategoricalInput implements Comparable<CategoricalInput> {
         long denominator = count1 + count2 - intersection;
         double jaccard = denominator == 0 ? 0 : (double) intersection / denominator;
         if (jaccard < similarityCutoff) return null;
-        return new SimilarityResult(id, e2.id, count1, count2, intersection, jaccard);
+        return new SimilarityResult(id, e2.id, count1, count2, intersection, jaccard, bidirectional, false);
     }
 
     SimilarityResult overlap(double similarityCutoff, CategoricalInput e2) {
