@@ -28,7 +28,7 @@ public class SimilarityStreamGeneratorTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Integer> data() {
         return Arrays.asList(
-                1, 2
+                1, 2, 8
         );
     }
 
@@ -52,10 +52,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void allPairs() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, ALL_PAIRS_COMPUTER);
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, ALL_PAIRS_COMPUTER);
 
         CategoricalInput[] ids = new CategoricalInput[3];
         ids[0] = new CategoricalInput(0, new long[]{});
@@ -75,10 +73,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void allPairsTopK() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, ALL_PAIRS_COMPUTER);
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, ALL_PAIRS_COMPUTER);
 
         CategoricalInput[] ids = new CategoricalInput[3];
         ids[0] = new CategoricalInput(0, new long[]{});
@@ -98,10 +94,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void sourceSpecifiedTargetSpecified() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, COMPUTER);
 
         CategoricalInput[] ids = new CategoricalInput[3];
         ids[0] = new CategoricalInput(0, new long[]{});
@@ -122,10 +116,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void sourceSpecifiedTargetSpecifiedTopK() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, COMPUTER);
 
 
         CategoricalInput[] ids = new CategoricalInput[3];
@@ -146,10 +138,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void sourceSpecifiedTargetNotSpecified() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, COMPUTER);
 
 
         CategoricalInput[] ids = new CategoricalInput[4];
@@ -178,11 +168,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void sourceSpecifiedTargetNotSpecifiedTopK() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
-
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, COMPUTER);
 
 
         CategoricalInput[] ids = new CategoricalInput[4];
@@ -207,10 +194,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void sourceNotSpecifiedTargetSpecified() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, COMPUTER);
 
 
         CategoricalInput[] ids = new CategoricalInput[4];
@@ -241,10 +226,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void sourceNotSpecifiedTargetSpecifiedTopK() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, COMPUTER);
 
 
         CategoricalInput[] ids = new CategoricalInput[4];
@@ -254,7 +237,7 @@ public class SimilarityStreamGeneratorTest {
         ids[3] = new CategoricalInput(3, new long[]{});
 
         int[] sourceIndexIds = new int[]{};
-        int[] targetIndexIds = new int[]{2,3};
+        int[] targetIndexIds = new int[]{2, 3};
 
         Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 1);
 
@@ -271,10 +254,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void sourceTargetOverlap() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, COMPUTER);
 
         CategoricalInput[] ids = new CategoricalInput[4];
         ids[0] = new CategoricalInput(5, new long[]{});
@@ -301,10 +282,8 @@ public class SimilarityStreamGeneratorTest {
     @Test
     public void sourceTargetOverlapTopK() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-        TerminationFlag terminationFlag = mock(TerminationFlag.class);
-        when(terminationFlag.running()).thenReturn(true);
 
-        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag(), configuration, DECODER, COMPUTER);
 
         CategoricalInput[] ids = new CategoricalInput[4];
         ids[0] = new CategoricalInput(5, new long[]{});
@@ -312,8 +291,8 @@ public class SimilarityStreamGeneratorTest {
         ids[2] = new CategoricalInput(7, new long[]{});
         ids[3] = new CategoricalInput(8, new long[]{});
 
-        int[] sourceIndexIds = new int[]{0,1,2};
-        int[] targetIndexIds = new int[]{1,2};
+        int[] sourceIndexIds = new int[]{0, 1, 2};
+        int[] targetIndexIds = new int[]{1, 2};
 
         Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 1);
 
@@ -323,6 +302,12 @@ public class SimilarityStreamGeneratorTest {
         assertThat(rows, hasItems(similarityResult(5, 6, false, false)));
         assertThat(rows, hasItems(similarityResult(6, 7, false, false)));
         assertThat(rows, hasItems(similarityResult(7, 6, false, false)));
+    }
+
+    private TerminationFlag terminationFlag() {
+        TerminationFlag terminationFlag = mock(TerminationFlag.class);
+        when(terminationFlag.running()).thenReturn(true);
+        return terminationFlag;
     }
 
 }
