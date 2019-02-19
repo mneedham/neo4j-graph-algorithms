@@ -69,14 +69,13 @@ include::scripts/yens-k-shortest-paths.cypher[tag=stream-sample-graph]
 |===
 // end::stream[]
 
-By default this procedure doesn't return paths, but we can have it return those by passing in the config `path: true`.
+This procedure doesn't return paths by default, but we can have it return those by passing in the config `path: true`.
 
 .The following will run the algorithm and stream results, including paths:
 [source, cypher]
 ----
 include::scripts/yens-k-shortest-paths.cypher[tag=stream-sample-with-path-graph]
 ----
-
 
 image::yens-path.svg[]
 
@@ -102,6 +101,7 @@ image::yens_result.png[]
 The quickest route takes us from A to B, via D and E and is saved as `PATH_0`.
 Second quickest path is saved as `PATH_1` and third one is saved as`PATH_2`
 // end::write-sample-graph-explanation[]
+
 
 == Cypher projection
 

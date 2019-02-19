@@ -85,6 +85,7 @@ include::scripts/single-shortest-path.cypher[tag=delta-write-sample-graph]
 The above table shows the cost of going from A to each of the other nodes, including itself at a cost of 0.
 // end::delta-stream-sample-graph-explanation[]
 
+
 == Cypher projection
 
 include::cypher-projection.adoc[tag=explanation]
@@ -95,6 +96,7 @@ include::cypher-projection.adoc[tag=explanation]
 ----
 include::scripts/single-shortest-path.cypher[tag=cypher-loading]
 ----
+
 
 [[algorithms-single-source-shortest-path-syntax]]
 == Syntax

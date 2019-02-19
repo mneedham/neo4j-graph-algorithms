@@ -130,6 +130,7 @@ We can assume that users are not on Yelp for finding and creating friends, like 
 
 Local triangle count and clustering coefficient of nodes can be used as features in finding influencers in social networks.
 
+
 == Cypher projection
 
 include::cypher-projection.adoc[tag=explanation]
@@ -140,6 +141,7 @@ include::cypher-projection.adoc[tag=explanation]
 ----
 include::scripts/triangle-count.cypher[tag=cypher-loading]
 ----
+
 
 [[algorithms-triangle-count-clustering-coefficient-syntax]]
 == Syntax

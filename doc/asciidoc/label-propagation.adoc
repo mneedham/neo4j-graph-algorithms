@@ -127,6 +127,7 @@ Using this preliminary set of labels (identifiers), it then sequentially updates
 include::scripts/label-propagation.cypher[tag=write-existing-label-sample-graph]
 ----
 
+
 == Cypher projection
 
 include::cypher-projection.adoc[tag=explanation]

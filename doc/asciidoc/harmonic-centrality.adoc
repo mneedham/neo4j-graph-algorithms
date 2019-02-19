@@ -103,6 +103,7 @@ sum |1.5    2    1.5    1     1
 
 Instead of calculating the farness, we sum the inverse of each cell and multiply by `1/(n-1)`.
 
+
 == Huge graph projection
 
 include::huge-projection.adoc[tag=explanation]

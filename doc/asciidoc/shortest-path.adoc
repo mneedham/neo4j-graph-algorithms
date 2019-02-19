@@ -99,6 +99,7 @@ The quickest route takes us from A to F, via C, D, and E, at a total cost of 160
 
 // == Example usage
 
+
 == Cypher projection
 
 include::cypher-projection.adoc[tag=explanation]
@@ -109,6 +110,7 @@ include::cypher-projection.adoc[tag=explanation]
 ----
 include::scripts/single-shortest-path.cypher[tag=cypher-loading]
 ----
+
 
 [[algorithms-shortest-path-syntax]]
 == Syntax

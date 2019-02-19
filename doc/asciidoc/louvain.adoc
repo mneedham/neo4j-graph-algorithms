@@ -130,6 +130,7 @@ Mark, Doug, and Charles are all friends with each other, as are Bridget, Alice, 
 Charles is the only one who has friends in both communities, but he has more in community 4 so he fits better in that one.
 // end::stream-sample-graph-explanation[]
 
+
 [[algorithms-louvain-hierarchical]]
 == Hierarchical Louvain algorithm sample
 
@@ -174,9 +175,10 @@ include::scripts/louvain.cypher[tag=write-hierarchical-sample-graph]
 Our algorithm found two hierarchical levels of communities.
 
 On the first level it found three communities with Alice, Bridget and Michael forming the first community, Charles, Doug and Mark forming the second one and Karin and Amy forming the third one.
-On the second level it found two communities. Alice, Bridget and Michael stay in the same community, but the other two communities merge into a single one. 
+On the second level it found two communities. Alice, Bridget and Michael stay in the same community, but the other two communities merge into a single one.
 
 // end::stream-hierarchical-sample-graph-explanation[]
+
 
 [[algorithms-louvain-pre-defined]]
 == Pre-defined communities
@@ -220,6 +222,7 @@ In this example the pre-defined communities are read from the `community` proper
 | Amy     | 1
 |===
 // end::stream-pre-defined-sample-graph-result[]
+
 
 == Huge graph projection
 

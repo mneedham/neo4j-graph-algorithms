@@ -85,6 +85,7 @@ Charles ends up in his own component because there isn't an outgoing relationshi
 include::scripts/strongly-connected-components.cypher[tag=get-largest-component]
 ----
 
+
 == Huge graph projection
 
 include::huge-projection.adoc[tag=explanation]
