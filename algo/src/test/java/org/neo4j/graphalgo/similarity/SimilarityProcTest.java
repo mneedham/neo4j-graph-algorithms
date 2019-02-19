@@ -25,7 +25,7 @@ public class SimilarityProcTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Integer> data() {
         return Arrays.asList(
-                1, 2
+                1
         );
     }
 

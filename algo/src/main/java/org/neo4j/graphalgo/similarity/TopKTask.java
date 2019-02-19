@@ -2,11 +2,7 @@ package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.impl.util.TopKConsumer;
 
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.IntStream;
-
-import static org.neo4j.graphalgo.similarity.SimilarityProc.computeSimilarityForSourceIndex;
+import static org.neo4j.graphalgo.similarity.SimilarityStreamGenerator.computeSimilarityForSourceIndex;
 
 class TopKTask<T> implements Runnable {
     private final int batchSize;
