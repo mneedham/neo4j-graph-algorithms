@@ -178,23 +178,6 @@ public class SimilarityProc {
 
     <T> Stream<SimilarityResult> similarityStream(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, SimilarityComputer<T> computer, ProcedureConfiguration configuration, Supplier<RleDecoder> decoderFactory, double cutoff, int topK) {
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-//        int concurrency = configuration.getConcurrency();
-//
-//        int length = inputs.length;
-//        if (concurrency == 1) {
-//            if (topK != 0) {
-//                return similarityStreamTopK(inputs, sourceIndexIds, targetIndexIds, length, cutoff, topK, computer, decoderFactory);
-//            } else {
-//                return similarityStream(inputs, sourceIndexIds, targetIndexIds, length, cutoff, computer, decoderFactory);
-//            }
-//        } else {
-//            if (topK != 0) {
-//                return similarityParallelStreamTopK(inputs, length, terminationFlag, concurrency, cutoff, topK, computer, decoderFactory);
-//            } else {
-//                return similarityParallelStream(inputs, length, terminationFlag, concurrency, cutoff, computer, decoderFactory);
-//            }
-//        }
-
         return new SimilarityStreamGenerator<>(terminationFlag, configuration, decoderFactory, computer).stream(inputs, sourceIndexIds, targetIndexIds, cutoff, topK);
     }
 
