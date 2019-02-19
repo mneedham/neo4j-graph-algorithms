@@ -242,7 +242,7 @@ public class SimilarityProc {
 
         int multiplier = batchSize < length ? batchSize : 1;
         for (int taskId = 0; taskId < taskCount; taskId++) {
-            tasks.add(new TopKTask(batchSize, taskId, multiplier, length, inputs, cutoff, topK, computer, decoderFactory.get()));
+            tasks.add(new TopKTask(batchSize, taskId, multiplier, length, inputs, cutoff, topK, computer, decoderFactory.get(), null, null));
         }
         ParallelUtil.runWithConcurrency(concurrency, tasks, terminationFlag, Pools.DEFAULT);
 

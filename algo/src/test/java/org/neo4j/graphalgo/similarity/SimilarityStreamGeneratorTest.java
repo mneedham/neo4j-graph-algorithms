@@ -44,7 +44,7 @@ public class SimilarityStreamGeneratorTest {
     }
 
     public static final SimilarityProc.SimilarityComputer<CategoricalInput> COMPUTER = (decoder, source, target, cutoff) ->
-            similarityResult(source.id, target.id, false,false);
+            similarityResult(source.id, target.id, false, false);
 
 
     public static final Supplier<RleDecoder> DECODER = () -> null;
@@ -91,8 +91,8 @@ public class SimilarityStreamGeneratorTest {
         assertEquals(3, rows.size());
 
         assertThat(rows, hasItems(similarityResult(0, 1, true, false)));
-        assertThat(rows, hasItems(similarityResult(1, 0,true, true)));
-        assertThat(rows, hasItems(similarityResult(2, 0,true, true)));
+        assertThat(rows, hasItems(similarityResult(1, 0, true, true)));
+        assertThat(rows, hasItems(similarityResult(2, 0, true, true)));
     }
 
     @Test
@@ -118,27 +118,31 @@ public class SimilarityStreamGeneratorTest {
         assertThat(rows, hasItems(similarityResult(0, 1, false, false)));
         assertThat(rows, hasItems(similarityResult(0, 2, false, false)));
     }
-//
-//    @Test
-//    public void sourceSpecifiedTargetSpecifiedTopK() {
-//        SimilarityProc similarityProc = new SimilarityProc();
-//
-//        CategoricalInput[] ids = new CategoricalInput[3];
-//        ids[0] = new CategoricalInput(0, new long[]{});
-//        ids[1] = new CategoricalInput(1, new long[]{});
-//        ids[2] = new CategoricalInput(2, new long[]{});
-//
-//        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-//        int[] sourceIndexIds = new int[]{0};
-//        int[] targetIndexIds = new int[]{1, 2};
-//        Stream<SimilarityResult> stream = similarityProc.similarityStream(ids, sourceIndexIds, targetIndexIds, COMPUTER, configuration, DECODER, -1.0, 1);
-//
-//        List<SimilarityResult> rows = stream.collect(Collectors.toList());
-//        assertEquals(1, rows.size());
-//
-//        assertThat(rows, hasItems(similarityResult(0, 1, false, false)));
-//    }
-//
+
+    @Test
+    public void sourceSpecifiedTargetSpecifiedTopK() {
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
+        TerminationFlag terminationFlag = mock(TerminationFlag.class);
+        when(terminationFlag.running()).thenReturn(true);
+
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+
+
+        CategoricalInput[] ids = new CategoricalInput[3];
+        ids[0] = new CategoricalInput(0, new long[]{});
+        ids[1] = new CategoricalInput(1, new long[]{});
+        ids[2] = new CategoricalInput(2, new long[]{});
+
+        int[] sourceIndexIds = new int[]{0};
+        int[] targetIndexIds = new int[]{1, 2};
+        Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 1);
+
+        List<SimilarityResult> rows = stream.collect(Collectors.toList());
+        assertEquals(1, rows.size());
+
+        assertThat(rows, hasItems(similarityResult(0, 1, false, false)));
+    }
+
     @Test
     public void sourceSpecifiedTargetNotSpecified() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
@@ -169,32 +173,37 @@ public class SimilarityStreamGeneratorTest {
         assertThat(rows, hasItems(similarityResult(1, 2, false, false)));
         assertThat(rows, hasItems(similarityResult(1, 3, false, false)));
     }
-//
-//    @Test
-//    public void sourceSpecifiedTargetNotSpecifiedTopK() {
-//        SimilarityProc similarityProc = new SimilarityProc();
-//
-//        CategoricalInput[] ids = new CategoricalInput[4];
-//        ids[0] = new CategoricalInput(0, new long[]{});
-//        ids[1] = new CategoricalInput(1, new long[]{});
-//        ids[2] = new CategoricalInput(2, new long[]{});
-//        ids[3] = new CategoricalInput(3, new long[]{});
-//
-//        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-//
-//        int[] sourceIndexIds = new int[]{0, 1};
-//        int[] targetIndexIds = new int[]{};
-//
-//        Stream<SimilarityResult> stream = similarityProc.similarityStream(ids, sourceIndexIds, targetIndexIds, COMPUTER, configuration, DECODER, -1.0, 1);
-//
-//        List<SimilarityResult> rows = stream.collect(Collectors.toList());
-//
-//        assertEquals(2, rows.size());
-//
-//        assertThat(rows, hasItems(similarityResult(0, 1, false, false)));
-//        assertThat(rows, hasItems(similarityResult(1, 2, false, false)));
-//    }
-//
+
+    //
+    @Test
+    public void sourceSpecifiedTargetNotSpecifiedTopK() {
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
+        TerminationFlag terminationFlag = mock(TerminationFlag.class);
+        when(terminationFlag.running()).thenReturn(true);
+
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+
+
+
+        CategoricalInput[] ids = new CategoricalInput[4];
+        ids[0] = new CategoricalInput(0, new long[]{});
+        ids[1] = new CategoricalInput(1, new long[]{});
+        ids[2] = new CategoricalInput(2, new long[]{});
+        ids[3] = new CategoricalInput(3, new long[]{});
+
+        int[] sourceIndexIds = new int[]{0, 1};
+        int[] targetIndexIds = new int[]{};
+
+        Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 1);
+
+        List<SimilarityResult> rows = stream.collect(Collectors.toList());
+
+        assertEquals(2, rows.size());
+
+        assertThat(rows, hasItems(similarityResult(0, 1, false, false)));
+        assertThat(rows, hasItems(similarityResult(1, 2, false, false)));
+    }
+
     @Test
     public void sourceNotSpecifiedTargetSpecified() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
@@ -211,7 +220,7 @@ public class SimilarityStreamGeneratorTest {
         ids[3] = new CategoricalInput(3, new long[]{});
 
         int[] sourceIndexIds = new int[]{};
-        int[] targetIndexIds = new int[]{2,3};
+        int[] targetIndexIds = new int[]{2, 3};
 
         Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 0);
 
@@ -227,35 +236,70 @@ public class SimilarityStreamGeneratorTest {
         assertThat(rows, hasItems(similarityResult(1, 2, false, false)));
         assertThat(rows, hasItems(similarityResult(2, 3, false, false)));
     }
-//
-//    @Test
-//    public void sourceNotSpecifiedTargetSpecifiedTopK() {
-//        SimilarityProc similarityProc = new SimilarityProc();
-//
-//        CategoricalInput[] ids = new CategoricalInput[4];
-//        ids[0] = new CategoricalInput(0, new long[]{});
-//        ids[1] = new CategoricalInput(1, new long[]{});
-//        ids[2] = new CategoricalInput(2, new long[]{});
-//        ids[3] = new CategoricalInput(3, new long[]{});
-//
-//        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-//
-//        int[] sourceIndexIds = new int[]{};
-//        int[] targetIndexIds = new int[]{2,3};
-//
-//        Stream<SimilarityResult> stream = similarityProc.similarityStream(ids, sourceIndexIds, targetIndexIds, COMPUTER, configuration, DECODER, -1.0, 1);
-//
-//        List<SimilarityResult> rows = stream.collect(Collectors.toList());
-//
-//        assertEquals(4, rows.size());
-//        assertThat(rows, hasItems(similarityResult(0, 2, false, false)));
-//        assertThat(rows, hasItems(similarityResult(1, 2, false, false)));
-//        assertThat(rows, hasItems(similarityResult(2, 3, false, false)));
-//        assertThat(rows, hasItems(similarityResult(3, 2, false, false)));
-//    }
-//
+
+
+    @Test
+    public void sourceNotSpecifiedTargetSpecifiedTopK() {
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
+        TerminationFlag terminationFlag = mock(TerminationFlag.class);
+        when(terminationFlag.running()).thenReturn(true);
+
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+
+
+        CategoricalInput[] ids = new CategoricalInput[4];
+        ids[0] = new CategoricalInput(0, new long[]{});
+        ids[1] = new CategoricalInput(1, new long[]{});
+        ids[2] = new CategoricalInput(2, new long[]{});
+        ids[3] = new CategoricalInput(3, new long[]{});
+
+        int[] sourceIndexIds = new int[]{};
+        int[] targetIndexIds = new int[]{2,3};
+
+        Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 1);
+
+
+        List<SimilarityResult> rows = stream.collect(Collectors.toList());
+
+        assertEquals(4, rows.size());
+        assertThat(rows, hasItems(similarityResult(0, 2, false, false)));
+        assertThat(rows, hasItems(similarityResult(1, 2, false, false)));
+        assertThat(rows, hasItems(similarityResult(2, 3, false, false)));
+        assertThat(rows, hasItems(similarityResult(3, 2, false, false)));
+    }
+
     @Test
     public void sourceTargetOverlap() {
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
+        TerminationFlag terminationFlag = mock(TerminationFlag.class);
+        when(terminationFlag.running()).thenReturn(true);
+
+        SimilarityStreamGenerator<CategoricalInput> generator = new SimilarityStreamGenerator<>(terminationFlag, configuration, DECODER, COMPUTER);
+
+        CategoricalInput[] ids = new CategoricalInput[4];
+        ids[0] = new CategoricalInput(5, new long[]{});
+        ids[1] = new CategoricalInput(6, new long[]{});
+        ids[2] = new CategoricalInput(7, new long[]{});
+        ids[3] = new CategoricalInput(8, new long[]{});
+
+        int[] sourceIndexIds = new int[]{0, 1, 2};
+        int[] targetIndexIds = new int[]{1, 2};
+
+        Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 0);
+
+
+        List<SimilarityResult> rows = stream.collect(Collectors.toList());
+
+        assertEquals(4, rows.size());
+
+        assertThat(rows, hasItems(similarityResult(5, 6, false, false)));
+        assertThat(rows, hasItems(similarityResult(5, 7, false, false)));
+        assertThat(rows, hasItems(similarityResult(6, 7, false, false)));
+        assertThat(rows, hasItems(similarityResult(7, 6, false, false)));
+    }
+
+    @Test
+    public void sourceTargetOverlapTopK() {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
         TerminationFlag terminationFlag = mock(TerminationFlag.class);
         when(terminationFlag.running()).thenReturn(true);
@@ -271,42 +315,14 @@ public class SimilarityStreamGeneratorTest {
         int[] sourceIndexIds = new int[]{0,1,2};
         int[] targetIndexIds = new int[]{1,2};
 
-        Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 0);
-
+        Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 1);
 
         List<SimilarityResult> rows = stream.collect(Collectors.toList());
 
-        assertEquals(4, rows.size());
-
+        assertEquals(3, rows.size());
         assertThat(rows, hasItems(similarityResult(5, 6, false, false)));
-        assertThat(rows, hasItems(similarityResult(5, 7, false, false)));
         assertThat(rows, hasItems(similarityResult(6, 7, false, false)));
         assertThat(rows, hasItems(similarityResult(7, 6, false, false)));
     }
-//
-//    @Test
-//    public void sourceTargetOverlapTopK() {
-//        SimilarityProc similarityProc = new SimilarityProc();
-//
-//        CategoricalInput[] ids = new CategoricalInput[4];
-//        ids[0] = new CategoricalInput(5, new long[]{});
-//        ids[1] = new CategoricalInput(6, new long[]{});
-//        ids[2] = new CategoricalInput(7, new long[]{});
-//        ids[3] = new CategoricalInput(8, new long[]{});
-//
-//        ProcedureConfiguration configuration = ProcedureConfiguration.create(MapUtil.map("concurrency", concurrency));
-//
-//        int[] sourceIndexIds = new int[]{0,1,2};
-//        int[] targetIndexIds = new int[]{1,2};
-//
-//        Stream<SimilarityResult> stream = similarityProc.similarityStream(ids, sourceIndexIds, targetIndexIds, COMPUTER, configuration, DECODER, -1.0, 1);
-//
-//        List<SimilarityResult> rows = stream.collect(Collectors.toList());
-//
-//        assertEquals(3, rows.size());
-//        assertThat(rows, hasItems(similarityResult(5, 6, false, false)));
-//        assertThat(rows, hasItems(similarityResult(6, 7, false, false)));
-//        assertThat(rows, hasItems(similarityResult(7, 6, false, false)));
-//    }
 
 }
