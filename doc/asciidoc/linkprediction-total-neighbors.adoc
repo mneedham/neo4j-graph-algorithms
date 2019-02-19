@@ -1,17 +1,17 @@
-[[algorithms-linkprediction-resource-allocation]]
-= The Resource Allocation algorithm
+[[algorithms-linkprediction-total-neighbors]]
+= The Total Neighbors algorithm
 
 [abstract]
 --
-This section describes the Resource Allocation algorithm in the Neo4j Graph Algorithms library.
+This section describes the Total Neighbors algorithm in the Neo4j Graph Algorithms library.
 --
 
 // tag::introduction[]
-link:https://arxiv.org/pdf/0901.0553.pdf[Resource Allocation] is a measure used to compute the closeness of nodes based on their shared neighbors.
+link:https://arxiv.org/pdf/0901.0553.pdf[Total Neighbors] is a measure used to compute the closeness of nodes based on their shared neighbors.
 // end::introduction[]
 
 
-[[algorithms-linkprediction-resource-allocation-context]]
+[[algorithms-linkprediction-total-neighbors-context]]
 == History and explanation
 
 // tag::explanation[]
@@ -19,9 +19,9 @@ link:https://arxiv.org/pdf/0901.0553.pdf[Resource Allocation] is a measure used 
 The Resource Allocation  algorithm was introduced in 2009 by Tao Zhou, Linyuan Lü, and Yi-Cheng Zhang as part of a study to predict links in various networks.
 It is computed using the following formula:
 
-image::resource-allocation.svg[role="middle"]
+image::total-neighbors.svg[role="middle"]
 
-where `N(u)` is the set of nodes adjacent to `u`.
+where `N(x)` is the set of nodes adjacent to `x`, and `N(y)` is the set of nodes adjacent to `y`.
 
 A value of 0 indicates that two nodes are not close, while higher values indicate nodes are closer.
 
@@ -30,19 +30,19 @@ The library contains a function to calculate closeness between two nodes.
 // end::explanation[]
 
 
-[[algorithms-linkprediction-resource-allocation-sample]]
-== Resource Allocation algorithm sample
+[[algorithms-linkprediction-total-neighbors-sample]]
+== Total Neighbors algorithm sample
 
 .The following will create a sample graph:
 [source, cypher]
 ----
-include::scripts/linkprediction-resource-allocation.cypher[tag=create-sample-graph]
+include::scripts/linkprediction-total-neighbors.cypher[tag=create-sample-graph]
 ----
 
-.The following will return the Resource Allocation score for Michael and Karin:
+.The following will return the Total Neighbors score for Michael and Karin:
 [source, cypher]
 ----
-include::scripts/linkprediction-resource-allocation.cypher[tag=all-rels]
+include::scripts/linkprediction-total-neighbors.cypher[tag=all-rels]
 ----
 
 // tag::function[]
@@ -50,17 +50,17 @@ include::scripts/linkprediction-resource-allocation.cypher[tag=all-rels]
 [opts="header",cols="1"]
 |===
 | `score`
-| 0.5
+| 4.0
 |===
 // end::function[]
 
 
 We can also compute the score of a pair of nodes based on a specific relationship type.
 
-.The following will return the Resource Allocation score for Michael and Karin based only on the `FRIENDS` relationships:
+.The following will return the Total Neighbors score for Michael and Karin based only on the `FRIENDS` relationships:
 [source, cypher]
 ----
-include::scripts/linkprediction-resource-allocation.cypher[tag=only-friends]
+include::scripts/linkprediction-total-neighbors.cypher[tag=only-friends]
 ----
 
 // tag::function[]
@@ -68,18 +68,18 @@ include::scripts/linkprediction-resource-allocation.cypher[tag=only-friends]
 [opts="header",cols="1"]
 |===
 | `score`
-| 0.0
+| 2.0
 |===
 // end::function[]
 
 
-[[algorithms-linkprediction-resource-allocation-syntax]]
+[[algorithms-linkprediction-total-neighbors-syntax]]
 == Syntax
 
 .The following will run the algorithm and return the result:
 [source, cypher]
 ----
-RETURN algo.linkprediction.resourceAllocation(node1:Node, node2:Node, {
+RETURN algo.linkprediction.totalNeighbors(node1:Node, node2:Node, {
     relationshipQuery: null,
     direction: "BOTH"
 })

@@ -81,7 +81,7 @@ include::scripts/linkprediction-same-community.cypher[tag=missing-community]
 By default the community is read from the `community` property, but we can explicitly state the property to read from as well.
 
 
-.The following will indicate that Arya and Karin belong to the same community based on the `partition` property:
+.The following will indicate that Arya and Karin belong to the same community, based on the `partition` property:
 [source, cypher]
 ----
 include::scripts/linkprediction-same-community.cypher[tag=same-community-specific]
