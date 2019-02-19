@@ -48,7 +48,7 @@ public class SimilarityStreamGenerator<T> {
         }
     }
 
-    Stream<SimilarityResult> stream(T[] inputs, double cutoff, int topK) {
+    public Stream<SimilarityResult> stream(T[] inputs, double cutoff, int topK) {
         int concurrency = configuration.getConcurrency();
 
         int length = inputs.length;

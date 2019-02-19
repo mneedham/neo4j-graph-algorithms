@@ -36,14 +36,14 @@ public class SimilarityStreamGeneratorTest {
         this.concurrency = concurrency;
     }
 
-    public static final SimilarityProc.SimilarityComputer<CategoricalInput> ALL_PAIRS_COMPUTER = (decoder, source, target, cutoff) ->
+    public static final SimilarityComputer<CategoricalInput> ALL_PAIRS_COMPUTER = (decoder, source, target, cutoff) ->
             similarityResult(source.id, target.id, true, false);
 
-    private static SimilarityResult similarityResult(long sourceId, long targetId, boolean birectional, boolean reversed) {
-        return new SimilarityResult(sourceId, targetId, -1, -1, -1, 0.7, birectional, reversed);
+    private static SimilarityResult similarityResult(long sourceId, long targetId, boolean bidirectional, boolean reversed) {
+        return new SimilarityResult(sourceId, targetId, -1, -1, -1, 0.7, bidirectional, reversed);
     }
 
-    public static final SimilarityProc.SimilarityComputer<CategoricalInput> COMPUTER = (decoder, source, target, cutoff) ->
+    public static final SimilarityComputer<CategoricalInput> COMPUTER = (decoder, source, target, cutoff) ->
             similarityResult(source.id, target.id, false, false);
 
 

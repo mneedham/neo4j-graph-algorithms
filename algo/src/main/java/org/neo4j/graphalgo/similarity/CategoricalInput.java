@@ -23,7 +23,8 @@ import org.neo4j.graphalgo.core.utils.Intersections;
 import java.util.Arrays;
 import java.util.List;
 
-class CategoricalInput implements Comparable<CategoricalInput> {
+
+public class CategoricalInput implements  Comparable<CategoricalInput> {
     long id;
     long[] targets;
 
@@ -49,6 +50,10 @@ class CategoricalInput implements Comparable<CategoricalInput> {
         }
 
         return Arrays.copyOfRange(indexes, 0, indexesFound);
+    }
+
+    public long getId() {
+        return id;
     }
 
     @Override

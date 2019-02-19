@@ -37,7 +37,6 @@ import org.neo4j.logging.Log;
 import org.neo4j.procedure.Context;
 
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
