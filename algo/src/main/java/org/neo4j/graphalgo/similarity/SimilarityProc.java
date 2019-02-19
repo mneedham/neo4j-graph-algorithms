@@ -76,14 +76,6 @@ public class SimilarityProc {
         return topK(stream, topN, comparator);
     }
 
-    private static <T> void put(BlockingQueue<T> queue, T items) {
-        try {
-            queue.put(items);
-        } catch (InterruptedException e) {
-            // ignore
-        }
-    }
-
     static SimilarityRecorder<WeightedInput> similarityRecorder(SimilarityComputer<WeightedInput> computer, ProcedureConfiguration configuration) {
         boolean showComputations = configuration.get("showComputations", false);
         return showComputations ? new RecordingSimilarityRecorder<>(computer) : new NonRecordingSimilarityRecorder<>(computer);
@@ -193,7 +185,7 @@ public class SimilarityProc {
         return configuration.get("skipValue", Double.NaN);
     }
 
-    WeightedInput[] preparseDenseWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
+    private WeightedInput[] preparseDenseWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
         WeightedInput[] inputs = new WeightedInput[data.size()];
         int idx = 0;
         for (Map<String, Object> row : data) {
@@ -211,7 +203,7 @@ public class SimilarityProc {
         return inputs;
     }
 
-    WeightedInput[] prepareSparseWeights(GraphDatabaseAPI api, String query, Double skipValue, ProcedureConfiguration configuration) throws Exception {
+    private WeightedInput[] prepareSparseWeights(GraphDatabaseAPI api, String query, Double skipValue, ProcedureConfiguration configuration) throws Exception {
         Map<String, Object> params = configuration.getParams();
         Long degreeCutoff = getDegreeCutoff(configuration);
         int repeatCutoff = configuration.get("sparseVectorRepeatCutoff", REPEAT_CUTOFF).intValue();
@@ -303,15 +295,5 @@ public class SimilarityProc {
         return createDecoderFactory(configuration.getGraphName("dense"), size);
     }
 
-    public static SimilarityConsumer assignSimilarityPairs(TopKConsumer<SimilarityResult>[] topKConsumers) {
-        return (s, t, result) -> {
-            topKConsumers[result.reversed ? t : s].accept(result);
-
-            if (result.bidirectional) {
-                SimilarityResult reverse = result.reverse();
-                topKConsumers[reverse.reversed ? t : s].accept(reverse);
-            }
-        };
-    }
 
 }

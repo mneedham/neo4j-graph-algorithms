@@ -14,13 +14,13 @@ class NewTopKTask<T> implements Runnable {
     private final int length;
     private final T[] ids;
     private final double similiarityCutoff;
-    private final SimilarityProc.SimilarityComputer<T> computer;
+    private final SimilarityComputer<T> computer;
     private RleDecoder decoder;
     private final Supplier<IntStream> sourceRange;
     private final Function<Integer, IntStream> targetRange;
     private final TopKConsumer<SimilarityResult>[] topKConsumers;
 
-    NewTopKTask(int batchSize, int taskOffset, int multiplier, int length, T[] ids, double similiarityCutoff, int topK, SimilarityProc.SimilarityComputer<T> computer, RleDecoder decoder, Supplier<IntStream> sourceRange, Function<Integer, IntStream> targetRange) {
+    NewTopKTask(int batchSize, int taskOffset, int multiplier, int length, T[] ids, double similiarityCutoff, int topK, SimilarityComputer<T> computer, RleDecoder decoder, Supplier<IntStream> sourceRange, Function<Integer, IntStream> targetRange) {
         this.batchSize = batchSize;
         this.taskOffset = taskOffset;
         this.multiplier = multiplier;
@@ -36,12 +36,12 @@ class NewTopKTask<T> implements Runnable {
 
     @Override
     public void run() {
-        SimilarityConsumer consumer = SimilarityProc.assignSimilarityPairs(topKConsumers);
+        SimilarityConsumer consumer = TopKTask.assignSimilarityPairs(topKConsumers);
         sourceRange.get().skip(taskOffset * multiplier).limit(batchSize).forEach(sourceId ->
                 computeSimilarityForSourceIndex(sourceId, ids, similiarityCutoff, consumer, computer, decoder, targetRange));
     }
 
-    private void computeSimilarityForSourceIndex(int sourceId, T[] inputs, double cutoff, SimilarityConsumer consumer, SimilarityProc.SimilarityComputer<T> computer, RleDecoder decoder, Function<Integer, IntStream> targetRange) {
+    private void computeSimilarityForSourceIndex(int sourceId, T[] inputs, double cutoff, SimilarityConsumer consumer, SimilarityComputer<T> computer, RleDecoder decoder, Function<Integer, IntStream> targetRange) {
         targetRange.apply(sourceId).forEach(targetId -> {
             if(sourceId != targetId) {
                 SimilarityResult similarity = computer.similarity(decoder, inputs[sourceId], inputs[targetId], cutoff);

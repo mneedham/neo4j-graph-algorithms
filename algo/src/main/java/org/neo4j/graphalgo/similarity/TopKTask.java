@@ -11,11 +11,11 @@ class TopKTask<T> implements Runnable {
     private final int length;
     private final T[] ids;
     private final double similiarityCutoff;
-    private final SimilarityProc.SimilarityComputer<T> computer;
+    private final SimilarityComputer<T> computer;
     private RleDecoder decoder;
     private final TopKConsumer<SimilarityResult>[] topKConsumers;
 
-    TopKTask(int batchSize, int taskOffset, int multiplier, int length, T[] ids, double similiarityCutoff, int topK, SimilarityProc.SimilarityComputer<T> computer, RleDecoder decoder) {
+    TopKTask(int batchSize, int taskOffset, int multiplier, int length, T[] ids, double similiarityCutoff, int topK, SimilarityComputer<T> computer, RleDecoder decoder) {
         this.batchSize = batchSize;
         this.taskOffset = taskOffset;
         this.multiplier = multiplier;
@@ -29,7 +29,7 @@ class TopKTask<T> implements Runnable {
 
     @Override
     public void run() {
-        SimilarityConsumer consumer = SimilarityProc.assignSimilarityPairs(topKConsumers);
+        SimilarityConsumer consumer = assignSimilarityPairs(topKConsumers);
 
         for (int offset = 0; offset < batchSize; offset++) {
             int sourceId = taskOffset * multiplier + offset;
@@ -44,5 +44,16 @@ class TopKTask<T> implements Runnable {
         for (int i = 0; i < target.length; i++) {
             target[i].accept(topKConsumers[i]);
         }
+    }
+
+    public static SimilarityConsumer assignSimilarityPairs(TopKConsumer<SimilarityResult>[] topKConsumers) {
+        return (s, t, result) -> {
+            topKConsumers[result.reversed ? t : s].accept(result);
+
+            if (result.bidirectional) {
+                SimilarityResult reverse = result.reverse();
+                topKConsumers[reverse.reversed ? t : s].accept(reverse);
+            }
+        };
     }
 }

@@ -60,7 +60,7 @@ public class SimilarityStreamGeneratorTest {
         ids[1] = new CategoricalInput(1, new long[]{});
         ids[2] = new CategoricalInput(2, new long[]{});
 
-        Stream<SimilarityResult> stream = generator.stream(ids, new int[]{}, new int[]{}, -1.0, 0);
+        Stream<SimilarityResult> stream = generator.stream(ids, -1.0, 0);
 
         List<SimilarityResult> rows = stream.collect(Collectors.toList());
         assertEquals(3, rows.size());
@@ -81,7 +81,7 @@ public class SimilarityStreamGeneratorTest {
         ids[1] = new CategoricalInput(1, new long[]{});
         ids[2] = new CategoricalInput(2, new long[]{});
 
-        Stream<SimilarityResult> stream = generator.stream(ids, new int[]{}, new int[]{}, -1.0, 1);
+        Stream<SimilarityResult> stream = generator.stream(ids,-1.0, 1);
 
         List<SimilarityResult> rows = stream.collect(Collectors.toList());
         assertEquals(3, rows.size());
