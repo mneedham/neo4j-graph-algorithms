@@ -8,7 +8,7 @@ This section describes the Same Community algorithm in the Neo4j Graph Algorithm
 
 // tag::introduction[]
 Same Community is a way of determining whether two nodes belong to the same community.
-These communities could be computed by one of the <<algorithms-community>>.
+These communities could be computed by using one of the <<algorithms-community>>.
 
 // end::introduction[]
 
@@ -18,7 +18,7 @@ These communities could be computed by one of the <<algorithms-community>>.
 
 // tag::explanation[]
 
-If two nodes belong to the same community, there's a greater likelihood that there'll be a relationship between them in future, if there isn't already.
+If two nodes belong to the same community, there is a greater likelihood that there will be a relationship between them in future, if there isn't already.
 
 A value of 0 indicates that two nodes are not in the same community.
 A value of 1 indicates that two nodes are in the same community.
@@ -78,7 +78,7 @@ include::scripts/linkprediction-same-community.cypher[tag=missing-community]
 | 0.0
 |===
 
-By default the community is read from the `community` property, but we can explicitly state the property to read from as well.
+By default, the community is read from the `community` property, but it is possible to explicitly state which property to read from.
 
 
 .The following will indicate that Arya and Karin belong to the same community, based on the `partition` property:
