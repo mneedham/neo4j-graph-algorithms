@@ -53,7 +53,9 @@ public class CategoricalInput implements  Comparable<CategoricalInput>, Similari
         return new SimilarityResult(id, e2.id, count1, count2, intersection, jaccard, bidirectional, false);
     }
 
-    SimilarityResult overlap(double similarityCutoff, CategoricalInput e2) {
+    SimilarityResult overlap(double similarityCutoff, CategoricalInput e2, boolean inferReverse) {
+        System.out.println(this.id + "-> " + e2.id);
+
         long intersection = Intersections.intersection3(targets, e2.targets);
         if (similarityCutoff >= 0d && intersection == 0) return null;
         int count1 = targets.length;
@@ -65,7 +67,7 @@ public class CategoricalInput implements  Comparable<CategoricalInput>, Similari
         if (count1 <= count2) {
             return new SimilarityResult(id, e2.id, count1, count2, intersection, overlap, false, false);
         } else {
-            return new SimilarityResult(e2.id, id, count2, count1, intersection, overlap, false, true);
+            return inferReverse ? new SimilarityResult(e2.id, id, count2, count1, intersection, overlap, false, true) : null;
         }
 
     }
@@ -76,5 +78,6 @@ public class CategoricalInput implements  Comparable<CategoricalInput>, Similari
                 "id=" + id +
                 ", targets=" + Arrays.toString(targets) +
                 '}';
+
     }
 }

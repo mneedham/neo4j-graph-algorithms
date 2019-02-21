@@ -148,20 +148,25 @@ public class SimilarityStreamGeneratorTest {
         ids[2] = new CategoricalInput(2, new long[]{});
         ids[3] = new CategoricalInput(3, new long[]{});
 
-        int[] sourceIndexIds = new int[]{0, 1};
+        int[] sourceIndexIds = new int[]{1, 3};
         int[] targetIndexIds = new int[]{};
 
         Stream<SimilarityResult> stream = generator.stream(ids, sourceIndexIds, targetIndexIds, -1.0, 0);
 
         List<SimilarityResult> rows = stream.collect(Collectors.toList());
 
-        assertEquals(5, rows.size());
+        for (SimilarityResult row : rows) {
+            System.out.println(row);
+        }
 
-        assertThat(rows, hasItems(similarityResult(0, 1, false, false)));
-        assertThat(rows, hasItems(similarityResult(0, 2, false, false)));
-        assertThat(rows, hasItems(similarityResult(0, 3, false, false)));
+        assertEquals(6, rows.size());
+
+        assertThat(rows, hasItems(similarityResult(1, 0, false, false)));
         assertThat(rows, hasItems(similarityResult(1, 2, false, false)));
         assertThat(rows, hasItems(similarityResult(1, 3, false, false)));
+        assertThat(rows, hasItems(similarityResult(3, 0, false, false)));
+        assertThat(rows, hasItems(similarityResult(3, 1, false, false)));
+        assertThat(rows, hasItems(similarityResult(3, 2, false, false)));
     }
 
     @Test

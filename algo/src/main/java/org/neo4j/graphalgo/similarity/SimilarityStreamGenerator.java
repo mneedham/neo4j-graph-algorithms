@@ -6,6 +6,7 @@ import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.QueueBasedSpliterator;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.impl.util.TopKConsumer;
+import org.neo4j.helpers.collection.Pair;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -154,7 +155,7 @@ public class SimilarityStreamGenerator<T> {
         RleDecoder decoder = decoderFactory.get();
 
         IntStream sourceRange = sourceIndexIds.length > 0 ? Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
-        Function<Integer, IntStream> targetRange = (sourceId) -> targetIndexIds.length > 0 ? Arrays.stream(targetIndexIds) : IntStream.range(sourceId + 1, length);
+        Function<Integer, IntStream> targetRange = (sourceId) -> targetIndexIds.length > 0 ? Arrays.stream(targetIndexIds) : IntStream.range(0, length);
 
         return sourceRange.boxed().flatMap(sourceId -> targetRange.apply(sourceId)
                 .mapToObj(targetId -> sourceId == targetId ? null : computer.similarity(decoder, inputs[sourceId], inputs[targetId], cutoff))
@@ -215,7 +216,7 @@ public class SimilarityStreamGenerator<T> {
                 Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
 
         Function<Integer, IntStream> targetRange = (sourceId) -> targetIndexIds.length > 0 ?
-                Arrays.stream(targetIndexIds) : IntStream.range(sourceId + 1, length);
+                Arrays.stream(targetIndexIds) : IntStream.range(0, length);
 
         int sourceIdsLength = sourceIndexIds.length > 0 ? sourceIndexIds.length : length;
 
