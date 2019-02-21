@@ -21,7 +21,7 @@ package org.neo4j.graphalgo.similarity;
 import org.neo4j.graphalgo.core.utils.Intersections;
 
 import java.util.Arrays;
-import java.util.List;
+
 
 
 public class CategoricalInput implements  Comparable<CategoricalInput>, SimilarityInput {

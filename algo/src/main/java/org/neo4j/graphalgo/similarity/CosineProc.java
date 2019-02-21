@@ -87,7 +87,7 @@ public class CosineProc extends SimilarityProc {
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
         int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
         int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
-        
+
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue, sourceIndexIds, targetIndexIds);
         SimilarityRecorder<WeightedInput> recorder = similarityRecorder(computer, configuration);
 
