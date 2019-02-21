@@ -87,7 +87,6 @@ public class SimilarityStreamGenerator<T> {
     }
 
     private Stream<SimilarityResult> similarityParallelStream(T[] inputs, int length, TerminationFlag terminationFlag, int concurrency, double cutoff, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
-
         int timeout = 100;
         int queueSize = 1000;
 
@@ -160,8 +159,8 @@ public class SimilarityStreamGenerator<T> {
                 .filter(Objects::nonNull));
     }
 
-    private IntStream idRange(int[] sourceIndexIds, int length) {
-        return sourceIndexIds.length > 0 ? Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
+    private IntStream idRange(int[] indexIds, int length) {
+        return indexIds.length > 0 ? Arrays.stream(indexIds) : IntStream.range(0, length);
     }
 
     private Function<Integer, IntStream> targetRange(int[] targetIndexIds, int length) {
