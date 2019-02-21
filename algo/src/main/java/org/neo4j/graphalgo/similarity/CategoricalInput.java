@@ -54,8 +54,6 @@ public class CategoricalInput implements  Comparable<CategoricalInput>, Similari
     }
 
     SimilarityResult overlap(double similarityCutoff, CategoricalInput e2, boolean inferReverse) {
-        System.out.println(this.id + "-> " + e2.id);
-
         long intersection = Intersections.intersection3(targets, e2.targets);
         if (similarityCutoff >= 0d && intersection == 0) return null;
         int count1 = targets.length;

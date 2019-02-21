@@ -6,7 +6,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-class NewTopKTask<T> implements Runnable {
+class SourceTargetTopKTask<T> implements Runnable {
     private SimilarityProc similarityProc;
     private final int batchSize;
     private final int taskOffset;
@@ -20,7 +20,7 @@ class NewTopKTask<T> implements Runnable {
     private final Function<Integer, IntStream> targetRange;
     private final TopKConsumer<SimilarityResult>[] topKConsumers;
 
-    NewTopKTask(int batchSize, int taskOffset, int multiplier, int length, T[] ids, double similiarityCutoff, int topK, SimilarityComputer<T> computer, RleDecoder decoder, Supplier<IntStream> sourceRange, Function<Integer, IntStream> targetRange) {
+    SourceTargetTopKTask(int batchSize, int taskOffset, int multiplier, int length, T[] ids, double similiarityCutoff, int topK, SimilarityComputer<T> computer, RleDecoder decoder, Supplier<IntStream> sourceRange, Function<Integer, IntStream> targetRange) {
         this.batchSize = batchSize;
         this.taskOffset = taskOffset;
         this.multiplier = multiplier;
