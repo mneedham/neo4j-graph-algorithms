@@ -6,7 +6,6 @@ import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.QueueBasedSpliterator;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.impl.util.TopKConsumer;
-import org.neo4j.helpers.collection.Pair;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -154,20 +153,28 @@ public class SimilarityStreamGenerator<T> {
     private Stream<SimilarityResult> similarityStream(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, int length, double cutoff, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
         RleDecoder decoder = decoderFactory.get();
 
-        IntStream sourceRange = sourceIndexIds.length > 0 ? Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
-        Function<Integer, IntStream> targetRange = (sourceId) -> targetIndexIds.length > 0 ? Arrays.stream(targetIndexIds) : IntStream.range(0, length);
+        IntStream sourceRange = idRange(sourceIndexIds, length);
+        Function<Integer, IntStream> targetRange = targetRange(targetIndexIds, length);
 
         return sourceRange.boxed().flatMap(sourceId -> targetRange.apply(sourceId)
                 .mapToObj(targetId -> sourceId == targetId ? null : computer.similarity(decoder, inputs[sourceId], inputs[targetId], cutoff))
                 .filter(Objects::nonNull));
     }
 
+    private IntStream idRange(int[] sourceIndexIds, int length) {
+        return sourceIndexIds.length > 0 ? Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
+    }
+
+    private Function<Integer, IntStream> targetRange(int[] targetIndexIds, int length) {
+        return (sourceId) -> idRange(targetIndexIds, length);
+    }
+
     private Stream<SimilarityResult> similarityStreamTopK(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, int length, double cutoff, int topK, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
         TopKConsumer<SimilarityResult>[] topKHolder = initializeTopKConsumers(length, topK);
         RleDecoder decoder = decoderFactory.get();
 
-        IntStream sourceRange = sourceIndexIds.length > 0 ? Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
-        Function<Integer, IntStream> targetRange = (sourceId) -> targetIndexIds.length > 0 ? Arrays.stream(targetIndexIds) : IntStream.range(sourceId + 1, length);
+        IntStream sourceRange = idRange(sourceIndexIds, length);
+        Function<Integer, IntStream> targetRange = targetRange(targetIndexIds, length);
 
         SimilarityConsumer consumer = assignSimilarityPairs(topKHolder);
         sourceRange.forEach(sourceId -> computeSimilarityForSourceIndex(sourceId, inputs, cutoff, consumer, computer, decoder, targetRange));
@@ -211,12 +218,8 @@ public class SimilarityStreamGenerator<T> {
     }
 
     private  Stream<SimilarityResult> similarityParallelStream(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, int length, TerminationFlag terminationFlag, int concurrency, double cutoff, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
-
-        Supplier<IntStream> sourceRange = () ->  sourceIndexIds.length > 0 ?
-                Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
-
-        Function<Integer, IntStream> targetRange = (sourceId) -> targetIndexIds.length > 0 ?
-                Arrays.stream(targetIndexIds) : IntStream.range(0, length);
+        Supplier<IntStream> sourceRange = () -> idRange(sourceIndexIds, length);
+        Function<Integer, IntStream> targetRange = targetRange(targetIndexIds, length);
 
         int sourceIdsLength = sourceIndexIds.length > 0 ? sourceIndexIds.length : length;
 
@@ -262,11 +265,8 @@ public class SimilarityStreamGenerator<T> {
     }
 
     private Stream<SimilarityResult> similarityParallelStreamTopK(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, int length, TerminationFlag terminationFlag, int concurrency, double cutoff, int topK, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
-        Supplier<IntStream> sourceRange = () ->  sourceIndexIds.length > 0 ?
-                Arrays.stream(sourceIndexIds) : IntStream.range(0, length);
-
-        Function<Integer, IntStream> targetRange = (sourceId) -> targetIndexIds.length > 0 ?
-                Arrays.stream(targetIndexIds) : IntStream.range(sourceId + 1, length);
+        Supplier<IntStream> sourceRange = () -> idRange(sourceIndexIds, length);
+        Function<Integer, IntStream> targetRange = targetRange(targetIndexIds, length);
 
         int sourceIdsLength = sourceIndexIds.length > 0 ? sourceIndexIds.length : length;
 
