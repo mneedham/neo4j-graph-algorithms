@@ -45,7 +45,7 @@ public class JaccardProc extends SimilarityProc {
             return Stream.empty();
         }
 
-        long[] inputIds = SimilarityInput.extractInputIds(inputs);
+        long[] inputIds = SimilarityInput.extractInputIds(inputs); 
         int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
         int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
 
