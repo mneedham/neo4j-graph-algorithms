@@ -139,11 +139,6 @@ public class SimilarityProc {
         return configuration.get("similarityCutoff", -1D);
     }
 
-    <T> Stream<SimilarityResult> similarityStream(T[] inputs, SimilarityComputer<T> computer, ProcedureConfiguration configuration, Supplier<RleDecoder> decoderFactory, double cutoff, int topK) {
-        TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        return new SimilarityStreamGenerator<>(terminationFlag, configuration, decoderFactory, computer).stream(inputs, cutoff, topK);
-    }
-
     <T> Stream<SimilarityResult> similarityStream(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, SimilarityComputer<T> computer, ProcedureConfiguration configuration, Supplier<RleDecoder> decoderFactory, double cutoff, int topK) {
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
 
