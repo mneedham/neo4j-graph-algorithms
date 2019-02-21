@@ -134,7 +134,7 @@ class WeightedInput implements Comparable<WeightedInput>, SimilarityInput {
         return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, cosineSquares, bidirectional, false);
     }
 
-    public SimilarityResult pearson(RleDecoder decoder, double similarityCutoff, WeightedInput other) {
+    public SimilarityResult pearson(RleDecoder decoder, double similarityCutoff, WeightedInput other, boolean bidirectional) {
         double[] thisWeights = weights;
         double[] otherWeights = other.weights;
         if (decoder != null) {
@@ -148,10 +148,10 @@ class WeightedInput implements Comparable<WeightedInput>, SimilarityInput {
 
         if (similarityCutoff >= 0d && (pearson == 0 || pearson < similarityCutoff)) return null;
 
-        return new SimilarityResult(id, other.id, itemCount, other.itemCount, 0, pearson);
+        return new SimilarityResult(id, other.id, itemCount, other.itemCount, 0, pearson, bidirectional, false);
     }
 
-    public SimilarityResult pearsonSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, Double skipValue) {
+    public SimilarityResult pearsonSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, Double skipValue, boolean bidirectional) {
         double[] thisWeights = weights;
         double[] otherWeights = other.weights;
         if (decoder != null) {
@@ -165,7 +165,7 @@ class WeightedInput implements Comparable<WeightedInput>, SimilarityInput {
 
         if (similarityCutoff >= 0d && (pearson == 0 || pearson < similarityCutoff)) return null;
 
-        return new SimilarityResult(id, other.id, itemCount, other.itemCount, 0, pearson);
+        return new SimilarityResult(id, other.id, itemCount, other.itemCount, 0, pearson, bidirectional, false);
     }
 
     @Override

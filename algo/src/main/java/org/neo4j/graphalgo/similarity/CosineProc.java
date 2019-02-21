@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.neo4j.graphalgo.similarity.SimilarityInput.indexesFor;
+
 public class CosineProc extends SimilarityProc {
 
     @Procedure(name = "algo.similarity.cosine.stream", mode = Mode.READ)
@@ -52,7 +54,7 @@ public class CosineProc extends SimilarityProc {
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
         int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
         int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
-        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue,sourceIndexIds, targetIndexIds);
+        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue, sourceIndexIds, targetIndexIds);
 
         double similarityCutoff = similarityCutoff(configuration);
         int topN = getTopN(configuration);
@@ -61,10 +63,7 @@ public class CosineProc extends SimilarityProc {
         return generateWeightedStream(configuration, inputs, sourceIndexIds, targetIndexIds,  similarityCutoff, topN, topK, computer);
     }
 
-    private int[] indexesFor(ProcedureConfiguration configuration, long[] inputIds, String key) {
-        List<Long> sourceIds = configuration.get(key, Collections.emptyList());
-        return SimilarityInput.indexes(inputIds, sourceIds);
-    }
+
 
     @Procedure(name = "algo.similarity.cosine", mode = Mode.WRITE)
     @Description("CALL algo.similarity.cosine([{item:id, weights:[weights]}], {similarityCutoff:-1,degreeCutoff:0}) " +

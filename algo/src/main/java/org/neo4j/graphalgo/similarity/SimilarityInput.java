@@ -1,6 +1,9 @@
 package org.neo4j.graphalgo.similarity;
 
+import org.neo4j.graphalgo.core.ProcedureConfiguration;
+
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public interface SimilarityInput {
@@ -20,8 +23,14 @@ public interface SimilarityInput {
 
         return Arrays.copyOfRange(indexes, 0, indexesFound);
     }
+
     static long[] extractInputIds(SimilarityInput[] inputs) {
         return Arrays.stream(inputs).mapToLong(SimilarityInput::getId).toArray();
+    }
+
+    static int[] indexesFor(ProcedureConfiguration configuration, long[] inputIds, String key) {
+        List<Long> sourceIds = configuration.get(key, Collections.emptyList());
+        return indexes(inputIds, sourceIds);
     }
 
 }
