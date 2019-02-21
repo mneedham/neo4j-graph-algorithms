@@ -66,7 +66,7 @@ class WeightedInput implements Comparable<WeightedInput>, SimilarityInput {
         return Long.compare(id, o.id);
     }
 
-    public SimilarityResult sumSquareDeltaSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, double skipValue) {
+    public SimilarityResult sumSquareDeltaSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, double skipValue, boolean bidirectional) {
         double[] thisWeights = weights;
         double[] otherWeights = other.weights;
         if (decoder != null) {
@@ -80,10 +80,10 @@ class WeightedInput implements Comparable<WeightedInput>, SimilarityInput {
         long intersection = 0;
 
         if (similarityCutoff >= 0d && sumSquareDelta > similarityCutoff) return null;
-        return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, sumSquareDelta);
+        return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, sumSquareDelta,bidirectional, false);
     }
 
-    public SimilarityResult sumSquareDelta(RleDecoder decoder, double similarityCutoff, WeightedInput other) {
+    public SimilarityResult sumSquareDelta(RleDecoder decoder, double similarityCutoff, WeightedInput other, boolean bidirectional) {
         double[] thisWeights = weights;
         double[] otherWeights = other.weights;
         if (decoder != null) {
@@ -97,7 +97,7 @@ class WeightedInput implements Comparable<WeightedInput>, SimilarityInput {
         long intersection = 0;
 
         if (similarityCutoff >= 0d && sumSquareDelta > similarityCutoff) return null;
-        return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, sumSquareDelta);
+        return new SimilarityResult(id, other.id, itemCount, other.itemCount, intersection, sumSquareDelta, bidirectional, false);
     }
 
     public SimilarityResult cosineSquaresSkip(RleDecoder decoder, double similarityCutoff, WeightedInput other, double skipValue, boolean bidirectional) {
