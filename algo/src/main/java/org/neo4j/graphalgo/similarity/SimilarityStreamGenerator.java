@@ -5,7 +5,6 @@ import org.neo4j.graphalgo.core.utils.ParallelUtil;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.QueueBasedSpliterator;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
-import org.neo4j.graphalgo.impl.util.TopKConsumer;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -70,10 +69,10 @@ public class SimilarityStreamGenerator<T> {
     // All Pairs
 
     private Stream<SimilarityResult> similarityStreamTopK(T[] inputs, int length, double cutoff, int topK, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
-        TopKConsumer<SimilarityResult>[] topKHolder = initializeTopKConsumers(length, topK);
+        TopKConsumer<SimilarityResult>[] topKHolder = TopKConsumer.initializeTopKConsumers(length, topK);
         RleDecoder decoder = decoderFactory.get();
 
-        SimilarityConsumer consumer = assignSimilarityPairs(topKHolder);
+        SimilarityConsumer consumer = TopKConsumer.assignSimilarityPairs(topKHolder);
         for (int sourceId = 0; sourceId < length; sourceId++) {
             computeSimilarityForSourceIndex(sourceId, inputs, length, cutoff, consumer, computer, decoder);
         }
@@ -130,11 +129,11 @@ public class SimilarityStreamGenerator<T> {
 
         int multiplier = batchSize < length ? batchSize : 1;
         for (int taskId = 0; taskId < taskCount; taskId++) {
-            tasks.add(new TopKTask(batchSize, taskId, multiplier, length, inputs, cutoff, topK, computer, decoderFactory.get()));
+            tasks.add(new TopKTask<>(batchSize, taskId, multiplier, length, inputs, cutoff, topK, computer, decoderFactory.get()));
         }
         ParallelUtil.runWithConcurrency(concurrency, tasks, terminationFlag, Pools.DEFAULT);
 
-        TopKConsumer<SimilarityResult>[] topKConsumers = initializeTopKConsumers(length, topK);
+        TopKConsumer<SimilarityResult>[] topKConsumers = TopKConsumer.initializeTopKConsumers(length, topK);
         for (Runnable task : tasks) ((TopKTask) task).mergeInto(topKConsumers);
         return Arrays.stream(topKConsumers).flatMap(TopKConsumer::stream);
     }
@@ -170,13 +169,13 @@ public class SimilarityStreamGenerator<T> {
     }
 
     private Stream<SimilarityResult> similarityStreamTopK(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, int length, double cutoff, int topK, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
-        TopKConsumer<SimilarityResult>[] topKHolder = initializeTopKConsumers(length, topK);
+        TopKConsumer<SimilarityResult>[] topKHolder = TopKConsumer.initializeTopKConsumers(length, topK);
         RleDecoder decoder = decoderFactory.get();
 
         IntStream sourceRange = idRange(sourceIndexIds, length);
         Function<Integer, IntStream> targetRange = targetRange(targetIndexIds, length);
 
-        SimilarityConsumer consumer = assignSimilarityPairs(topKHolder);
+        SimilarityConsumer consumer = TopKConsumer.assignSimilarityPairs(topKHolder);
         sourceRange.forEach(sourceId -> computeSimilarityForSourceIndex(sourceId, inputs, cutoff, consumer, computer, decoder, targetRange));
 
         return Arrays.stream(topKHolder).flatMap(TopKConsumer::stream);
@@ -193,28 +192,6 @@ public class SimilarityStreamGenerator<T> {
                 }
             }
         });
-    }
-
-    private static SimilarityConsumer assignSimilarityPairs(TopKConsumer<SimilarityResult>[] topKConsumers) {
-        return (s, t, result) -> {
-
-            int selectedIndex = result.reversed ? t : s;
-            topKConsumers[selectedIndex].accept(result);
-
-            if (result.bidirectional) {
-                SimilarityResult reverse = result.reverse();
-                topKConsumers[reverse.reversed ? t : s].accept(reverse);
-            }
-        };
-    }
-
-    private TopKConsumer<SimilarityResult>[] initializeTopKConsumers(int length, int topK) {
-        Comparator<SimilarityResult> comparator = topK > 0 ? SimilarityResult.DESCENDING : SimilarityResult.ASCENDING;
-        topK = Math.abs(topK);
-
-        TopKConsumer<SimilarityResult>[] results = new TopKConsumer[length];
-        for (int i = 0; i < results.length; i++) results[i] = new TopKConsumer<>(topK, comparator);
-        return results;
     }
 
     private  Stream<SimilarityResult> similarityParallelStream(T[] inputs, int[] sourceIndexIds, int[] targetIndexIds, int length, TerminationFlag terminationFlag, int concurrency, double cutoff, SimilarityComputer<T> computer, Supplier<RleDecoder> decoderFactory) {
@@ -276,11 +253,11 @@ public class SimilarityStreamGenerator<T> {
 
         int multiplier = batchSize < sourceIdsLength ? batchSize : 1;
         for (int taskId = 0; taskId < taskCount; taskId++) {
-            tasks.add(new SourceTargetTopKTask(batchSize, taskId, multiplier, length, inputs, cutoff, topK, computer, decoderFactory.get(), sourceRange, targetRange));
+            tasks.add(new SourceTargetTopKTask<>(batchSize, taskId, multiplier, length, inputs, cutoff, topK, computer, decoderFactory.get(), sourceRange, targetRange));
         }
         ParallelUtil.runWithConcurrency(concurrency, tasks, terminationFlag, Pools.DEFAULT);
 
-        TopKConsumer<SimilarityResult>[] topKConsumers = initializeTopKConsumers(length, topK);
+        TopKConsumer<SimilarityResult>[] topKConsumers = TopKConsumer.initializeTopKConsumers(length, topK);
         for (Runnable task : tasks) ((SourceTargetTopKTask) task).mergeInto(topKConsumers);
         return Arrays.stream(topKConsumers).flatMap(TopKConsumer::stream);
     }

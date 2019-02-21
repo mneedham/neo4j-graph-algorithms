@@ -1,7 +1,5 @@
 package org.neo4j.graphalgo.similarity;
 
-import org.neo4j.graphalgo.impl.util.TopKConsumer;
-
 import static org.neo4j.graphalgo.similarity.SimilarityStreamGenerator.computeSimilarityForSourceIndex;
 
 class TopKTask<T> implements Runnable {

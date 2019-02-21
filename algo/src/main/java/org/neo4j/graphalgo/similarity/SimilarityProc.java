@@ -26,7 +26,6 @@ import org.HdrHistogram.DoubleHistogram;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.ProcedureConstants;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
-import org.neo4j.graphalgo.impl.util.TopKConsumer;
 import org.neo4j.graphalgo.similarity.recorder.NonRecordingSimilarityRecorder;
 import org.neo4j.graphalgo.similarity.recorder.RecordingSimilarityRecorder;
 import org.neo4j.graphalgo.similarity.recorder.SimilarityRecorder;
@@ -42,7 +41,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static org.neo4j.graphalgo.impl.util.TopKConsumer.topK;
+import static org.neo4j.graphalgo.similarity.TopKConsumer.topK;
 import static org.neo4j.graphalgo.similarity.Weights.REPEAT_CUTOFF;
 
 public class SimilarityProc {

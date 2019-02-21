@@ -1,17 +1,13 @@
 package org.neo4j.graphalgo.similarity;
 
-import org.neo4j.graphalgo.impl.util.TopKConsumer;
-
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 class SourceTargetTopKTask<T> implements Runnable {
-    private SimilarityProc similarityProc;
     private final int batchSize;
     private final int taskOffset;
     private final int multiplier;
-    private final int length;
     private final T[] ids;
     private final double similiarityCutoff;
     private final SimilarityComputer<T> computer;
@@ -24,7 +20,6 @@ class SourceTargetTopKTask<T> implements Runnable {
         this.batchSize = batchSize;
         this.taskOffset = taskOffset;
         this.multiplier = multiplier;
-        this.length = length;
         this.ids = ids;
         this.similiarityCutoff = similiarityCutoff;
         this.computer = computer;
