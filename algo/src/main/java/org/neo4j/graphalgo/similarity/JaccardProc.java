@@ -45,7 +45,7 @@ public class JaccardProc extends SimilarityProc {
             return Stream.empty();
         }
 
-        long[] inputIds = CategoricalInput.extractInputIds(inputs);
+        long[] inputIds = SimilarityInput.extractInputIds(inputs);
         int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
         int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
 
@@ -57,7 +57,7 @@ public class JaccardProc extends SimilarityProc {
 
     private int[] indexesFor(ProcedureConfiguration configuration, long[] inputIds, String key) {
         List<Long> sourceIds = configuration.get(key, Collections.emptyList());
-        return CategoricalInput.indexes(inputIds, sourceIds);
+        return SimilarityInput.indexes(inputIds, sourceIds);
     }
 
     @Procedure(name = "algo.similarity.jaccard", mode = Mode.WRITE)
@@ -75,7 +75,7 @@ public class JaccardProc extends SimilarityProc {
             return emptyStream(writeRelationshipType, writeProperty);
         }
 
-        long[] inputIds = CategoricalInput.extractInputIds(inputs);
+        long[] inputIds = SimilarityInput.extractInputIds(inputs);
         int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
         int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
 

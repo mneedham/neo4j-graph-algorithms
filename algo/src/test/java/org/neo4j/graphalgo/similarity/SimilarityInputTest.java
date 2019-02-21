@@ -5,9 +5,9 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static org.junit.Assert.*;
-import static org.neo4j.graphalgo.similarity.CategoricalInput.extractInputIds;
+import static org.neo4j.graphalgo.similarity.SimilarityInput.extractInputIds;
 
-public class CategoricalInputTest {
+public class SimilarityInputTest {
 
     @Test
     public void findOneItem() {
@@ -16,7 +16,7 @@ public class CategoricalInputTest {
         ids[1] = new CategoricalInput(6, new long[]{});
         ids[2] = new CategoricalInput(7, new long[]{});
 
-        int[] indexes = CategoricalInput.indexes(extractInputIds(ids), Arrays.asList( 5L));
+        int[] indexes = SimilarityInput.indexes(extractInputIds(ids), Arrays.asList( 5L));
 
         assertArrayEquals(indexes, new int[] {0});
     }
@@ -30,7 +30,7 @@ public class CategoricalInputTest {
         ids[3] = new CategoricalInput(8, new long[]{});
         ids[4] = new CategoricalInput(9, new long[]{});
 
-        int[] indexes = CategoricalInput.indexes(extractInputIds(ids), Arrays.asList( 5L, 9L));
+        int[] indexes = SimilarityInput.indexes(extractInputIds(ids), Arrays.asList( 5L, 9L));
 
         assertArrayEquals(indexes, new int[] {0, 4});
     }
@@ -44,7 +44,7 @@ public class CategoricalInputTest {
         ids[3] = new CategoricalInput(8, new long[]{});
         ids[4] = new CategoricalInput(9, new long[]{});
 
-        int[] indexes = CategoricalInput.indexes(extractInputIds(ids), Arrays.asList( 10L));
+        int[] indexes = SimilarityInput.indexes(extractInputIds(ids), Arrays.asList( 10L));
 
         assertArrayEquals(indexes, new int[] {});
     }
@@ -58,7 +58,7 @@ public class CategoricalInputTest {
         ids[3] = new CategoricalInput(8, new long[]{});
         ids[4] = new CategoricalInput(9, new long[]{});
 
-        int[] indexes = CategoricalInput.indexes(extractInputIds(ids), Arrays.asList( 10L ,11L, -1L, 29L));
+        int[] indexes = SimilarityInput.indexes(extractInputIds(ids), Arrays.asList( 10L ,11L, -1L, 29L));
 
         assertArrayEquals(indexes, new int[] {});
     }
@@ -72,7 +72,7 @@ public class CategoricalInputTest {
         ids[3] = new CategoricalInput(8, new long[]{});
         ids[4] = new CategoricalInput(9, new long[]{});
 
-        int[] indexes = CategoricalInput.indexes(extractInputIds(ids), Arrays.asList( 10L ,5L, 7L, 12L));
+        int[] indexes = SimilarityInput.indexes(extractInputIds(ids), Arrays.asList( 10L ,5L, 7L, 12L));
 
         assertArrayEquals(indexes, new int[] {0, 2});
     }

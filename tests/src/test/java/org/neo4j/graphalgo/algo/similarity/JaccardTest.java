@@ -182,7 +182,7 @@ public class JaccardTest {
     }
 
     @Test
-    public void jaccardStreamTestSourceTargetIds() {
+    public void jaccardStreamSourceTargetIdsTest() {
         Result results = db.execute(STATEMENT_STREAM, map("config",map(
                 "concurrency",1,
                 "targetIds", Collections.singletonList(1L),
@@ -194,7 +194,7 @@ public class JaccardTest {
     }
 
     @Test
-    public void jaccardStreamTestSourceTargetIdsTopK() {
+    public void jaccardStreamSourceTargetIdsTopKTest() {
         Result results = db.execute(STATEMENT_STREAM, map("config",map(
                 "concurrency",1,
                 "topK", 1,

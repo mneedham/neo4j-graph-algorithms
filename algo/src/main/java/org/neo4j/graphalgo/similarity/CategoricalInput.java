@@ -24,32 +24,13 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class CategoricalInput implements  Comparable<CategoricalInput> {
+public class CategoricalInput implements  Comparable<CategoricalInput>, SimilarityInput {
     long id;
     long[] targets;
 
     public CategoricalInput(long id, long[] targets) {
         this.id = id;
         this.targets = targets;
-    }
-
-    public static long[] extractInputIds(CategoricalInput[] inputs) {
-        return Arrays.stream(inputs).mapToLong(input -> input.id).toArray();
-    }
-
-    public static int[] indexes(long[] inputIds, List<Long> idsToFind) {
-        int[] indexes = new int[idsToFind.size()];
-
-        int indexesFound = 0;
-        for (int i = 0; i < idsToFind.size(); i++) {
-            int index = Arrays.binarySearch(inputIds, idsToFind.get(i));
-            if (index >= 0) {
-                indexes[indexesFound] = index;
-                indexesFound++;
-            }
-        }
-
-        return Arrays.copyOfRange(indexes, 0, indexesFound);
     }
 
     public long getId() {

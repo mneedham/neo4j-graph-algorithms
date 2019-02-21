@@ -25,6 +25,8 @@ import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -47,12 +49,21 @@ public class CosineProc extends SimilarityProc {
             return Stream.empty();
         }
 
+        long[] inputIds = SimilarityInput.extractInputIds(inputs);
+        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
+        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue,sourceIndexIds, targetIndexIds);
+
         double similarityCutoff = similarityCutoff(configuration);
         int topN = getTopN(configuration);
         int topK = getTopK(configuration);
-        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
 
-        return generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, computer);
+        return generateWeightedStream(configuration, inputs, sourceIndexIds, targetIndexIds,  similarityCutoff, topN, topK, computer);
+    }
+
+    private int[] indexesFor(ProcedureConfiguration configuration, long[] inputIds, String key) {
+        List<Long> sourceIds = configuration.get(key, Collections.emptyList());
+        return SimilarityInput.indexes(inputIds, sourceIds);
     }
 
     @Procedure(name = "algo.similarity.cosine", mode = Mode.WRITE)
@@ -73,30 +84,37 @@ public class CosineProc extends SimilarityProc {
             return emptyStream(writeRelationshipType, writeProperty);
         }
 
+        long[] inputIds = SimilarityInput.extractInputIds(inputs);
+        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
+        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+        
+        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue, sourceIndexIds, targetIndexIds);
+        SimilarityRecorder<WeightedInput> recorder = similarityRecorder(computer, configuration);
+
         double similarityCutoff = similarityCutoff(configuration);
         int topN = getTopN(configuration);
         int topK = getTopK(configuration);
 
-        SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
-        SimilarityRecorder<WeightedInput> recorder = similarityRecorder(computer, configuration);
 
-        Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, recorder);
+        Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, sourceIndexIds, targetIndexIds, similarityCutoff, topN, topK, recorder);
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
         return writeAndAggregateResults(stream, inputs.length, configuration, write, writeRelationshipType, writeProperty, recorder);
     }
 
-    private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
+    private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue, int[] sourceIndexIds, int[] targetIndexIds) {
+        boolean bidirectional = sourceIndexIds.length == 0 && targetIndexIds.length == 0;
+
         return skipValue == null ?
-                (decoder, s, t, cutoff) -> s.cosineSquares(decoder, cutoff, t) :
-                (decoder, s, t, cutoff) -> s.cosineSquaresSkip(decoder, cutoff, t, skipValue);
+                (decoder, s, t, cutoff) -> s.cosineSquares(decoder, cutoff, t, bidirectional) :
+                (decoder, s, t, cutoff) -> s.cosineSquaresSkip(decoder, cutoff, t, skipValue, bidirectional);
     }
 
     Stream<SimilarityResult> generateWeightedStream(ProcedureConfiguration configuration, WeightedInput[] inputs,
-                                                    double similarityCutoff, int topN, int topK,
+                                                    int[] sourceIndexIds, int[] targetIndexIds, double similarityCutoff, int topN, int topK,
                                                     SimilarityComputer<WeightedInput> computer) {
         Supplier<RleDecoder> decoderFactory = createDecoderFactory(configuration, inputs[0]);
-        return topN(similarityStream(inputs, computer, configuration, decoderFactory, similarityCutoff, topK), topN)
+        return topN(similarityStream(inputs, sourceIndexIds, targetIndexIds, computer, configuration, decoderFactory, similarityCutoff, topK), topN)
                 .map(SimilarityResult::squareRooted);
     }
 
