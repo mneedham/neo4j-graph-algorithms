@@ -386,10 +386,6 @@ public class SimilarityProc {
         return createDecoderFactory(configuration.getGraphName("dense"), size);
     }
 
-    interface SimilarityComputer<T> {
-        SimilarityResult similarity(RleDecoder decoder, T source, T target, double cutoff);
-    }
-
     public static SimilarityConsumer assignSimilarityPairs(TopKConsumer<SimilarityResult>[] topKConsumers) {
         return (s, t, result) -> {
             topKConsumers[result.reversed ? t : s].accept(result);

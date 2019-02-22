@@ -1,13 +1,17 @@
-package org.neo4j.graphalgo.similarity;
+package org.neo4j.graphalgo.similarity.recorder;
+
+import org.neo4j.graphalgo.similarity.RleDecoder;
+import org.neo4j.graphalgo.similarity.SimilarityComputer;
+import org.neo4j.graphalgo.similarity.SimilarityResult;
 
 import java.util.concurrent.atomic.LongAdder;
 
 public class RecordingSimilarityRecorder<T> implements SimilarityRecorder<T> {
 
-    private final SimilarityProc.SimilarityComputer computer;
+    private final SimilarityComputer<T> computer;
     private final LongAdder computations = new LongAdder();
 
-    public RecordingSimilarityRecorder(SimilarityProc.SimilarityComputer computer) {
+    public RecordingSimilarityRecorder(SimilarityComputer computer) {
         this.computer = computer;
     }
 

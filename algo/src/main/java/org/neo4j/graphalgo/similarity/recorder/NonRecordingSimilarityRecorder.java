@@ -1,9 +1,13 @@
-package org.neo4j.graphalgo.similarity;
+package org.neo4j.graphalgo.similarity.recorder;
+
+import org.neo4j.graphalgo.similarity.RleDecoder;
+import org.neo4j.graphalgo.similarity.SimilarityComputer;
+import org.neo4j.graphalgo.similarity.SimilarityResult;
 
 public class NonRecordingSimilarityRecorder<T> implements SimilarityRecorder<T> {
-    private final SimilarityProc.SimilarityComputer computer;
+    private final SimilarityComputer<T> computer;
 
-    public NonRecordingSimilarityRecorder(SimilarityProc.SimilarityComputer computer) {
+    public NonRecordingSimilarityRecorder(SimilarityComputer computer) {
         this.computer = computer;
     }
 
@@ -19,5 +23,3 @@ public class NonRecordingSimilarityRecorder<T> implements SimilarityRecorder<T> 
 }
 
 
-interface SimilarityRecorder<T> extends Computations, SimilarityProc.SimilarityComputer<T> {
-}

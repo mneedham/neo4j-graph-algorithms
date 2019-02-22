@@ -19,6 +19,9 @@
 package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
+import org.neo4j.graphalgo.similarity.recorder.NonRecordingSimilarityRecorder;
+import org.neo4j.graphalgo.similarity.recorder.RecordingSimilarityRecorder;
+import org.neo4j.graphalgo.similarity.recorder.SimilarityRecorder;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
