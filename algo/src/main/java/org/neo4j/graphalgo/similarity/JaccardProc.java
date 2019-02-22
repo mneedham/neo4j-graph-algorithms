@@ -67,7 +67,7 @@ public class JaccardProc extends SimilarityProc {
                 similarityCutoff, getTopK(configuration)), getTopN(configuration));
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
-        return writeAndAggregateResults(stream, inputs.length, configuration, write, writeRelationshipType, writeProperty );
+        return writeAndAggregateResults(stream, inputs.length, configuration, write, writeRelationshipType, writeProperty);
     }
 
     private SimilarityComputer<CategoricalInput> similarityComputer() {

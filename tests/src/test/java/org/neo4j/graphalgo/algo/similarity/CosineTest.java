@@ -56,7 +56,7 @@ public class CosineTest {
             "WITH collect(userData) as data\n" +
 
             "CALL algo.similarity.cosine(data, $config) " +
-            "yield p25, p50, p75, p90, p95, p99, p999, p100, nodes, similarityPairs " +
+            "yield p25, p50, p75, p90, p95, p99, p999, p100, nodes, similarityPairs, computations " +
             "RETURN *";
 
     public static final String STORE_EMBEDDING_STATEMENT = "MATCH (i:Item) WITH i ORDER BY id(i) MATCH (p:Person) OPTIONAL MATCH (p)-[r:LIKES]->(i)\n" +
@@ -336,7 +336,10 @@ public class CosineTest {
     public void simpleCosineWriteTest() {
         Map<String, Object> params = map("config", map( "write",true, "similarityCutoff", 0.1));
 
-        db.execute(STATEMENT,params).close();
+        Result writeResult = db.execute(STATEMENT, params);
+        Map<String, Object> writeRow = writeResult.next();
+        assertEquals(6L, (long)writeRow.get("computations"));
+        writeResult.close();
 
         String checkSimilaritiesQuery = "MATCH (a)-[similar:SIMILAR]-(b)" +
                 "RETURN a.name AS node1, b.name as node2, similar.score AS score " +
