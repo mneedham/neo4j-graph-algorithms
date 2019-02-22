@@ -96,6 +96,11 @@ public class SimilarityProc {
         return showComputations ? new RecordingSimilarityRecorder<>(computer) : new NonRecordingSimilarityRecorder<>(computer);
     }
 
+    static SimilarityRecorder<CategoricalInput> categoricalSimilarityRecorder(SimilarityComputer<CategoricalInput> computer, ProcedureConfiguration configuration) {
+        boolean showComputations = configuration.get("showComputations", false);
+        return showComputations ? new RecordingSimilarityRecorder<>(computer) : new NonRecordingSimilarityRecorder<>(computer);
+    }
+
     Long getDegreeCutoff(ProcedureConfiguration configuration) {
         return configuration.get("degreeCutoff", 0L);
     }

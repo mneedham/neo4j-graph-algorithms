@@ -22,6 +22,7 @@ public class RecordingSimilarityRecorder<T> implements SimilarityRecorder<T> {
 
     @Override
     public SimilarityResult similarity(RleDecoder decoder, T source, T target, double cutoff) {
+        System.out.println(source  + " -> " + target);
         computations.increment();
         return computer.similarity(decoder, source, target, cutoff);
     }
