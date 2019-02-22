@@ -53,6 +53,10 @@ public class CategoricalInput implements  Comparable<CategoricalInput>, Similari
         return new SimilarityResult(id, e2.id, count1, count2, intersection, jaccard, bidirectional, false);
     }
 
+    SimilarityResult overlap(double similarityCutoff, CategoricalInput e2) {
+    return overlap(similarityCutoff, e2, true);
+    }
+
     SimilarityResult overlap(double similarityCutoff, CategoricalInput e2, boolean inferReverse) {
         long intersection = Intersections.intersection3(targets, e2.targets);
         if (similarityCutoff >= 0d && intersection == 0) return null;

@@ -94,6 +94,6 @@ public class OverlapProc extends SimilarityProc {
         if(sourceIndexIds.length > 0 || targetIndexIds.length > 0 ) {
             return (decoder, s, t, cutoff) -> s.overlap(cutoff, t, false);
         }
-        return (decoder, s, t, cutoff) -> s.overlap(cutoff, t, false);
+        return (decoder, s, t, cutoff) -> s.overlap(cutoff, t);
     }
 }
