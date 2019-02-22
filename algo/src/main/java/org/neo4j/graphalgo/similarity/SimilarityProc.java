@@ -30,6 +30,9 @@ import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.QueueBasedSpliterator;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.impl.util.TopKConsumer;
+import org.neo4j.graphalgo.similarity.recorder.NonRecordingSimilarityRecorder;
+import org.neo4j.graphalgo.similarity.recorder.RecordingSimilarityRecorder;
+import org.neo4j.graphalgo.similarity.recorder.SimilarityRecorder;
 import org.neo4j.graphdb.Result;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -86,6 +89,11 @@ public class SimilarityProc {
         } catch (InterruptedException e) {
             // ignore
         }
+    }
+
+    static SimilarityRecorder<WeightedInput> similarityRecorder(SimilarityComputer<WeightedInput> computer, ProcedureConfiguration configuration) {
+        boolean showComputations = configuration.get("showComputations", false);
+        return showComputations ? new RecordingSimilarityRecorder<>(computer) : new NonRecordingSimilarityRecorder<>(computer);
     }
 
     Long getDegreeCutoff(ProcedureConfiguration configuration) {

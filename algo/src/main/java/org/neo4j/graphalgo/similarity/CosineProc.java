@@ -19,8 +19,6 @@
 package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
-import org.neo4j.graphalgo.similarity.recorder.NonRecordingSimilarityRecorder;
-import org.neo4j.graphalgo.similarity.recorder.RecordingSimilarityRecorder;
 import org.neo4j.graphalgo.similarity.recorder.SimilarityRecorder;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
@@ -80,17 +78,12 @@ public class CosineProc extends SimilarityProc {
         int topK = getTopK(configuration);
 
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
-        boolean showComputations = configuration.get("showComputations", false);
-        SimilarityRecorder<WeightedInput> recordingSimilarityRecorder = similarityRecorder(computer, showComputations);
+        SimilarityRecorder<WeightedInput> recorder = similarityRecorder(computer, configuration);
 
-        Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, recordingSimilarityRecorder);
+        Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, recorder);
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
-        return writeAndAggregateResults(stream, inputs.length, configuration, write, writeRelationshipType, writeProperty, recordingSimilarityRecorder);
-    }
-
-    private SimilarityRecorder<WeightedInput> similarityRecorder(SimilarityComputer<WeightedInput> computer, boolean showComputations) {
-        return showComputations ? new RecordingSimilarityRecorder<>(computer) : new NonRecordingSimilarityRecorder<>(computer);
+        return writeAndAggregateResults(stream, inputs.length, configuration, write, writeRelationshipType, writeProperty, recorder);
     }
 
     private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {
