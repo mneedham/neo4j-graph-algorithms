@@ -38,7 +38,8 @@ public interface SimilarityInput {
         try {
             return indexes(inputIds, sourceIds);
         } catch(IllegalArgumentException exception) {
-            throw new RuntimeException(String.format(String.format("Missing node id in %s list ", key)), exception);
+            String message = String.format("%s: %s", String.format("Missing node id in '%s' list ", key), exception.getMessage());
+            throw new RuntimeException(new IllegalArgumentException(message));
         }
     }
 
