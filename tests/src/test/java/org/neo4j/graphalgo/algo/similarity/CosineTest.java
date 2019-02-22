@@ -333,13 +333,33 @@ public class CosineTest {
     }
 
     @Test
-    public void simpleCosineWriteTest() {
-        Map<String, Object> params = map("config", map( "write",true, "similarityCutoff", 0.1));
+    public void dontComputeComputationsByDefault() {
+        Map<String, Object> params = map("config", map(
+                "write", true,
+                "similarityCutoff", 0.1));
 
         Result writeResult = db.execute(STATEMENT, params);
         Map<String, Object> writeRow = writeResult.next();
-        assertEquals(6L, (long)writeRow.get("computations"));
-        writeResult.close();
+        assertEquals(-1L, (long) writeRow.get("computations"));
+    }
+
+    @Test
+    public void numberOfComputations() {
+        Map<String, Object> params = map("config", map(
+                "write", true,
+                "showComputations", true,
+                "similarityCutoff", 0.1));
+
+        Result writeResult = db.execute(STATEMENT, params);
+        Map<String, Object> writeRow = writeResult.next();
+        assertEquals(6L, (long) writeRow.get("computations"));
+    }
+
+    @Test
+    public void simpleCosineWriteTest() {
+        Map<String, Object> params = map("config", map( "write",true, "similarityCutoff", 0.1));
+
+        db.execute(STATEMENT, params).close();
 
         String checkSimilaritiesQuery = "MATCH (a)-[similar:SIMILAR]-(b)" +
                 "RETURN a.name AS node1, b.name as node2, similar.score AS score " +

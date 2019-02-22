@@ -77,12 +77,17 @@ public class CosineProc extends SimilarityProc {
         int topK = getTopK(configuration);
 
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue);
-        SimilarityRecorder<WeightedInput> similarityRecorder = new SimilarityRecorder<>(computer);
+        boolean showComputations = configuration.get("showComputations", false);
+        SimilarityRecorder<WeightedInput> recordingSimilarityRecorder = similarityRecorder(computer, showComputations);
 
-        Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, similarityRecorder);
+        Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, similarityCutoff, topN, topK, recordingSimilarityRecorder);
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
-        return writeAndAggregateResults(stream, inputs.length, configuration, write, writeRelationshipType, writeProperty, similarityRecorder);
+        return writeAndAggregateResults(stream, inputs.length, configuration, write, writeRelationshipType, writeProperty, recordingSimilarityRecorder);
+    }
+
+    private SimilarityRecorder<WeightedInput> similarityRecorder(SimilarityComputer<WeightedInput> computer, boolean showComputations) {
+        return showComputations ? new RecordingSimilarityRecorder<>(computer) : new NonRecordingSimilarityRecorder<>(computer);
     }
 
     private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue) {

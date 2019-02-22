@@ -1,24 +1,23 @@
 package org.neo4j.graphalgo.similarity;
 
-import java.util.concurrent.atomic.LongAdder;
-
-public class SimilarityRecorder<T> implements SimilarityProc.SimilarityComputer<T>, Computations {
-
+public class NonRecordingSimilarityRecorder<T> implements SimilarityRecorder<T> {
     private final SimilarityProc.SimilarityComputer computer;
-    private final LongAdder computations = new LongAdder();
 
-    public SimilarityRecorder(SimilarityProc.SimilarityComputer computer) {
+    public NonRecordingSimilarityRecorder(SimilarityProc.SimilarityComputer computer) {
         this.computer = computer;
     }
 
     public long count() {
-        return computations.longValue();
+        return -1;
     }
 
 
     @Override
     public SimilarityResult similarity(RleDecoder decoder, T source, T target, double cutoff) {
-        computations.increment();
         return computer.similarity(decoder, source, target, cutoff);
     }
+}
+
+
+interface SimilarityRecorder<T> extends Computations, SimilarityProc.SimilarityComputer<T> {
 }
