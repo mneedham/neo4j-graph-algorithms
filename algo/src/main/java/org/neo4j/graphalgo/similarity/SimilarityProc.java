@@ -91,7 +91,7 @@ public class SimilarityProc {
     Long getWriteBatchSize(ProcedureConfiguration configuration) {
         return configuration.get("writeBatchSize", 10000L);
     }
-    Stream<SimilaritySummaryResult> writeAndAggregateResults(Stream<SimilarityResult> stream, int length, ProcedureConfiguration configuration, boolean write, String writeRelationshipType, String writeProperty, Computations computations) {
+    Stream<SimilaritySummaryResult> writeAndAggregateResults(Stream<SimilarityResult> stream, int length, int sourceIdsLength, int targetIdsLength, ProcedureConfiguration configuration, boolean write, String writeRelationshipType, String writeProperty, Computations computations) {
         long writeBatchSize = getWriteBatchSize(configuration);
         AtomicLong similarityPairs = new AtomicLong();
         DoubleHistogram histogram = new DoubleHistogram(5);
@@ -107,11 +107,11 @@ public class SimilarityProc {
             stream.forEach(recorder);
         }
 
-        return Stream.of(SimilaritySummaryResult.from(length, similarityPairs, computations.count(), writeRelationshipType, writeProperty, write, histogram));
+        return Stream.of(SimilaritySummaryResult.from(length, sourceIdsLength, targetIdsLength, similarityPairs, computations.count(), writeRelationshipType, writeProperty, write, histogram));
     }
 
     Stream<SimilaritySummaryResult> emptyStream(String writeRelationshipType, String writeProperty) {
-        return Stream.of(SimilaritySummaryResult.from(0, new AtomicLong(0), -1, writeRelationshipType,
+        return Stream.of(SimilaritySummaryResult.from(0, 0,0, new AtomicLong(0), -1, writeRelationshipType,
                 writeProperty, false, new DoubleHistogram(5)));
     }
 

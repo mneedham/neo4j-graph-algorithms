@@ -92,7 +92,7 @@ public class PearsonProc extends SimilarityProc {
         Stream<SimilarityResult> stream = generateWeightedStream(configuration, inputs, sourceIndexIds, targetIndexIds, similarityCutoff, topN, topK, recorder);
 
         boolean write = configuration.isWriteFlag(false) && similarityCutoff > 0.0;
-        return writeAndAggregateResults(stream, inputs.length, configuration, write, writeRelationshipType, writeProperty, recorder);
+        return writeAndAggregateResults(stream, inputs.length, sourceIndexIds.length, targetIndexIds.length, configuration, write, writeRelationshipType, writeProperty, recorder);
     }
 
     private SimilarityComputer<WeightedInput> similarityComputer(Double skipValue, int[] sourceIndexIds, int[] targetIndexIds) {
