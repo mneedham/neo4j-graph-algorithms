@@ -50,8 +50,8 @@ public class OverlapProc extends SimilarityProc {
         }
 
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
-        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
-        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+        int[] sourceIndexIds = indexesFor(inputIds, configuration, "sourceIds");
+        int[] targetIndexIds = indexesFor(inputIds, configuration, "targetIds");
 
         SimilarityComputer<CategoricalInput> computer = similarityComputer(sourceIndexIds, targetIndexIds);
 
@@ -77,8 +77,8 @@ public class OverlapProc extends SimilarityProc {
         }
 
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
-        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
-        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+        int[] sourceIndexIds = indexesFor(inputIds, configuration, "sourceIds");
+        int[] targetIndexIds = indexesFor(inputIds, configuration, "targetIds");
 
         SimilarityComputer<CategoricalInput> computer = similarityComputer(sourceIndexIds, targetIndexIds);
         SimilarityRecorder<CategoricalInput> recorder = categoricalSimilarityRecorder(computer, configuration);

@@ -46,8 +46,8 @@ public class PearsonProc extends SimilarityProc {
 
 
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
-        int[] sourceIndexIds = SimilarityInput.indexesFor(configuration, inputIds, "sourceIds");
-        int[] targetIndexIds = SimilarityInput.indexesFor(configuration, inputIds, "targetIds");
+        int[] sourceIndexIds = SimilarityInput.indexesFor(inputIds, configuration, "sourceIds");
+        int[] targetIndexIds = SimilarityInput.indexesFor(inputIds, configuration, "targetIds");
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue, sourceIndexIds, targetIndexIds);
 
         if(inputs.length == 0) {
@@ -73,8 +73,8 @@ public class PearsonProc extends SimilarityProc {
         WeightedInput[] inputs = prepareWeights(rawData, configuration, skipValue);
 
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
-        int[] sourceIndexIds = SimilarityInput.indexesFor(configuration, inputIds, "sourceIds");
-        int[] targetIndexIds = SimilarityInput.indexesFor(configuration, inputIds, "targetIds");
+        int[] sourceIndexIds = SimilarityInput.indexesFor(inputIds, configuration, "sourceIds");
+        int[] targetIndexIds = SimilarityInput.indexesFor(inputIds, configuration, "targetIds");
 
         String writeRelationshipType = configuration.get("writeRelationshipType", "SIMILAR");
         String writeProperty = configuration.getWriteProperty("score");

@@ -35,7 +35,7 @@ public class SimilarityInputTest {
         assertArrayEquals(indexes, new int[] {0, 4});
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void missingItem() {
         CategoricalInput[] ids = new CategoricalInput[5];
         ids[0] = new CategoricalInput(5, new long[]{});
@@ -49,7 +49,7 @@ public class SimilarityInputTest {
         assertArrayEquals(indexes, new int[] {});
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void allMissing() {
         CategoricalInput[] ids = new CategoricalInput[5];
         ids[0] = new CategoricalInput(5, new long[]{});
@@ -63,7 +63,7 @@ public class SimilarityInputTest {
         assertArrayEquals(indexes, new int[] {});
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void someMissingSomeFound() {
         CategoricalInput[] ids = new CategoricalInput[5];
         ids[0] = new CategoricalInput(5, new long[]{});

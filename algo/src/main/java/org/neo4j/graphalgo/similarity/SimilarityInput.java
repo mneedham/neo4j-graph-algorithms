@@ -14,7 +14,12 @@ public interface SimilarityInput {
 
         int indexesFound = 0;
         for (int i = 0; i < idsToFind.size(); i++) {
-            int index = Arrays.binarySearch(inputIds, idsToFind.get(i));
+            long idToFind = idsToFind.get(i);
+            int index = Arrays.binarySearch(inputIds, idToFind);
+            if (index < 0) {
+                throw new IllegalArgumentException(String.format("Node id [%d] does not exist in node ids list", idToFind));
+            }
+
             if(index >= 0) {
                 indexes[indexesFound] = index;
                 indexesFound++;
@@ -28,9 +33,13 @@ public interface SimilarityInput {
         return Arrays.stream(inputs).mapToLong(SimilarityInput::getId).toArray();
     }
 
-    static int[] indexesFor(ProcedureConfiguration configuration, long[] inputIds, String key) {
+    static int[] indexesFor(long[] inputIds, ProcedureConfiguration configuration, String key) {
         List<Long> sourceIds = configuration.get(key, Collections.emptyList());
-        return indexes(inputIds, sourceIds);
+        try {
+            return indexes(inputIds, sourceIds);
+        } catch(IllegalArgumentException exception) {
+            throw new RuntimeException(String.format(String.format("Missing node id in %s list ", key)), exception);
+        }
     }
 
 }

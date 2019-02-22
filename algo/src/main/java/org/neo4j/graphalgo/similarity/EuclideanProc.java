@@ -50,8 +50,8 @@ public class EuclideanProc extends SimilarityProc {
         }
 
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
-        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
-        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+        int[] sourceIndexIds = indexesFor(inputIds, configuration, "sourceIds");
+        int[] targetIndexIds = indexesFor(inputIds, configuration, "targetIds");
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue, sourceIndexIds, targetIndexIds);
 
         double similarityCutoff = similarityCutoff(configuration);
@@ -80,8 +80,8 @@ public class EuclideanProc extends SimilarityProc {
         }
 
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
-        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
-        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+        int[] sourceIndexIds = indexesFor(inputIds, configuration, "sourceIds");
+        int[] targetIndexIds = indexesFor(inputIds, configuration, "targetIds");
         SimilarityComputer<WeightedInput> computer = similarityComputer(skipValue, sourceIndexIds, targetIndexIds);
 
 

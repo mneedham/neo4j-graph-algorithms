@@ -25,10 +25,11 @@ import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import static org.neo4j.graphalgo.similarity.SimilarityInput.indexesFor;
+
 
 public class JaccardProc extends SimilarityProc {
 
@@ -46,18 +47,13 @@ public class JaccardProc extends SimilarityProc {
         }
 
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
-        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
-        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+        int[] sourceIndexIds = indexesFor(inputIds, configuration, "sourceIds");
+        int[] targetIndexIds = indexesFor(inputIds, configuration, "targetIds");
 
         SimilarityComputer<CategoricalInput> computer = similarityComputer(sourceIndexIds, targetIndexIds);
 
         return topN(similarityStream(inputs, sourceIndexIds, targetIndexIds, computer, configuration, () -> null,
                 getSimilarityCutoff(configuration), getTopK(configuration)), getTopN(configuration));
-    }
-
-    private int[] indexesFor(ProcedureConfiguration configuration, long[] inputIds, String key) {
-        List<Long> sourceIds = configuration.get(key, Collections.emptyList());
-        return SimilarityInput.indexes(inputIds, sourceIds);
     }
 
     @Procedure(name = "algo.similarity.jaccard", mode = Mode.WRITE)
@@ -76,8 +72,8 @@ public class JaccardProc extends SimilarityProc {
         }
 
         long[] inputIds = SimilarityInput.extractInputIds(inputs);
-        int[] sourceIndexIds = indexesFor(configuration, inputIds, "sourceIds");
-        int[] targetIndexIds = indexesFor(configuration, inputIds, "targetIds");
+        int[] sourceIndexIds = indexesFor(inputIds, configuration, "sourceIds");
+        int[] targetIndexIds = indexesFor(inputIds, configuration,"targetIds");
 
         SimilarityComputer<CategoricalInput> computer = similarityComputer(sourceIndexIds, targetIndexIds);
         SimilarityRecorder<CategoricalInput> recorder = categoricalSimilarityRecorder(computer, configuration);
