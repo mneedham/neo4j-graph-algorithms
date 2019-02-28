@@ -100,39 +100,21 @@ final class LoadAllRelationships implements LoadRelationships {
 
     @Override
     public int degreeBoth(final NodeCursor cursor) {
+//        return Nodes.countAll(cursor, cursors);
         return countAll(cursor, cursors);
     }
 
-    private static int countAll(NodeCursor nodeCursor, CursorFactory cursors)
-    {
+    private static int countAll(NodeCursor nodeCursor, CursorFactory cursors) {
         Set<Pair<Long, Long>> sourceTargetPairs = new HashSet<>();
 
-        if ( nodeCursor.isDense() )
-        {
-            try ( RelationshipGroupCursor group = cursors.allocateRelationshipGroupCursor() )
-            {
-                nodeCursor.relationships( group );
-                int count = 0;
-                while ( group.next() )
-                {
-                    count += group.totalCount();
-                }
-                return count;
+        try (RelationshipTraversalCursor traversal = cursors.allocateRelationshipTraversalCursor()) {
+            nodeCursor.allRelationships(traversal);
+            while (traversal.next()) {
+                long low = Math.min(traversal.sourceNodeReference(), traversal.targetNodeReference());
+                long high = Math.max(traversal.sourceNodeReference(), traversal.targetNodeReference());
+                sourceTargetPairs.add(Pair.of(low, high));
             }
-        }
-        else
-        {
-            try ( RelationshipTraversalCursor traversal = cursors.allocateRelationshipTraversalCursor() )
-            {
-                nodeCursor.allRelationships( traversal );
-                while ( traversal.next() )
-                {
-                    long low = Math.min(traversal.sourceNodeReference(), traversal.targetNodeReference());
-                    long high = Math.max(traversal.sourceNodeReference(), traversal.targetNodeReference());
-                    sourceTargetPairs.add(Pair.of(low, high));
-                }
-                return sourceTargetPairs.size();
-            }
+            return sourceTargetPairs.size();
         }
     }
 
@@ -188,38 +170,16 @@ final class LoadRelationshipsOfSingleType implements LoadRelationships {
     {
         Set<Pair<Long, Long>> sourceTargetPairs = new HashSet<>();
 
-        if ( nodeCursor.isDense() )
-        {
-            try ( RelationshipGroupCursor group = cursors.allocateRelationshipGroupCursor() )
-            {
-                nodeCursor.relationships( group );
-                int count = 0;
-                while ( group.next() )
-                {
-                    if ( group.type() == type )
-                    {
-                        return group.totalCount();
-                    }
+        try (RelationshipTraversalCursor traversal = cursors.allocateRelationshipTraversalCursor()) {
+            nodeCursor.allRelationships(traversal);
+            while (traversal.next()) {
+                if (traversal.type() == type) {
+                    long low = Math.min(traversal.sourceNodeReference(), traversal.targetNodeReference());
+                    long high = Math.max(traversal.sourceNodeReference(), traversal.targetNodeReference());
+                    sourceTargetPairs.add(Pair.of(low, high));
                 }
-                return count;
             }
-        }
-        else
-        {
-            try ( RelationshipTraversalCursor traversal = cursors.allocateRelationshipTraversalCursor() )
-            {
-                nodeCursor.allRelationships( traversal );
-                while ( traversal.next() )
-                {
-                    if ( traversal.type() == type )
-                    {
-                        long low = Math.min(traversal.sourceNodeReference(), traversal.targetNodeReference());
-                        long high = Math.max(traversal.sourceNodeReference(), traversal.targetNodeReference());
-                        sourceTargetPairs.add(Pair.of(low, high));
-                    }
-                }
-                return sourceTargetPairs.size();
-            }
+            return sourceTargetPairs.size();
         }
     }
 
