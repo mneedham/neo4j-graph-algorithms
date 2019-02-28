@@ -30,6 +30,7 @@ import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.huge.HugeGraphFactory;
+import org.neo4j.graphalgo.core.neo4jview.GraphViewFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
@@ -48,17 +49,17 @@ public final class DegreeCentralityTest {
 
     @Parameterized.Parameters(name = "{1}")
     public static Collection<Object[]> data() {
-//        return Arrays.asList(
-//                new Object[]{HeavyGraphFactory.class, "HeavyGraphFactory"},
-//                new Object[]{HeavyCypherGraphFactory.class, "HeavyCypherGraphFactory"},
-//                new Object[]{HugeGraphFactory.class, "HugeGraphFactory"},
-//                new Object[]{GraphViewFactory.class, "GraphViewFactory"}
-//        );
-
         return Arrays.asList(
                 new Object[]{HeavyGraphFactory.class, "HeavyGraphFactory"},
-                new Object[]{HugeGraphFactory.class, "HugeGraphFactory"}
+                new Object[]{HeavyCypherGraphFactory.class, "HeavyCypherGraphFactory"},
+                new Object[]{HugeGraphFactory.class, "HugeGraphFactory"},
+                new Object[]{GraphViewFactory.class, "GraphViewFactory"}
         );
+
+//        return Arrays.asList(
+//                new Object[]{HeavyGraphFactory.class, "HeavyGraphFactory"},
+//                new Object[]{HugeGraphFactory.class, "HugeGraphFactory"}
+//        );
     }
 
     private static final String DB_CYPHER = "" +
@@ -159,7 +160,6 @@ public final class DegreeCentralityTest {
             expected.put(db.findNode(label, "name", "h").getId(), 0.0);
             expected.put(db.findNode(label, "name", "i").getId(), 0.0);
             expected.put(db.findNode(label, "name", "j").getId(), 0.0);
-            tx.close();
         }
 
         final Graph graph;
@@ -207,7 +207,6 @@ public final class DegreeCentralityTest {
             expected.put(db.findNode(label, "name", "h").getId(), 0.0);
             expected.put(db.findNode(label, "name", "i").getId(), 0.0);
             expected.put(db.findNode(label, "name", "j").getId(), 0.0);
-            tx.close();
         }
 
         final Graph graph;
@@ -257,7 +256,6 @@ public final class DegreeCentralityTest {
             expected.put(db.findNode(label, "name", "h").getId(), 0.0);
             expected.put(db.findNode(label, "name", "i").getId(), 0.0);
             expected.put(db.findNode(label, "name", "j").getId(), 0.0);
-            tx.close();
         }
 
         final Graph graph;
@@ -307,7 +305,6 @@ public final class DegreeCentralityTest {
             expected.put(db.findNode(label, "name", "h").getId(), 0.0);
             expected.put(db.findNode(label, "name", "i").getId(), 0.0);
             expected.put(db.findNode(label, "name", "j").getId(), 0.0);
-            tx.close();
         }
 
         final Graph graph;
@@ -355,7 +352,6 @@ public final class DegreeCentralityTest {
             expected.put(db.findNode(label, "name", "h").getId(), 0.0);
             expected.put(db.findNode(label, "name", "i").getId(), 0.0);
             expected.put(db.findNode(label, "name", "j").getId(), 0.0);
-            tx.close();
         }
 
         final Graph graph;
@@ -407,7 +403,6 @@ public final class DegreeCentralityTest {
             expected.put(db.findNode(label, "name", "h").getId(), 0.0);
             expected.put(db.findNode(label, "name", "i").getId(), 0.0);
             expected.put(db.findNode(label, "name", "j").getId(), 0.0);
-            tx.close();
         }
 
         final Graph graph;
