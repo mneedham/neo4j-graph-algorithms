@@ -443,7 +443,7 @@ public final class DegreeCentralityTest {
         IntStream.range(0, expected.size()).forEach(i -> {
             final long nodeId = graph.toOriginalNodeId(i);
             assertEquals(
-                    "Node#" + nodeId,
+                    "Node#" + nodeId + "[" + i + "]",
                     expected.get(nodeId),
                     degreeCentrality.degrees()[i],
                     1e-2
