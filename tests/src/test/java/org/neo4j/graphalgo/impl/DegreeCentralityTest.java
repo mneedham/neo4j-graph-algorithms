@@ -167,6 +167,7 @@ public final class DegreeCentralityTest {
             graph = new GraphLoader(db)
                     .withLabel("MATCH (n:Label1) RETURN id(n) as id")
                     .withRelationshipType("MATCH (n:Label1)-[:TYPE1]->(m:Label1) RETURN id(n) as source,id(m) as target")
+                    .withDirection(Direction.OUTGOING)
                     .load(graphImpl);
 
         } else {
@@ -307,22 +308,29 @@ public final class DegreeCentralityTest {
             expected.put(db.findNode(label, "name", "j").getId(), 0.0);
         }
 
+        Direction direction = Direction.INCOMING;
+
         final Graph graph;
         if (graphImpl.isAssignableFrom(HeavyCypherGraphFactory.class)) {
+            // For Cypher we always treat the graph as outgoing, and let the user
+            // handle the direction in the Cypher query
+            direction = Direction.OUTGOING;
+
             graph = new GraphLoader(db)
                     .withLabel("MATCH (n:Label1) RETURN id(n) as id")
                     .withRelationshipType("MATCH (n:Label1)<-[:TYPE1]-(m:Label1) RETURN id(n) as source,id(m) as target")
+                    .withDirection(direction)
                     .load(graphImpl);
 
         } else {
             graph = new GraphLoader(db)
                     .withLabel(label)
                     .withRelationshipType("TYPE1")
-                    .withDirection(Direction.INCOMING)
+                    .withDirection(direction)
                     .load(graphImpl);
         }
 
-        DegreeCentrality degreeCentrality = new DegreeCentrality(graph, Pools.DEFAULT, 4, Direction.INCOMING);
+        DegreeCentrality degreeCentrality = new DegreeCentrality(graph, Pools.DEFAULT, 4, direction);
         degreeCentrality.compute();
 
         IntStream.range(0, expected.size()).forEach(i -> {
@@ -354,12 +362,20 @@ public final class DegreeCentralityTest {
             expected.put(db.findNode(label, "name", "j").getId(), 0.0);
         }
 
+        Direction direction = Direction.INCOMING;
+
         final Graph graph;
         if (graphImpl.isAssignableFrom(HeavyCypherGraphFactory.class)) {
+            // For Cypher we always treat the graph as outgoing, and let the user
+            // handle the direction in the Cypher query
+            direction = Direction.OUTGOING;
+
+
             graph = new GraphLoader(db)
                     .withLabel("MATCH (n:Label1) RETURN id(n) as id")
                     .withRelationshipType("MATCH (n:Label1)<-[t:TYPE1]-(m:Label1) RETURN id(n) as source,id(m) as target, t.weight AS weight")
                     .withOptionalRelationshipWeightsFromProperty("weight", 1.0)
+                    .withDirection(direction)
                     .load(graphImpl);
 
         } else {
@@ -367,11 +383,11 @@ public final class DegreeCentralityTest {
                     .withLabel(label)
                     .withRelationshipType("TYPE1")
                     .withOptionalRelationshipWeightsFromProperty("weight", 1.0)
-                    .withDirection(Direction.INCOMING)
+                    .withDirection(direction)
                     .load(graphImpl);
         }
 
-        WeightedDegreeCentrality degreeCentrality = new WeightedDegreeCentrality(graph, Pools.DEFAULT, 4, Direction.INCOMING);
+        WeightedDegreeCentrality degreeCentrality = new WeightedDegreeCentrality(graph, Pools.DEFAULT, 4, direction);
         degreeCentrality.compute(false);
 
         IntStream.range(0, expected.size()).forEach(i -> {
