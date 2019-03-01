@@ -123,6 +123,37 @@ public class DegreeProcIntegrationTest {
         assertMapEquals(weightedExpected, actual);
     }
 
+    @Test
+    public void testDegreeWriteBack() throws Exception {
+        runQuery(
+                "CALL algo.degree('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'INCOMING'}) YIELD writeMillis, write, writeProperty",
+                row -> {
+                    assertTrue(row.getBoolean("write"));
+                    assertEquals("degree", row.getString("writeProperty"));
+                    assertTrue(
+                            "write time not set",
+                            row.getNumber("writeMillis").intValue() >= 0);
+                });
+
+        assertResult("degree", expected);
+    }
+
+    @Test
+    public void testWeightedDegreeWriteBack() throws Exception {
+        runQuery(
+                "CALL algo.degree('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'INCOMING', weightProperty: 'foo'}) YIELD writeMillis, write, writeProperty",
+                row -> {
+                    assertTrue(row.getBoolean("write"));
+                    assertEquals("degree", row.getString("writeProperty"));
+                    assertTrue(
+                            "write time not set",
+                            row.getNumber("writeMillis").intValue() >= 0);
+                });
+
+        assertResult("degree", weightedExpected);
+    }
+
+
     private static void runQuery(
             String query,
             Consumer<Result.ResultRow> check) {
