@@ -188,14 +188,8 @@ public final class DegreeCentralityProc {
             direction = Direction.OUTGOING;
         }
 
-        DegreeCentralityAlgorithm algo;
-//        if(weightPropertyKey != null) {
-//            algo = new WeightedDegreeCentrality(graph, Pools.DEFAULT, concurrency, direction);
-//            statsBuilder.timeEval(algo::compute);
-//        } else {
-            algo = new DegreeCentrality(graph, Pools.DEFAULT, concurrency, direction, weightPropertyKey != null);
-            statsBuilder.timeEval(algo::compute);
-//        }
+        DegreeCentralityAlgorithm algo = new DegreeCentrality(graph, Pools.DEFAULT, concurrency, direction, weightPropertyKey != null);
+        statsBuilder.timeEval(algo::compute);
         Algorithm<?> algorithm = algo.algorithm();
         algorithm.withTerminationFlag(terminationFlag);
 
