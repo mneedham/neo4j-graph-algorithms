@@ -24,7 +24,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.neo4j.graphalgo.DegreeCentralityProc;
-import org.neo4j.graphalgo.PageRankProc;
 import org.neo4j.graphalgo.TestDatabaseCreator;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Result;
@@ -42,8 +41,12 @@ import static org.junit.Assert.*;
 public class DegreeProcIntegrationTest {
 
     private static GraphDatabaseAPI db;
-    private static Map<Long, Double> expected = new HashMap<>();
-    private static Map<Long, Double> weightedExpected = new HashMap<>();
+    private static Map<Long, Double> incomingExpected = new HashMap<>();
+    private static Map<Long, Double> bothExpected = new HashMap<>();
+    private static Map<Long, Double> outgoingExpected = new HashMap<>();
+    private static Map<Long, Double> incomingWeightedExpected = new HashMap<>();
+    private static Map<Long, Double> bothWeightedExpected = new HashMap<>();
+    private static Map<Long, Double> outgoingWeightedExpected = new HashMap<>();
 
     private static final String DB_CYPHER = "" +
             "CREATE (a:Label1 {name:\"a\"})\n" +
@@ -75,13 +78,30 @@ public class DegreeProcIntegrationTest {
 
         try (Transaction tx = db.beginTx()) {
             final Label label = Label.label("Label1");
-            expected.put(db.findNode(label, "name", "a").getId(), 0.0);
-            expected.put(db.findNode(label, "name", "b").getId(), 1.0);
-            expected.put(db.findNode(label, "name", "c").getId(), 2.0);
+            incomingExpected.put(db.findNode(label, "name", "a").getId(), 0.0);
+            incomingExpected.put(db.findNode(label, "name", "b").getId(), 1.0);
+            incomingExpected.put(db.findNode(label, "name", "c").getId(), 2.0);
 
-            weightedExpected.put(db.findNode(label, "name", "a").getId(), 0.0);
-            weightedExpected.put(db.findNode(label, "name", "b").getId(), 3.0);
-            weightedExpected.put(db.findNode(label, "name", "c").getId(), 7.1);
+            incomingWeightedExpected.put(db.findNode(label, "name", "a").getId(), 0.0);
+            incomingWeightedExpected.put(db.findNode(label, "name", "b").getId(), 3.0);
+            incomingWeightedExpected.put(db.findNode(label, "name", "c").getId(), 7.1);
+
+            bothExpected.put(db.findNode(label, "name", "a").getId(), 2.0);
+            bothExpected.put(db.findNode(label, "name", "b").getId(), 2.0);
+            bothExpected.put(db.findNode(label, "name", "c").getId(), 2.0);
+
+            bothWeightedExpected.put(db.findNode(label, "name", "a").getId(), 5.1);
+            bothWeightedExpected.put(db.findNode(label, "name", "b").getId(), 8.0);
+            bothWeightedExpected.put(db.findNode(label, "name", "c").getId(), 7.1);
+
+            outgoingExpected.put(db.findNode(label, "name", "a").getId(), 2.0);
+            outgoingExpected.put(db.findNode(label, "name", "b").getId(), 1.0);
+            outgoingExpected.put(db.findNode(label, "name", "c").getId(), 0.0);
+
+            outgoingWeightedExpected.put(db.findNode(label, "name", "a").getId(), 5.1);
+            outgoingWeightedExpected.put(db.findNode(label, "name", "b").getId(), 5.0);
+            outgoingWeightedExpected.put(db.findNode(label, "name", "c").getId(), 0.0);
+
             tx.success();
         }
     }
@@ -100,7 +120,7 @@ public class DegreeProcIntegrationTest {
     public String graphImpl;
 
     @Test
-    public void testDegreeStream() throws Exception {
+    public void testDegreeIncomingStream() throws Exception {
         final Map<Long, Double> actual = new HashMap<>();
         runQuery(
                 "CALL algo.degree.stream('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'INCOMING'}) YIELD nodeId, score",
@@ -108,11 +128,11 @@ public class DegreeProcIntegrationTest {
                         (Long)row.get("nodeId"),
                         (Double) row.get("score")));
 
-        assertMapEquals(expected, actual);
+        assertMapEquals(incomingExpected, actual);
     }
 
     @Test
-    public void testWeightedDegreeStream() throws Exception {
+    public void testWeightedDegreeIncomingStream() throws Exception {
         final Map<Long, Double> actual = new HashMap<>();
         runQuery(
                 "CALL algo.degree.stream('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'INCOMING', weightProperty: 'foo'}) YIELD nodeId, score",
@@ -120,11 +140,11 @@ public class DegreeProcIntegrationTest {
                         (Long)row.get("nodeId"),
                         (Double) row.get("score")));
 
-        assertMapEquals(weightedExpected, actual);
+        assertMapEquals(incomingWeightedExpected, actual);
     }
 
     @Test
-    public void testDegreeWriteBack() throws Exception {
+    public void testDegreeIncomingWriteBack() throws Exception {
         runQuery(
                 "CALL algo.degree('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'INCOMING'}) YIELD writeMillis, write, writeProperty",
                 row -> {
@@ -135,11 +155,11 @@ public class DegreeProcIntegrationTest {
                             row.getNumber("writeMillis").intValue() >= 0);
                 });
 
-        assertResult("degree", expected);
+        assertResult("degree", incomingExpected);
     }
 
     @Test
-    public void testWeightedDegreeWriteBack() throws Exception {
+    public void testWeightedDegreeIncomingWriteBack() throws Exception {
         runQuery(
                 "CALL algo.degree('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'INCOMING', weightProperty: 'foo'}) YIELD writeMillis, write, writeProperty",
                 row -> {
@@ -150,8 +170,117 @@ public class DegreeProcIntegrationTest {
                             row.getNumber("writeMillis").intValue() >= 0);
                 });
 
-        assertResult("degree", weightedExpected);
+        assertResult("degree", incomingWeightedExpected);
     }
+
+    @Test
+    public void testDegreeBothStream() throws Exception {
+        final Map<Long, Double> actual = new HashMap<>();
+        runQuery(
+                "CALL algo.degree.stream('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'BOTH'}) YIELD nodeId, score",
+                row -> actual.put(
+                        (Long)row.get("nodeId"),
+                        (Double) row.get("score")));
+
+        assertMapEquals(bothExpected, actual);
+    }
+
+    @Test
+    public void testWeightedDegreeBothStream() throws Exception {
+        final Map<Long, Double> actual = new HashMap<>();
+        runQuery(
+                "CALL algo.degree.stream('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'BOTH', weightProperty: 'foo'}) YIELD nodeId, score",
+                row -> actual.put(
+                        (Long)row.get("nodeId"),
+                        (Double) row.get("score")));
+
+        assertMapEquals(bothWeightedExpected, actual);
+    }
+
+    @Test
+    public void testDegreeBothWriteBack() throws Exception {
+        runQuery(
+                "CALL algo.degree('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'BOTH'}) YIELD writeMillis, write, writeProperty",
+                row -> {
+                    assertTrue(row.getBoolean("write"));
+                    assertEquals("degree", row.getString("writeProperty"));
+                    assertTrue(
+                            "write time not set",
+                            row.getNumber("writeMillis").intValue() >= 0);
+                });
+
+        assertResult("degree", bothExpected);
+    }
+
+    @Test
+    public void testWeightedDegreeBothWriteBack() throws Exception {
+        runQuery(
+                "CALL algo.degree('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'BOTH', weightProperty: 'foo'}) YIELD writeMillis, write, writeProperty",
+                row -> {
+                    assertTrue(row.getBoolean("write"));
+                    assertEquals("degree", row.getString("writeProperty"));
+                    assertTrue(
+                            "write time not set",
+                            row.getNumber("writeMillis").intValue() >= 0);
+                });
+
+        assertResult("degree", bothWeightedExpected);
+    }
+
+    @Test
+    public void testDegreeOutgoingStream() throws Exception {
+        final Map<Long, Double> actual = new HashMap<>();
+        runQuery(
+                "CALL algo.degree.stream('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'OUTGOING'}) YIELD nodeId, score",
+                row -> actual.put(
+                        (Long)row.get("nodeId"),
+                        (Double) row.get("score")));
+
+        assertMapEquals(outgoingExpected, actual);
+    }
+
+    @Test
+    public void testWeightedDegreeOutgoingStream() throws Exception {
+        final Map<Long, Double> actual = new HashMap<>();
+        runQuery(
+                "CALL algo.degree.stream('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'OUTGOING', weightProperty: 'foo'}) YIELD nodeId, score",
+                row -> actual.put(
+                        (Long)row.get("nodeId"),
+                        (Double) row.get("score")));
+
+        assertMapEquals(outgoingWeightedExpected, actual);
+    }
+
+    @Test
+    public void testDegreeOutgoingWriteBack() throws Exception {
+        runQuery(
+                "CALL algo.degree('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'OUTGOING'}) YIELD writeMillis, write, writeProperty",
+                row -> {
+                    assertTrue(row.getBoolean("write"));
+                    assertEquals("degree", row.getString("writeProperty"));
+                    assertTrue(
+                            "write time not set",
+                            row.getNumber("writeMillis").intValue() >= 0);
+                });
+
+        assertResult("degree", outgoingExpected);
+    }
+
+    @Test
+    public void testWeightedDegreeOutgoingWriteBack() throws Exception {
+        runQuery(
+                "CALL algo.degree('Label1', 'TYPE1', {graph:'"+graphImpl+"', direction:'OUTGOING', weightProperty: 'foo'}) YIELD writeMillis, write, writeProperty",
+                row -> {
+                    assertTrue(row.getBoolean("write"));
+                    assertEquals("degree", row.getString("writeProperty"));
+                    assertTrue(
+                            "write time not set",
+                            row.getNumber("writeMillis").intValue() >= 0);
+                });
+
+        assertResult("degree", outgoingWeightedExpected);
+    }
+
 
 
     private static void runQuery(

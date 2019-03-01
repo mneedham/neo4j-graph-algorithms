@@ -185,6 +185,10 @@ public final class DegreeCentralityProc {
         final int batchSize = configuration.getBatchSize();
         final int concurrency = configuration.getConcurrency(Pools.getNoThreadsInDefaultPool());
 
+        if(direction == Direction.BOTH) {
+            direction = Direction.OUTGOING;
+        }
+
         DegreeCentralityAlgorithm algo;
         if(weightPropertyKey != null) {
             algo = new WeightedDegreeCentrality(graph, Pools.DEFAULT, concurrency, direction);
