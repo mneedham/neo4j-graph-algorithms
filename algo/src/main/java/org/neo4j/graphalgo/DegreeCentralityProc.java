@@ -194,7 +194,7 @@ public final class DegreeCentralityProc {
             algo = new WeightedDegreeCentrality(graph, Pools.DEFAULT, concurrency, direction);
             statsBuilder.timeEval(algo::compute);
         } else {
-            algo = new DegreeCentrality(graph, Pools.DEFAULT, concurrency, direction, batchSize);
+            algo = new DegreeCentrality(graph, Pools.DEFAULT, concurrency, direction);
             statsBuilder.timeEval(algo::compute);
         }
         Algorithm<?> algorithm = algo.algorithm();

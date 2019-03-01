@@ -67,8 +67,11 @@ public class WeightedDegreeCentrality extends Algorithm<WeightedDegreeCentrality
     public WeightedDegreeCentrality compute(boolean cacheWeights) {
         nodeQueue.set(0);
 
-        List<Runnable> tasks = new ArrayList<>();
-        for (int i = 0; i < concurrency; i++) {
+        int batchSize = ParallelUtil.adjustBatchSize(nodeCount, concurrency);
+        int taskCount = ParallelUtil.threadSize(batchSize, nodeCount);
+        final ArrayList<Runnable> tasks = new ArrayList<>(taskCount);
+
+        for (int i = 0; i < taskCount; i++) {
             if(cacheWeights) {
                 tasks.add(new CacheDegreeTask());
             } else {
