@@ -180,7 +180,7 @@ public final class DegreeCentralityTest {
                     .load(graphImpl);
         }
 
-        DegreeCentrality degreeCentrality = new DegreeCentrality(graph, Pools.DEFAULT, 4, Direction.OUTGOING);
+        DegreeCentrality degreeCentrality = new DegreeCentrality(graph, Pools.DEFAULT, 4, Direction.OUTGOING, false);
         degreeCentrality.compute();
 
         IntStream.range(0, expected.size()).forEach(i -> {
@@ -332,7 +332,7 @@ public final class DegreeCentralityTest {
                     .load(graphImpl);
         }
 
-        DegreeCentrality degreeCentrality = new DegreeCentrality(graph, Pools.DEFAULT, 4, direction);
+        DegreeCentrality degreeCentrality = new DegreeCentrality(graph, Pools.DEFAULT, 4, direction, false);
         degreeCentrality.compute();
 
         IntStream.range(0, expected.size()).forEach(i -> {
@@ -439,7 +439,7 @@ public final class DegreeCentralityTest {
                     .load(graphImpl);
         }
 
-        DegreeCentrality degreeCentrality = new DegreeCentrality(graph, Pools.DEFAULT, 4, Direction.OUTGOING);
+        DegreeCentrality degreeCentrality = new DegreeCentrality(graph, Pools.DEFAULT, 4, Direction.OUTGOING, false);
         degreeCentrality.compute();
 
         IntStream.range(0, expected.size()).forEach(i -> {

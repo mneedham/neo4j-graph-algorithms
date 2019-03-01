@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 public class DegreeCentrality extends Algorithm<DegreeCentrality> implements DegreeCentralityAlgorithm {
     private final int nodeCount;
+    private boolean weighted;
     private Direction direction;
     private Graph graph;
     private final ExecutorService executor;
@@ -50,28 +51,31 @@ public class DegreeCentrality extends Algorithm<DegreeCentrality> implements Deg
             Graph graph,
             ExecutorService executor,
             int concurrency,
-            Direction direction) {
+            Direction direction, boolean weighted) {
 
         this.graph = graph;
         this.executor = executor;
         this.concurrency = concurrency;
         this.direction = direction;
         nodeCount = Math.toIntExact(graph.nodeCount());
+        this.weighted = weighted;
         degrees = new double[nodeCount];
     }
 
     public void compute() {
-        nodeQueue.set(0);
-
         int batchSize = ParallelUtil.adjustBatchSize(nodeCount, concurrency);
         int taskCount = ParallelUtil.threadSize(batchSize, nodeCount);
-        final ArrayList<DegreeTask> tasks = new ArrayList<>(taskCount);
+        final ArrayList<Runnable> tasks = new ArrayList<>(taskCount);
 
         this.starts = new long[taskCount];
         this.partitions = new double[taskCount][batchSize];
 
         for (int i = 0; i < taskCount; i++) {
-            tasks.add(new DegreeTask(starts[i], partitions[i]));
+            if(weighted) {
+                tasks.add(new WeightedDegreeTask(starts[i], partitions[i]));
+            } else {
+                tasks.add(new DegreeTask(starts[i], partitions[i]));
+            }
         }
         ParallelUtil.runWithConcurrency(concurrency, tasks, executor);
     }
@@ -102,7 +106,7 @@ public class DegreeCentrality extends Algorithm<DegreeCentrality> implements Deg
         private final double[] partition;
         private final long endNodeId;
 
-        public DegreeTask(long start, double[] partition) {
+        DegreeTask(long start, double[] partition) {
             this.startNodeId = start;
             this.partition = partition;
             this.endNodeId = Math.min(start + partition.length, nodeCount);
@@ -112,14 +116,54 @@ public class DegreeCentrality extends Algorithm<DegreeCentrality> implements Deg
         public void run() {
             if(graph instanceof HugeGraph) {
                 HugeGraph hugeGraph = (HugeGraph) graph;
-                for (long nodeId = startNodeId; nodeId < endNodeId; nodeId++) {
+                for (long nodeId = startNodeId; nodeId < endNodeId && running(); nodeId++) {
                     partition[Math.toIntExact(nodeId - startNodeId)] = hugeGraph.degree(nodeId, direction);
                 }
             } else {
                 int sNodeId = (int) startNodeId;
-                for (int nodeId = sNodeId; nodeId < endNodeId; nodeId++) {
+                for (int nodeId = sNodeId; nodeId < endNodeId && running(); nodeId++) {
                     partition[nodeId - sNodeId] = graph.degree(nodeId, direction);
+                }
+            }
+        }
+    }
 
+    private class WeightedDegreeTask implements Runnable {
+        private final long startNodeId;
+        private final double[] partition;
+        private final long endNodeId;
+
+        WeightedDegreeTask(long start, double[] partition) {
+            this.startNodeId = start;
+            this.partition = partition;
+            this.endNodeId = Math.min(start + partition.length, nodeCount);
+        }
+
+        @Override
+        public void run() {
+            if(graph instanceof HugeGraph) {
+                HugeGraph hugeGraph = (HugeGraph) graph;
+                for (long nodeId = startNodeId; nodeId < endNodeId && running(); nodeId++) {
+                    int index = Math.toIntExact(nodeId - startNodeId);
+                    hugeGraph.forEachRelationship(nodeId, direction, (sourceNodeId, targetNodeId, weight) -> {
+                        if(weight > 0) {
+                            partition[index] += weight;
+                        }
+                        return true;
+                    });
+                }
+            } else {
+                int sNodeId = (int) startNodeId;
+                for (int nodeId = sNodeId; nodeId < endNodeId && running(); nodeId++) {
+                    int index = nodeId - sNodeId;
+
+                    graph.forEachRelationship(nodeId, direction, (sourceNodeId, targetNodeId, relationId, weight) -> {
+                        if(weight > 0) {
+                            partition[index] += weight;
+                        }
+
+                        return true;
+                    });
                 }
             }
         }

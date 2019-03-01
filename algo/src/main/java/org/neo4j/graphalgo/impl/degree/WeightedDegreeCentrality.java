@@ -102,7 +102,6 @@ public class WeightedDegreeCentrality extends Algorithm<WeightedDegreeCentrality
     @Override
     public void compute() {
         compute(false);
-
     }
 
     @Override
