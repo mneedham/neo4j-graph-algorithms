@@ -28,7 +28,6 @@ import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.core.write.PropertyTranslator;
 import org.neo4j.graphalgo.core.write.Translators;
 import org.neo4j.graphalgo.impl.Algorithm;
-import org.neo4j.graphalgo.impl.WeightedDegreeCentrality;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.logging.Log;
 
