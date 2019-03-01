@@ -188,7 +188,7 @@ public final class DegreeCentralityTest {
             assertEquals(
                     "Node#" + nodeId,
                     expected.get(nodeId),
-                    degreeCentrality.degrees()[i],
+                    degreeCentrality.result().score(i),
                     1e-2
             );
         });
@@ -340,7 +340,7 @@ public final class DegreeCentralityTest {
             assertEquals(
                     "Node#" + nodeId,
                     expected.get(nodeId),
-                    degreeCentrality.degrees()[i],
+                    degreeCentrality.result().score(i),
                     1e-2
             );
         });
@@ -447,7 +447,7 @@ public final class DegreeCentralityTest {
             assertEquals(
                     "Node#" + nodeId + "[" + i + "]",
                     expected.get(nodeId),
-                    degreeCentrality.degrees()[i],
+                    degreeCentrality.result().score(i),
                     1e-2
             );
         });

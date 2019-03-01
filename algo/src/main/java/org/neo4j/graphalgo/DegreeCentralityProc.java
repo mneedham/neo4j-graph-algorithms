@@ -182,7 +182,6 @@ public final class DegreeCentralityProc {
             DegreeCentralityScore.Stats.Builder statsBuilder,
             String weightPropertyKey, Direction direction) {
 
-        final int batchSize = configuration.getBatchSize();
         final int concurrency = configuration.getConcurrency(Pools.getNoThreadsInDefaultPool());
 
         if (direction == Direction.BOTH) {

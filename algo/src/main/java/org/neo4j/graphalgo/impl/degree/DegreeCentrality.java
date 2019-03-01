@@ -19,16 +19,16 @@
 package org.neo4j.graphalgo.impl.degree;
 
 import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.api.HugeGraph;
 import org.neo4j.graphalgo.core.utils.ParallelUtil;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.DegreeCentralityAlgorithm;
 import org.neo4j.graphalgo.impl.results.CentralityResult;
-import org.neo4j.graphalgo.impl.results.PrimitiveDoubleArrayResult;
+import org.neo4j.graphalgo.impl.results.PartitionedDoubleArrayResult;
 import org.neo4j.graphdb.Direction;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -40,7 +40,11 @@ public class DegreeCentrality extends Algorithm<DegreeCentrality> implements Deg
     private final ExecutorService executor;
     private final int concurrency;
     private volatile AtomicInteger nodeQueue = new AtomicInteger();
+
     private double[] degrees;
+
+    private long[] starts;
+    private double[][] partitions;
 
     public DegreeCentrality(
             Graph graph,
@@ -63,8 +67,11 @@ public class DegreeCentrality extends Algorithm<DegreeCentrality> implements Deg
         int taskCount = ParallelUtil.threadSize(batchSize, nodeCount);
         final ArrayList<DegreeTask> tasks = new ArrayList<>(taskCount);
 
+        this.starts = new long[taskCount];
+        this.partitions = new double[taskCount][batchSize];
+
         for (int i = 0; i < taskCount; i++) {
-            tasks.add(new DegreeTask());
+            tasks.add(new DegreeTask(starts[i], partitions[i]));
         }
         ParallelUtil.runWithConcurrency(concurrency, tasks, executor);
     }
@@ -87,28 +94,38 @@ public class DegreeCentrality extends Algorithm<DegreeCentrality> implements Deg
 
     @Override
     public CentralityResult result() {
-        return new PrimitiveDoubleArrayResult(degrees);
+        return new PartitionedDoubleArrayResult(partitions, starts);
     }
 
     private class DegreeTask implements Runnable {
+        private final long startNodeId;
+        private final double[] partition;
+        private final long endNodeId;
+
+        public DegreeTask(long start, double[] partition) {
+            this.startNodeId = start;
+            this.partition = partition;
+            this.endNodeId = Math.min(start + partition.length, nodeCount);
+        }
+
         @Override
         public void run() {
-            for (; ; ) {
-                final int nodeId = nodeQueue.getAndIncrement();
-                if (nodeId >= nodeCount || !running()) {
-                    return;
+            if(graph instanceof HugeGraph) {
+                HugeGraph hugeGraph = (HugeGraph) graph;
+                for (long nodeId = startNodeId; nodeId < endNodeId; nodeId++) {
+                    partition[Math.toIntExact(nodeId - startNodeId)] = hugeGraph.degree(nodeId, direction);
                 }
+            } else {
+                int sNodeId = (int) startNodeId;
+                for (int nodeId = sNodeId; nodeId < endNodeId; nodeId++) {
+                    partition[nodeId - sNodeId] = graph.degree(nodeId, direction);
 
-                int degree = graph.degree(nodeId, direction);
-                degrees[nodeId] = degree;
-
+                }
             }
         }
     }
 
-    public double[] degrees() {
-        return degrees;
-    }
+
 
     public Stream<Result> resultStream() {
         return IntStream.range(0, nodeCount)
