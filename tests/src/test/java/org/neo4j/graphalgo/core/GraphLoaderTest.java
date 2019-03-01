@@ -28,6 +28,7 @@ import org.neo4j.graphalgo.api.GraphFactory;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.huge.HugeGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
+import org.neo4j.graphdb.Direction;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
 import java.util.Arrays;
@@ -60,6 +61,75 @@ public class GraphLoaderTest {
             Class<? extends GraphFactory> graphImpl,
             String nameIgnoredOnlyForTestName) {
         this.graphImpl = graphImpl;
+    }
+
+    @Test
+    public void both() {
+        db.execute("" +
+                "CREATE (a:Node),(b:Node),(c:Node),(d:Node) " +
+                "CREATE" +
+                " (a)-[:REL]->(a)," +
+                " (b)-[:REL]->(b)," +
+                " (a)-[:REL]->(b)," +
+                " (b)-[:REL]->(c)," +
+                " (b)-[:REL]->(d)");
+        GraphLoader graphLoader = new GraphLoader(db, Pools.DEFAULT);
+        Graph graph = graphLoader.withAnyLabel()
+                .withAnyRelationshipType()
+                .direction(Direction.BOTH)
+                .load(graphImpl);
+
+        assertEquals(4L, graph.nodeCount());
+        checkRelationships(graph, 0, 0, 1);
+        checkRelationships(graph, 1, 0, 1, 2, 3);
+        checkRelationships(graph, 2, 1);
+        checkRelationships(graph, 3, 1);
+    }
+
+    @Test
+    public void outgoing() {
+        db.execute("" +
+                "CREATE (a:Node),(b:Node),(c:Node),(d:Node) " +
+                "CREATE" +
+                " (a)-[:REL]->(a)," +
+                " (b)-[:REL]->(b)," +
+                " (a)-[:REL]->(b)," +
+                " (b)-[:REL]->(c)," +
+                " (b)-[:REL]->(d)");
+        GraphLoader graphLoader = new GraphLoader(db, Pools.DEFAULT);
+        Graph graph = graphLoader.withAnyLabel()
+                .withAnyRelationshipType()
+                .direction(Direction.OUTGOING)
+                .load(graphImpl);
+
+        assertEquals(4L, graph.nodeCount());
+        checkRelationships(graph, 0, 0, 1);
+        checkRelationships(graph, 1, 1, 2, 3);
+        checkRelationships(graph, 2);
+        checkRelationships(graph, 3);
+    }
+
+    @Test
+    public void incoming() {
+        db.execute("" +
+                "CREATE (a:Node),(b:Node),(c:Node),(d:Node) " +
+                "CREATE" +
+                " (a)-[:REL]->(a)," +
+                " (b)-[:REL]->(b)," +
+                " (a)-[:REL]->(b)," +
+                " (b)-[:REL]->(c)," +
+                " (b)-[:REL]->(d)");
+        GraphLoader graphLoader = new GraphLoader(db, Pools.DEFAULT);
+        Graph graph = graphLoader.withAnyLabel()
+                .withAnyRelationshipType()
+                .direction(Direction.INCOMING)
+                .load(graphImpl);
+
+        assertEquals(4L, graph.nodeCount());
+        checkIncomingRelationships(graph, 0, 0);
+        checkIncomingRelationships(graph, 1, 0, 1);
+        checkIncomingRelationships(graph, 2, 1);
+        checkIncomingRelationships(graph, 3, 1);
     }
 
     @Test
@@ -149,6 +219,18 @@ public class GraphLoaderTest {
     private void checkRelationships(Graph graph, int node, int... expected) {
         IntArrayList idList = new IntArrayList();
         graph.forEachOutgoing(node, (s, t, r) -> {
+            idList.add(t);
+            return true;
+        });
+        final int[] ids = idList.toArray();
+        Arrays.sort(ids);
+        Arrays.sort(expected);
+        assertArrayEquals(expected, ids);
+    }
+
+    private void checkIncomingRelationships(Graph graph, int node, int... expected) {
+        IntArrayList idList = new IntArrayList();
+        graph.forEachIncoming(node, (s, t, r) -> {
             idList.add(t);
             return true;
         });

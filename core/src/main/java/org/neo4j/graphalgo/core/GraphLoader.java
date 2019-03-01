@@ -597,4 +597,7 @@ public class GraphLoader {
         return this;
     }
 
+    public GraphLoader direction(Direction direction) {
+        return direction == Direction.BOTH ? asUndirected(true).withDirection(direction) : withDirection(direction);
+    }
 }

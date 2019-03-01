@@ -31,7 +31,6 @@ import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.degree.DegreeCentrality;
 import org.neo4j.graphalgo.impl.results.CentralityResult;
-import org.neo4j.graphalgo.impl.degree.WeightedDegreeCentrality;
 import org.neo4j.graphalgo.impl.pagerank.DegreeCentralityAlgorithm;
 import org.neo4j.graphalgo.results.DegreeCentralityScore;
 import org.neo4j.graphdb.Direction;
@@ -74,7 +73,8 @@ public final class DegreeCentralityProc {
 
         DegreeCentralityScore.Stats.Builder statsBuilder = new DegreeCentralityScore.Stats.Builder();
         AllocationTracker tracker = AllocationTracker.create();
-        final Graph graph = load(label, relationship, tracker, configuration.getGraphImpl(), statsBuilder, configuration, weightPropertyKey);
+        Direction direction = configuration.getDirection(Direction.INCOMING);
+        final Graph graph = load(label, relationship, tracker, configuration.getGraphImpl(), statsBuilder, configuration, weightPropertyKey, direction);
 
         if(graph.nodeCount() == 0) {
             graph.release();
@@ -82,7 +82,6 @@ public final class DegreeCentralityProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        Direction direction = configuration.getDirection(Direction.INCOMING);
         CentralityResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey, direction);
 
         logMemoryUsage(tracker);
@@ -106,8 +105,9 @@ public final class DegreeCentralityProc {
         final String weightPropertyKey = configuration.getString(CONFIG_WEIGHT_KEY, null);
 
         DegreeCentralityScore.Stats.Builder statsBuilder = new DegreeCentralityScore.Stats.Builder();
+        Direction direction = configuration.getDirection(Direction.INCOMING);
         AllocationTracker tracker = AllocationTracker.create();
-        final Graph graph = load(label, relationship, tracker, configuration.getGraphImpl(), statsBuilder, configuration, weightPropertyKey);
+        final Graph graph = load(label, relationship, tracker, configuration.getGraphImpl(), statsBuilder, configuration, weightPropertyKey, direction);
 
         if(graph.nodeCount() == 0) {
             graph.release();
@@ -115,7 +115,6 @@ public final class DegreeCentralityProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        Direction direction = configuration.getDirection(Direction.INCOMING);
         CentralityResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey, direction);
 
         logMemoryUsage(tracker);
@@ -153,19 +152,13 @@ public final class DegreeCentralityProc {
             Class<? extends GraphFactory> graphFactory,
             DegreeCentralityScore.Stats.Builder statsBuilder,
             ProcedureConfiguration configuration,
-            String weightPropertyKey) {
+            String weightPropertyKey, Direction direction) {
         GraphLoader graphLoader = new GraphLoader(api, Pools.DEFAULT)
                 .init(log, label, relationship, configuration)
                 .withAllocationTracker(tracker)
                 .withOptionalRelationshipWeightsFromProperty(weightPropertyKey, configuration.getWeightPropertyDefaultValue(0.0));
 
-        Direction direction = configuration.getDirection(Direction.OUTGOING);
-        if (direction == Direction.BOTH) {
-            graphLoader.asUndirected(true);
-        } else {
-            graphLoader.withDirection(direction);
-        }
-
+        graphLoader.direction(direction);
 
         try (ProgressTimer timer = statsBuilder.timeLoad()) {
             Graph graph = graphLoader.load(graphFactory);
