@@ -185,7 +185,7 @@ public final class DegreeCentralityProc {
         final int batchSize = configuration.getBatchSize();
         final int concurrency = configuration.getConcurrency(Pools.getNoThreadsInDefaultPool());
 
-        if(direction == Direction.BOTH) {
+        if (direction == Direction.BOTH) {
             direction = Direction.OUTGOING;
         }
 
@@ -194,7 +194,7 @@ public final class DegreeCentralityProc {
             algo = new WeightedDegreeCentrality(graph, Pools.DEFAULT, concurrency, direction);
             statsBuilder.timeEval(algo::compute);
         } else {
-            algo = new DegreeCentrality(graph, Pools.DEFAULT, concurrency, direction);
+            algo = new DegreeCentrality(graph, Pools.DEFAULT, concurrency, direction, batchSize);
             statsBuilder.timeEval(algo::compute);
         }
         Algorithm<?> algorithm = algo.algorithm();

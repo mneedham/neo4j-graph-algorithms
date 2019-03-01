@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 public class DegreeCentrality extends Algorithm<DegreeCentrality> implements DegreeCentralityAlgorithm {
     private final int nodeCount;
     private Direction direction;
+    private int batchSize;
     private Graph graph;
     private final ExecutorService executor;
     private final int concurrency;
@@ -46,24 +47,29 @@ public class DegreeCentrality extends Algorithm<DegreeCentrality> implements Deg
             Graph graph,
             ExecutorService executor,
             int concurrency,
-            Direction direction
-    ) {
+            Direction direction,
+            int batchSize) {
 
         this.graph = graph;
         this.executor = executor;
         this.concurrency = concurrency;
-        nodeCount = Math.toIntExact(graph.nodeCount());
         this.direction = direction;
+        this.batchSize = batchSize;
+        nodeCount = Math.toIntExact(graph.nodeCount());
         degrees = new double[nodeCount];
     }
 
     public void compute() {
         nodeQueue.set(0);
-        final ArrayList<Future<?>> futures = new ArrayList<>();
-        for (int i = 0; i < concurrency; i++) {
-            futures.add(executor.submit(new DegreeTask()));
+
+        int batchSize = ParallelUtil.adjustBatchSize(nodeCount, concurrency, this.batchSize);
+        int taskCount = ParallelUtil.threadSize(batchSize, nodeCount);
+        final ArrayList<DegreeTask> tasks = new ArrayList<>(taskCount);
+
+        for (int i = 0; i < taskCount; i++) {
+            tasks.add(new DegreeTask());
         }
-        ParallelUtil.awaitTermination(futures);
+        ParallelUtil.runWithConcurrency(concurrency, tasks, executor);
     }
 
     @Override
