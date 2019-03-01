@@ -82,7 +82,8 @@ public final class DegreeCentralityProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        CentralityResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey);
+        Direction direction = configuration.getDirection(Direction.INCOMING);
+        CentralityResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey, direction);
 
         logMemoryUsage(tracker);
 
@@ -114,7 +115,8 @@ public final class DegreeCentralityProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        CentralityResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey);
+        Direction direction = configuration.getDirection(Direction.INCOMING);
+        CentralityResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey, direction);
 
         logMemoryUsage(tracker);
 
@@ -178,17 +180,17 @@ public final class DegreeCentralityProc {
             TerminationFlag terminationFlag,
             ProcedureConfiguration configuration,
             DegreeCentralityScore.Stats.Builder statsBuilder,
-            String weightPropertyKey) {
+            String weightPropertyKey, Direction direction) {
 
         final int batchSize = configuration.getBatchSize();
         final int concurrency = configuration.getConcurrency(Pools.getNoThreadsInDefaultPool());
 
         DegreeCentralityAlgorithm algo;
         if(weightPropertyKey != null) {
-            algo = new WeightedDegreeCentrality(graph, Pools.DEFAULT, concurrency, Direction.OUTGOING);
+            algo = new WeightedDegreeCentrality(graph, Pools.DEFAULT, concurrency, direction);
             statsBuilder.timeEval(algo::compute);
         } else {
-            algo = new DegreeCentrality(graph, Pools.DEFAULT, concurrency, Direction.OUTGOING);
+            algo = new DegreeCentrality(graph, Pools.DEFAULT, concurrency, direction);
             statsBuilder.timeEval(algo::compute);
         }
         Algorithm<?> algorithm = algo.algorithm();
