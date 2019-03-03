@@ -50,7 +50,7 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
             if (hasRelationshipWeights) {
                 long relId = RawValues.combineIntInt(source, target);
                 double oldWeight = relWeights.get(relId, 0d);
-                Object weight = CypherLoadingUtils.getProperty(row, "weight");
+                Object weight = extractWeight(row);
                 if (weight instanceof Number) {
                     double thisWeight = ((Number) weight).doubleValue();
                     double newWeight = oldWeight + thisWeight;
@@ -58,17 +58,23 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
                 }
             }
         } else {
-            matrix.addOutgoing(source, target);
-            if (hasRelationshipWeights) {
-                long relId = RawValues.combineIntInt(source, target);
-                Object weight = CypherLoadingUtils.getProperty(row, "weight");
-                if (weight instanceof Number) {
-                    relWeights.put(relId, ((Number) weight).doubleValue());
+            if (!matrix.hasOutgoing(source, target)) {
+                matrix.addOutgoing(source, target);
+                if (hasRelationshipWeights) {
+                    long relId = RawValues.combineIntInt(source, target);
+                    Object weight = extractWeight(row);
+                    if (weight instanceof Number) {
+                        relWeights.put(relId, ((Number) weight).doubleValue());
+                    }
                 }
             }
         }
 
         return true;
+    }
+
+    private Object extractWeight(Result.ResultRow row) {
+        return CypherLoadingUtils.getProperty(row, "weight");
     }
 
     public long rows() {

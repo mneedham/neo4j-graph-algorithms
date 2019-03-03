@@ -73,7 +73,18 @@ public class HeavyCypherGraphSequentialFactoryTest {
         loadAndTestGraph(nodeStatement, relStatement, true);
     }
 
-    protected void loadAndTestGraph(String nodeStatement, String relStatement, boolean accumulateWeights) {
+    @Test
+    public void countEachRelationshipOnce() throws Exception {
+        String nodeStatement = "MATCH (n) RETURN id(n) as id";
+        String relStatement =
+                "MATCH (n)-[r:REL]->(m) RETURN id(n) as source, id(m) as target, r.prop as weight " +
+                "UNION ALL "+
+                "MATCH (n)-[r:REL]->(m) RETURN id(n) as source, id(m) as target, r.prop as weight ";
+
+        loadAndTestGraph(nodeStatement, relStatement, false);
+    }
+
+    private void loadAndTestGraph(String nodeStatement, String relStatement, boolean accumulateWeights) {
         final Graph graph = new GraphLoader((GraphDatabaseAPI) db)
                 .withBatchSize(1000)
                 .withAccumulateWeights(accumulateWeights)
