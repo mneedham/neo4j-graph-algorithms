@@ -15,8 +15,7 @@ public interface SimilarityInput {
         List<Long> missingIds = new ArrayList<>();
 
         int indexesFound = 0;
-        for (int i = 0; i < idsToFind.size(); i++) {
-            long idToFind = idsToFind.get(i);
+        for (long idToFind : idsToFind) {
             int index = Arrays.binarySearch(inputIds, idToFind);
             if (index < 0) {
                 missingIds.add(idToFind);
@@ -26,7 +25,7 @@ public interface SimilarityInput {
             }
         }
 
-        if(!missingIds.isEmpty()) {
+        if (!missingIds.isEmpty()) {
             throw new IllegalArgumentException(String.format("Node ids %s do not exist in node ids list", missingIds));
         }
 
@@ -34,7 +33,7 @@ public interface SimilarityInput {
     }
 
     static long[] extractInputIds(SimilarityInput[] inputs) {
-        return Arrays.stream(inputs).mapToLong(SimilarityInput::getId).toArray();
+        return Arrays.stream(inputs).parallel().mapToLong(SimilarityInput::getId).toArray();
     }
 
     static int[] indexesFor(long[] inputIds, ProcedureConfiguration configuration, String key) {
@@ -42,7 +41,7 @@ public interface SimilarityInput {
         try {
             return indexes(inputIds, sourceIds);
         } catch(IllegalArgumentException exception) {
-            String message = String.format("%s: %s", String.format("Missing node id in '%s' list ", key), exception.getMessage());
+            String message = String.format("%s: %s", String.format("Missing node ids in '%s' list ", key), exception.getMessage());
             throw new RuntimeException(new IllegalArgumentException(message));
         }
     }
