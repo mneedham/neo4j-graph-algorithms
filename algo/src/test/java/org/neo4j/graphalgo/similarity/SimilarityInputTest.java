@@ -1,6 +1,8 @@
 package org.neo4j.graphalgo.similarity;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 
@@ -8,6 +10,9 @@ import static org.junit.Assert.*;
 import static org.neo4j.graphalgo.similarity.SimilarityInput.extractInputIds;
 
 public class SimilarityInputTest {
+
+    @Rule
+    public ExpectedException expectedEx = ExpectedException.none();
 
     @Test
     public void findOneItem() {
@@ -35,8 +40,11 @@ public class SimilarityInputTest {
         assertArrayEquals(indexes, new int[] {0, 4});
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void missingItem() {
+        expectedEx.expect(IllegalArgumentException.class);
+        expectedEx.expectMessage("Node ids [10] do not exist in node ids list");
+
         CategoricalInput[] ids = new CategoricalInput[5];
         ids[0] = new CategoricalInput(5, new long[]{});
         ids[1] = new CategoricalInput(6, new long[]{});
@@ -49,8 +57,11 @@ public class SimilarityInputTest {
         assertArrayEquals(indexes, new int[] {});
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void allMissing() {
+        expectedEx.expect(IllegalArgumentException.class);
+        expectedEx.expectMessage("Node ids [10, 11, -1, 29] do not exist in node ids list");
+
         CategoricalInput[] ids = new CategoricalInput[5];
         ids[0] = new CategoricalInput(5, new long[]{});
         ids[1] = new CategoricalInput(6, new long[]{});
@@ -63,8 +74,11 @@ public class SimilarityInputTest {
         assertArrayEquals(indexes, new int[] {});
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void someMissingSomeFound() {
+        expectedEx.expect(IllegalArgumentException.class);
+        expectedEx.expectMessage("Node ids [10, 12] do not exist in node ids list");
+
         CategoricalInput[] ids = new CategoricalInput[5];
         ids[0] = new CategoricalInput(5, new long[]{});
         ids[1] = new CategoricalInput(6, new long[]{});

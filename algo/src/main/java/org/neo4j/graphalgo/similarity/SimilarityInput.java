@@ -2,6 +2,7 @@ package org.neo4j.graphalgo.similarity;
 
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -11,22 +12,25 @@ public interface SimilarityInput {
 
     static int[] indexes(long[] inputIds, List<Long> idsToFind) {
         int[] indexes = new int[idsToFind.size()];
+        List<Long> missingIds = new ArrayList<>();
 
         int indexesFound = 0;
         for (int i = 0; i < idsToFind.size(); i++) {
             long idToFind = idsToFind.get(i);
             int index = Arrays.binarySearch(inputIds, idToFind);
             if (index < 0) {
-                throw new IllegalArgumentException(String.format("Node id [%d] does not exist in node ids list", idToFind));
-            }
-
-            if(index >= 0) {
+                missingIds.add(idToFind);
+            } else {
                 indexes[indexesFound] = index;
                 indexesFound++;
             }
         }
 
-        return Arrays.copyOfRange(indexes, 0, indexesFound);
+        if(!missingIds.isEmpty()) {
+            throw new IllegalArgumentException(String.format("Node ids %s do not exist in node ids list", missingIds));
+        }
+
+        return indexes;
     }
 
     static long[] extractInputIds(SimilarityInput[] inputs) {
