@@ -47,61 +47,19 @@ import java.util.concurrent.Future;
  */
 public class HeavyCypherGraphFactory extends GraphFactory {
 
-    private static final int NO_BATCH = -1;
-    private static final int INITIAL_NODE_COUNT = 1_000_000;
+    static final int NO_BATCH = -1;
+    static final int INITIAL_NODE_COUNT = 1_000_000;
     private static final int ESTIMATED_DEGREE = 3;
-    private static final String LIMIT = "limit";
-    private static final String SKIP = "skip";
+    static final String LIMIT = "limit";
+    static final String SKIP = "skip";
     public static final String TYPE = "cypher";
+    private NodeLoader nodeLoader;
 
     public HeavyCypherGraphFactory(
             GraphDatabaseAPI api,
             GraphSetup setup) {
         super(api, setup);
-    }
-
-    static class Nodes {
-        private final long offset;
-        private final long rows;
-        IdMap idMap;
-        WeightMap nodeWeights;
-        WeightMap nodeProps;
-        private final Map<PropertyMapping, WeightMap> nodeProperties;
-        private final double defaultNodeWeight;
-        private final double defaultNodeValue;
-
-        Nodes(
-                long offset,
-                long rows,
-                IdMap idMap,
-                WeightMap nodeWeights,
-                WeightMap nodeProps,
-                Map<PropertyMapping, WeightMap> nodeProperties,
-                double defaultNodeWeight,
-                double defaultNodeValue) {
-            this.offset = offset;
-            this.rows = rows;
-            this.idMap = idMap;
-            this.nodeWeights = nodeWeights;
-            this.nodeProps = nodeProps;
-            this.nodeProperties = nodeProperties;
-            this.defaultNodeWeight = defaultNodeWeight;
-            this.defaultNodeValue = defaultNodeValue;
-        }
-
-        private WeightMapping nodeWeights() {
-            if (nodeWeights != null) {
-                return nodeWeights;
-            }
-            return new NullWeightMap(defaultNodeValue);
-        }
-
-        private WeightMapping nodeValues() {
-            if (nodeProps != null) {
-                return nodeProps;
-            }
-            return new NullWeightMap(defaultNodeWeight);
-        }
+        this.nodeLoader = new NodeLoader(api, setup, dimensions);
     }
 
     static class Relationships {
@@ -132,9 +90,8 @@ public class HeavyCypherGraphFactory extends GraphFactory {
     public Graph build() {
         int batchSize = setup.batchSize;
 
-        Nodes nodes = canBatchLoad(batchSize, setup.startLabel) ?
-                batchLoadNodes(batchSize) :
-                loadNodes(0, NO_BATCH);
+        Nodes nodes = nodeLoader.load();
+
         Relationships relationships;
         relationships = canBatchLoad(batchSize, setup.relationshipType) ?
                 batchLoadRelationships(batchSize, nodes) :
@@ -145,7 +102,7 @@ public class HeavyCypherGraphFactory extends GraphFactory {
         }
 
         Map<String, WeightMapping> nodePropertyMappings = new HashMap<>();
-        for (Map.Entry<PropertyMapping, WeightMap> entry : nodes.nodeProperties.entrySet()) {
+        for (Map.Entry<PropertyMapping, WeightMap> entry : nodes.nodeProperties().entrySet()) {
             nodePropertyMappings.put(entry.getKey().propertyName, entry.getValue());
         }
 
@@ -223,69 +180,6 @@ public class HeavyCypherGraphFactory extends GraphFactory {
         return new Relationships(0, total, matrix, relWeights, setup.relationDefaultWeight);
     }
 
-    private Nodes batchLoadNodes(int batchSize) {
-        ExecutorService pool = setup.executor;
-        int threads = setup.concurrency();
-
-        // data structures for merged information
-        int capacity = INITIAL_NODE_COUNT * 10;
-        LongIntHashMap nodeToGraphIds = new LongIntHashMap(capacity);
-
-        Map<PropertyMapping, WeightMap> nodeProperties = new HashMap<>();
-        for (PropertyMapping propertyMapping : setup.nodePropertyMappings) {
-            nodeProperties.put(propertyMapping,
-                    newWeightMapping(true, dimensions.nodePropertyDefaultValue(propertyMapping.propertyName), capacity));
-        }
-
-        long offset = 0;
-        long total = 0;
-        long lastOffset = 0;
-        List<Future<Nodes>> futures = new ArrayList<>(threads);
-        boolean working = true;
-        do {
-            long skip = offset;
-            futures.add(pool.submit(() -> loadNodes(skip, batchSize)));
-            offset += batchSize;
-            if (futures.size() >= threads) {
-                for (Future<Nodes> future : futures) {
-                    Nodes result = get("Error during loading nodes offset: " + (lastOffset + batchSize), future);
-                    lastOffset = result.offset;
-                    total += result.rows;
-                    working = result.idMap.size() > 0;
-                    if (working) {
-                        int minNodeId = nodeToGraphIds.size();
-
-                        result.idMap.nodeToGraphIds().forEach(
-                                (LongIntProcedure) (graphId, algoId) -> {
-                                    int newId = algoId + minNodeId;
-                                    nodeToGraphIds.put(graphId, newId);
-
-                                    for (Map.Entry<PropertyMapping, WeightMap> entry : nodeProperties.entrySet()) {
-                                        entry.getValue().put(
-                                                newId,
-                                                result.nodeProperties.get(entry.getKey()).get(algoId));
-                                    }
-                                });
-                    }
-                }
-                futures.clear();
-            }
-        } while (working);
-
-        long[] graphIds = new long[nodeToGraphIds.size()];
-        for (final LongIntCursor cursor : nodeToGraphIds) {
-            graphIds[cursor.value] = cursor.key;
-        }
-        return new Nodes(
-                0L,
-                total,
-                new IdMap(graphIds,nodeToGraphIds),
-                null,null,
-                nodeProperties,
-                setup.nodeDefaultWeight,
-                setup.nodeDefaultPropertyValue
-        );
-    }
 
     private <T> T get(String message, Future<T> future) {
         try {
@@ -353,50 +247,6 @@ public class HeavyCypherGraphFactory extends GraphFactory {
         RelationshipRowVisitor visitor = new RelationshipRowVisitor();
         api.execute(setup.relationshipType, params(offset, batchSize)).accept(visitor);
         return new Relationships(offset, visitor.rows, matrix, relWeights, setup.relationDefaultWeight);
-    }
-
-    private Nodes loadNodes(long offset, int batchSize) {
-        int capacity = batchSize == NO_BATCH ? INITIAL_NODE_COUNT : batchSize;
-        final IdMap idMap = new IdMap(capacity);
-
-        Map<PropertyMapping, WeightMap> nodeProperties = new HashMap<>();
-        for (PropertyMapping propertyMapping : setup.nodePropertyMappings) {
-            nodeProperties.put(propertyMapping,
-                    newWeightMapping(true, dimensions.nodePropertyDefaultValue(propertyMapping.propertyName), capacity));
-        }
-
-        class NodeRowVisitor implements Result.ResultVisitor<RuntimeException> {
-            private long rows;
-
-            @Override
-            public boolean visit(Result.ResultRow row) throws RuntimeException {
-                rows++;
-                long id = row.getNumber("id").longValue();
-                idMap.add(id);
-
-                for (Map.Entry<PropertyMapping, WeightMap> entry : nodeProperties.entrySet()) {
-                    Object value = getProperty(row, entry.getKey().propertyKey);
-                    if (value instanceof Number) {
-                        entry.getValue().put(id, ((Number) value).doubleValue());
-                    }
-                }
-
-                return true;
-            }
-        }
-
-        NodeRowVisitor visitor = new NodeRowVisitor();
-        api.execute(setup.startLabel, params(offset, batchSize)).accept(visitor);
-        idMap.buildMappedIds();
-        return new Nodes(
-                offset,
-                visitor.rows,
-                idMap,
-                null,
-                null,
-                nodeProperties,
-                setup.nodeDefaultWeight,
-                setup.nodeDefaultPropertyValue);
     }
 
     private Object getProperty(Result.ResultRow row, String propertyName) {
