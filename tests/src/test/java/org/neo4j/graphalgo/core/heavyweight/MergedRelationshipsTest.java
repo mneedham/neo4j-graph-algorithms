@@ -9,17 +9,17 @@ import org.neo4j.graphdb.Direction;
 import static org.junit.Assert.assertEquals;
 
 public class MergedRelationshipsTest {
+
+    public static final WeightMap REL_WEIGHTS = new WeightMap(10, 0, 0);
+
     @Test
     public void accumulatingRemovesDuplicates() {
-        GraphSetup setup = new GraphSetup();
-
         AdjacencyMatrix matrix = new AdjacencyMatrix(2, false, AllocationTracker.EMPTY);
         matrix.addOutgoing(0, 1);
 
-        WeightMap relWeights = new WeightMap(10, 0, 0);
-        Relationships relationships = new Relationships(0, 5, matrix, relWeights, 0.0);
+        Relationships relationships = new Relationships(0, 5, matrix, REL_WEIGHTS, 0.0);
 
-        MergedRelationships mergedRelationships = new MergedRelationships(5, setup, true);
+        MergedRelationships mergedRelationships = new MergedRelationships(5, new GraphSetup(), true);
 
         mergedRelationships.merge(relationships);
         mergedRelationships.merge(relationships);
@@ -29,15 +29,12 @@ public class MergedRelationshipsTest {
 
     @Test
     public void nonAccumulatingRemovesDuplicates() {
-        GraphSetup setup = new GraphSetup();
-
         AdjacencyMatrix matrix = new AdjacencyMatrix(2, false, AllocationTracker.EMPTY);
         matrix.addOutgoing(0, 1);
 
-        WeightMap relWeights = new WeightMap(10, 0, 0);
-        Relationships relationships = new Relationships(0, 5, matrix, relWeights, 0.0);
+        Relationships relationships = new Relationships(0, 5, matrix, REL_WEIGHTS, 0.0);
 
-        MergedRelationships mergedRelationships = new MergedRelationships(5, setup, false);
+        MergedRelationships mergedRelationships = new MergedRelationships(5, new GraphSetup(), false);
 
         mergedRelationships.merge(relationships);
         mergedRelationships.merge(relationships);
