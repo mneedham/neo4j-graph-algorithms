@@ -13,14 +13,14 @@ public class MergedRelationships {
     private boolean hasRelationshipWeights;
     private boolean accumulateWeights;
 
-    public MergedRelationships(int nodeCount, GraphSetup setup) {
+    public MergedRelationships(int nodeCount, GraphSetup setup, boolean accumulateWeights) {
         this.matrix = new AdjacencyMatrix(nodeCount, false, setup.tracker);
         this.relWeights = newWeightMapping(
                 setup.shouldLoadRelationshipWeight(),
                 setup.relationDefaultWeight,
                 nodeCount * ESTIMATED_DEGREE);
         this.hasRelationshipWeights = setup.shouldLoadRelationshipWeight();
-        this.accumulateWeights = setup.accumulateWeights;
+        this.accumulateWeights = accumulateWeights;
     }
 
     public boolean canMerge(Relationships result) {

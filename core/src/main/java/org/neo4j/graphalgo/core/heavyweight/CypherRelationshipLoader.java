@@ -1,10 +1,8 @@
 package org.neo4j.graphalgo.core.heavyweight;
 
 import org.neo4j.graphalgo.api.GraphSetup;
-import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.IdMap;
 import org.neo4j.graphalgo.core.WeightMap;
-import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 
 import java.util.ArrayList;
@@ -13,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import static org.neo4j.graphalgo.core.heavyweight.CypherLoadingUtils.newWeightMapping;
-import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.*;
+import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.NO_BATCH;
 
 public class CypherRelationshipLoader {
     private final GraphDatabaseAPI api;
@@ -34,12 +32,9 @@ public class CypherRelationshipLoader {
     private Relationships batchLoadRelationships(int batchSize, Nodes nodes) {
         ExecutorService pool = setup.executor;
         int threads = setup.concurrency();
-        boolean accumulateWeights = setup.accumulateWeights;
-
-        // data structures for merged information
         int nodeCount = nodes.idMap.size();
 
-        MergedRelationships mergedRelationships = new MergedRelationships(nodeCount, setup);
+        MergedRelationships mergedRelationships = new MergedRelationships(nodeCount, setup, setup.accumulateWeights);
 
         long offset = 0;
         long lastOffset = 0;
