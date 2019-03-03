@@ -109,7 +109,7 @@ public class CypherRelationshipLoader {
         boolean hasRelationshipWeights = setup.shouldLoadRelationshipWeight();
         final WeightMap relWeights = newWeightMapping(hasRelationshipWeights, setup.relationDefaultWeight, capacity);
 
-        RelationshipRowVisitor visitor = new RelationshipRowVisitor(idMap, hasRelationshipWeights, relWeights, matrix);
+        RelationshipRowVisitor visitor = new RelationshipRowVisitor(idMap, hasRelationshipWeights, relWeights, matrix, setup.accumulateWeights);
         api.execute(setup.relationshipType, CypherLoadingUtils.params(setup.params, offset, batchSize)).accept(visitor);
         return new Relationships(offset, visitor.rows(), matrix, relWeights, setup.relationDefaultWeight);
     }

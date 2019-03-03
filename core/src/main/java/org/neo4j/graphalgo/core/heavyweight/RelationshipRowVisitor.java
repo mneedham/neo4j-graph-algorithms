@@ -13,12 +13,14 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
     private boolean hasRelationshipWeights;
     private WeightMap relWeights;
     private AdjacencyMatrix matrix;
+    private boolean accumulateWeights;
 
-    RelationshipRowVisitor(IdMap idMap, boolean hasRelationshipWeights, WeightMap relWeights, AdjacencyMatrix matrix) {
+    RelationshipRowVisitor(IdMap idMap, boolean hasRelationshipWeights, WeightMap relWeights, AdjacencyMatrix matrix, boolean accumulateWeights) {
         this.idMap = idMap;
         this.hasRelationshipWeights = hasRelationshipWeights;
         this.relWeights = relWeights;
         this.matrix = matrix;
+        this.accumulateWeights = accumulateWeights;
     }
 
     @Override
@@ -40,17 +42,50 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
         if (target == -1) {
             return true;
         }
-        if (hasRelationshipWeights) {
-            long relId = RawValues.combineIntInt(source, target);
-            Object weight = getProperty(row, "weight");
-            if (weight instanceof Number) {
-                relWeights.put(relId, ((Number) weight).doubleValue());
+
+        if(accumulateWeights) {
+            if (!matrix.hasOutgoing(source, target)) {
+                matrix.addOutgoing(source, target);
+            }
+            if (hasRelationshipWeights) {
+                long relId = RawValues.combineIntInt(source, target);
+                double oldWeight = relWeights.get(relId, 0d);
+                Object weight = getProperty(row, "weight");
+                if (weight instanceof Number) {
+                    double thisWeight = ((Number) weight).doubleValue();
+                    double newWeight = oldWeight + thisWeight;
+                    relWeights.put(relId, newWeight);
+                }
+            }
+        } else {
+            matrix.addOutgoing(source, target);
+            if (hasRelationshipWeights) {
+                long relId = RawValues.combineIntInt(source, target);
+                Object weight = getProperty(row, "weight");
+                if (weight instanceof Number) {
+                    relWeights.put(relId, ((Number) weight).doubleValue());
+                }
             }
         }
 
-//                if (!matrix.hasOutgoing(source, target)) {
-        matrix.addOutgoing(source, target);
-//                }
+
+
+//        if (accumulateWeights) {
+//            // suboptimial, O(n) per node
+//            if (!matrix.hasOutgoing(source, target)) {
+//                matrix.addOutgoing(source, target);
+//            }
+//            if (resultWeights != null) {
+//                double oldWeight = relWeights.get(relationship, 0d);
+//                double newWeight = resultWeights.get(relationship) + oldWeight;
+//                relWeights.put(relationship, newWeight);
+//            }
+//        } else {
+//            matrix.addOutgoing(source, target);
+//            if (resultWeights != null) {
+//                relWeights.put(relationship, resultWeights.get(relationship));
+//            }
+//        }
 
         return true;
     }
