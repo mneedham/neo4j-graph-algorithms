@@ -1,6 +1,7 @@
 package org.neo4j.graphalgo.core.heavyweight;
 
 import org.neo4j.graphalgo.api.GraphSetup;
+import org.neo4j.graphalgo.api.RelationshipWeights;
 import org.neo4j.graphalgo.core.IdMap;
 import org.neo4j.graphalgo.core.WeightMap;
 import org.neo4j.graphdb.Direction;
@@ -37,12 +38,8 @@ public class CypherRelationshipLoader {
 
         // data structures for merged information
         int nodeCount = nodes.idMap.size();
-        AdjacencyMatrix matrix = new AdjacencyMatrix(nodeCount, false, setup.tracker);
-        boolean hasRelationshipWeights = setup.shouldLoadRelationshipWeight();
-        final WeightMap relWeights = newWeightMapping(
-                hasRelationshipWeights,
-                setup.relationDefaultWeight,
-                nodeCount * ESTIMATED_DEGREE);
+
+        MergedRelationships mergedRelationships = new MergedRelationships(nodeCount, setup);
 
         long offset = 0;
         long lastOffset = 0;
@@ -61,40 +58,16 @@ public class CypherRelationshipLoader {
                             future);
                     lastOffset = result.offset();
                     total += result.rows();
-                    working = result.rows() > 0;
+                    working = mergedRelationships.canMerge(result);
                     if (working) {
-                        WeightMap resultWeights = hasRelationshipWeights && result.relWeights().size() > 0 ? result.relWeights() : null;
-                        result.matrix().nodesWithRelationships(Direction.OUTGOING).forEachNode(
-                                node -> {
-                                    result.matrix().forEach(node, Direction.OUTGOING,
-                                            (source, target, relationship) -> {
-                                                if (accumulateWeights) {
-                                                    // suboptimial, O(n) per node
-                                                    if (!matrix.hasOutgoing(source, target)) {
-                                                        matrix.addOutgoing(source, target);
-                                                    }
-                                                    if (resultWeights != null) {
-                                                        double oldWeight = relWeights.get(relationship, 0d);
-                                                        double newWeight = resultWeights.get(relationship) + oldWeight;
-                                                        relWeights.put(relationship, newWeight);
-                                                    }
-                                                } else {
-                                                    matrix.addOutgoing(source, target);
-                                                    if (resultWeights != null) {
-                                                        relWeights.put(relationship, resultWeights.get(relationship));
-                                                    }
-                                                }
-                                                return true;
-                                            });
-                                    return true;
-                                });
+                        mergedRelationships.merge(result);
                     }
                 }
                 futures.clear();
             }
         } while (working);
 
-        return new Relationships(0, total, matrix, relWeights, setup.relationDefaultWeight);
+        return new Relationships(0, total, mergedRelationships.matrix(), mergedRelationships.relWeights(), setup.relationDefaultWeight);
     }
 
     private Relationships loadRelationships(long offset, int batchSize, Nodes nodes) {

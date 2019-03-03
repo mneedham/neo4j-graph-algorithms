@@ -98,7 +98,7 @@ public class HeavyCypherGraphParallelFactoryTest {
         loadAndTestGraph(nodeStatement, relStatement, false);
     }
 
-    protected void loadAndTestGraph(String nodeStatement, String relStatement, boolean accumulateWeights) {
+    private void loadAndTestGraph(String nodeStatement, String relStatement, boolean accumulateWeights) {
         final Graph graph = new GraphLoader((GraphDatabaseAPI) db)
                 .withExecutorService(Pools.DEFAULT)
                 .withBatchSize(1000)
