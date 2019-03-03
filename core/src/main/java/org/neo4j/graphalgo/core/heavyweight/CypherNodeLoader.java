@@ -72,9 +72,9 @@ class CypherNodeLoader {
                                     nodeToGraphIds.put(graphId, newId);
 
                                     for (Map.Entry<PropertyMapping, WeightMap> entry : nodeProperties.entrySet()) {
-                                        entry.getValue().put(
-                                                newId,
-                                                result.nodeProperties().get(entry.getKey()).get(algoId));
+                                        WeightMap weightMap = entry.getValue();
+                                        double weight = result.nodeProperties().get(entry.getKey()).get(algoId);
+                                        weightMap.put(newId, weight);
                                     }
                                 });
                     }
