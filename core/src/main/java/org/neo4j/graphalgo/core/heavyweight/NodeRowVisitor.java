@@ -33,7 +33,7 @@ class NodeRowVisitor implements Result.ResultVisitor<RuntimeException> {
         return true;
     }
 
-    public long rows() {
+    long rows() {
         return rows;
     }
 

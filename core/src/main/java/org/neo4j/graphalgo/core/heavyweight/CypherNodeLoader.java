@@ -14,18 +14,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.*;
+import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.INITIAL_NODE_COUNT;
+import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.NO_BATCH;
 
-class NodeLoader {
+class CypherNodeLoader {
     private final GraphSetup setup;
     private final GraphDimensions dimensions;
     private final GraphDatabaseAPI api;
 
-    public NodeLoader(GraphDatabaseAPI api, GraphSetup setup, GraphDimensions dimensions) {
+    public CypherNodeLoader(GraphDatabaseAPI api, GraphSetup setup, GraphDimensions dimensions) {
         this.api = api;
         this.setup = setup;
         this.dimensions = dimensions;
@@ -59,7 +59,7 @@ class NodeLoader {
             offset += batchSize;
             if (futures.size() >= threads) {
                 for (Future<Nodes> future : futures) {
-                    Nodes result = get("Error during loading nodes offset: " + (lastOffset + batchSize), future);
+                    Nodes result = CypherLoadingUtils.get("Error during loading nodes offset: " + (lastOffset + batchSize), future);
                     lastOffset = result.offset();
                     total += result.rows();
                     working = result.idMap.size() > 0;
@@ -106,7 +106,7 @@ class NodeLoader {
 
 
         NodeRowVisitor visitor = new NodeRowVisitor(idMap, nodeProperties);
-        api.execute(setup.startLabel, params(offset, batchSize)).accept(visitor);
+        api.execute(setup.startLabel, CypherLoadingUtils.params(setup.params,offset, batchSize)).accept(visitor);
         idMap.buildMappedIds();
         return new Nodes(
                 offset,
@@ -126,25 +126,6 @@ class NodeLoader {
                     CypherLoadingUtils.newWeightMapping(true, dimensions.nodePropertyDefaultValue(propertyMapping.propertyName), capacity));
         }
         return nodeProperties;
-    }
-
-    private <T> T get(String message, Future<T> future) {
-        try {
-            return future.get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted: " + message, e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(message, e);
-        }
-    }
-
-    private Map<String, Object> params(long offset, int batchSize) {
-        Map<String, Object> params = new HashMap<>(setup.params);
-        params.put(SKIP, offset);
-        if (batchSize > 0) {
-            params.put(LIMIT, batchSize);
-        }
-        return params;
     }
 
 }

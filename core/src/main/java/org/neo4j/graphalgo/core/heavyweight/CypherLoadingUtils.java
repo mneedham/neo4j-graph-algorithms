@@ -2,6 +2,11 @@ package org.neo4j.graphalgo.core.heavyweight;
 
 import org.neo4j.graphalgo.core.WeightMap;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.LIMIT;
 import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.SKIP;
 
@@ -14,5 +19,24 @@ public class CypherLoadingUtils {
 
     public static WeightMap newWeightMapping(boolean needWeights, double defaultValue, int capacity) {
         return needWeights ? new WeightMap(capacity, defaultValue, -2) : null;
+    }
+
+    public static Map<String, Object> params(Map<String, Object> baseParams, long offset, int batchSize) {
+        Map<String, Object> params = new HashMap<>(baseParams);
+        params.put(SKIP, offset);
+        if (batchSize > 0) {
+            params.put(LIMIT, batchSize);
+        }
+        return params;
+    }
+
+    public static <T> T get(String message, Future<T> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted: " + message, e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(message, e);
+        }
     }
 }
