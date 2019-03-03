@@ -21,9 +21,9 @@ import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.INITI
 import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.NO_BATCH;
 
 class CypherNodeLoader {
+    private final GraphDatabaseAPI api;
     private final GraphSetup setup;
     private final GraphDimensions dimensions;
-    private final GraphDatabaseAPI api;
 
     public CypherNodeLoader(GraphDatabaseAPI api, GraphSetup setup, GraphDimensions dimensions) {
         this.api = api;
