@@ -24,7 +24,7 @@ class NodeRowVisitor implements Result.ResultVisitor<RuntimeException> {
         idMap.add(id);
 
         for (Map.Entry<PropertyMapping, WeightMap> entry : nodeProperties.entrySet()) {
-            Object value = getProperty(row, entry.getKey().propertyKey);
+            Object value = CypherLoadingUtils.getProperty(row, entry.getKey().propertyKey);
             if (value instanceof Number) {
                 entry.getValue().put(id, ((Number) value).doubleValue());
             }
@@ -35,13 +35,5 @@ class NodeRowVisitor implements Result.ResultVisitor<RuntimeException> {
 
     long rows() {
         return rows;
-    }
-
-    private Object getProperty(Result.ResultRow row, String propertyName) {
-        try {
-            return row.get(propertyName);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
     }
 }

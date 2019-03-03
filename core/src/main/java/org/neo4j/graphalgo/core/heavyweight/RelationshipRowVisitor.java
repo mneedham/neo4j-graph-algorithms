@@ -50,7 +50,7 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
             if (hasRelationshipWeights) {
                 long relId = RawValues.combineIntInt(source, target);
                 double oldWeight = relWeights.get(relId, 0d);
-                Object weight = getProperty(row, "weight");
+                Object weight = CypherLoadingUtils.getProperty(row, "weight");
                 if (weight instanceof Number) {
                     double thisWeight = ((Number) weight).doubleValue();
                     double newWeight = oldWeight + thisWeight;
@@ -61,7 +61,7 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
             matrix.addOutgoing(source, target);
             if (hasRelationshipWeights) {
                 long relId = RawValues.combineIntInt(source, target);
-                Object weight = getProperty(row, "weight");
+                Object weight = CypherLoadingUtils.getProperty(row, "weight");
                 if (weight instanceof Number) {
                     relWeights.put(relId, ((Number) weight).doubleValue());
                 }
@@ -69,14 +69,6 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
         }
 
         return true;
-    }
-
-    private Object getProperty(Result.ResultRow row, String propertyName) {
-        try {
-            return row.get(propertyName);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
     }
 
     public long rows() {

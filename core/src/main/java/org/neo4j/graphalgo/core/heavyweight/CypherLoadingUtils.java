@@ -1,6 +1,7 @@
 package org.neo4j.graphalgo.core.heavyweight;
 
 import org.neo4j.graphalgo.core.WeightMap;
+import org.neo4j.graphdb.Result;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +38,14 @@ public class CypherLoadingUtils {
             throw new RuntimeException("Interrupted: " + message, e);
         } catch (ExecutionException e) {
             throw new RuntimeException(message, e);
+        }
+    }
+
+    public static Object getProperty(Result.ResultRow row, String propertyName) {
+        try {
+            return row.get(propertyName);
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 }
