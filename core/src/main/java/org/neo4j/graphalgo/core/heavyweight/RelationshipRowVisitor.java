@@ -68,25 +68,6 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
             }
         }
 
-
-
-//        if (accumulateWeights) {
-//            // suboptimial, O(n) per node
-//            if (!matrix.hasOutgoing(source, target)) {
-//                matrix.addOutgoing(source, target);
-//            }
-//            if (resultWeights != null) {
-//                double oldWeight = relWeights.get(relationship, 0d);
-//                double newWeight = resultWeights.get(relationship) + oldWeight;
-//                relWeights.put(relationship, newWeight);
-//            }
-//        } else {
-//            matrix.addOutgoing(source, target);
-//            if (resultWeights != null) {
-//                relWeights.put(relationship, resultWeights.get(relationship));
-//            }
-//        }
-
         return true;
     }
 
