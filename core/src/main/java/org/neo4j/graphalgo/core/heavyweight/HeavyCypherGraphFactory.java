@@ -346,7 +346,7 @@ public class HeavyCypherGraphFactory extends GraphFactory {
                         relWeights.put(relId, ((Number) weight).doubleValue());
                     }
                 }
-                matrix.addOutgoing(source, target);
+                matrix.addOutgoing(source, target); 
                 return true;
             }
         }
