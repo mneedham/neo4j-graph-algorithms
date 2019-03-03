@@ -8,7 +8,6 @@ import org.neo4j.graphalgo.api.GraphSetup;
 import org.neo4j.graphalgo.core.GraphDimensions;
 import org.neo4j.graphalgo.core.IdMap;
 import org.neo4j.graphalgo.core.WeightMap;
-import org.neo4j.graphdb.Result;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 
 import java.util.ArrayList;
@@ -19,14 +18,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.INITIAL_NODE_COUNT;
-import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.NO_BATCH;
-import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.SKIP;
-import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.LIMIT;
+import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.*;
 
 class NodeLoader {
-
-
     private final GraphSetup setup;
     private final GraphDimensions dimensions;
     private final GraphDatabaseAPI api;
@@ -39,53 +33,9 @@ class NodeLoader {
 
     public Nodes load() {
         int batchSize = setup.batchSize;
-        return canBatchLoad(batchSize, setup.startLabel) ?
+        return CypherLoadingUtils.canBatchLoad(setup.loadConcurrent(), batchSize, setup.startLabel) ?
                 batchLoadNodes(batchSize) :
                 loadNodes(0, NO_BATCH);
-    }
-
-    private Nodes loadNodes(long offset, int batchSize) {
-        int capacity = batchSize == NO_BATCH ? INITIAL_NODE_COUNT : batchSize;
-        final IdMap idMap = new IdMap(capacity);
-
-        Map<PropertyMapping, WeightMap> nodeProperties = new HashMap<>();
-        for (PropertyMapping propertyMapping : setup.nodePropertyMappings) {
-            nodeProperties.put(propertyMapping,
-                    newWeightMapping(true, dimensions.nodePropertyDefaultValue(propertyMapping.propertyName), capacity));
-        }
-
-        class NodeRowVisitor implements Result.ResultVisitor<RuntimeException> {
-            private long rows;
-
-            @Override
-            public boolean visit(Result.ResultRow row) throws RuntimeException {
-                rows++;
-                long id = row.getNumber("id").longValue();
-                idMap.add(id);
-
-                for (Map.Entry<PropertyMapping, WeightMap> entry : nodeProperties.entrySet()) {
-                    Object value = getProperty(row, entry.getKey().propertyKey);
-                    if (value instanceof Number) {
-                        entry.getValue().put(id, ((Number) value).doubleValue());
-                    }
-                }
-
-                return true;
-            }
-        }
-
-        NodeRowVisitor visitor = new NodeRowVisitor();
-        api.execute(setup.startLabel, params(offset, batchSize)).accept(visitor);
-        idMap.buildMappedIds();
-        return new Nodes(
-                offset,
-                visitor.rows,
-                idMap,
-                null,
-                null,
-                nodeProperties,
-                setup.nodeDefaultWeight,
-                setup.nodeDefaultPropertyValue);
     }
 
     private Nodes batchLoadNodes(int batchSize) {
@@ -96,11 +46,7 @@ class NodeLoader {
         int capacity = INITIAL_NODE_COUNT * 10;
         LongIntHashMap nodeToGraphIds = new LongIntHashMap(capacity);
 
-        Map<PropertyMapping, WeightMap> nodeProperties = new HashMap<>();
-        for (PropertyMapping propertyMapping : setup.nodePropertyMappings) {
-            nodeProperties.put(propertyMapping,
-                    newWeightMapping(true, dimensions.nodePropertyDefaultValue(propertyMapping.propertyName), capacity));
-        }
+        Map<PropertyMapping, WeightMap> nodeProperties = nodeProperties(capacity);
 
         long offset = 0;
         long total = 0;
@@ -152,6 +98,36 @@ class NodeLoader {
         );
     }
 
+    private Nodes loadNodes(long offset, int batchSize) {
+        int capacity = batchSize == NO_BATCH ? INITIAL_NODE_COUNT : batchSize;
+        final IdMap idMap = new IdMap(capacity);
+
+        Map<PropertyMapping, WeightMap> nodeProperties = nodeProperties(capacity);
+
+
+        NodeRowVisitor visitor = new NodeRowVisitor(idMap, nodeProperties);
+        api.execute(setup.startLabel, params(offset, batchSize)).accept(visitor);
+        idMap.buildMappedIds();
+        return new Nodes(
+                offset,
+                visitor.rows(),
+                idMap,
+                null,
+                null,
+                nodeProperties,
+                setup.nodeDefaultWeight,
+                setup.nodeDefaultPropertyValue);
+    }
+
+    private Map<PropertyMapping, WeightMap> nodeProperties(int capacity) {
+        Map<PropertyMapping, WeightMap> nodeProperties = new HashMap<>();
+        for (PropertyMapping propertyMapping : setup.nodePropertyMappings) {
+            nodeProperties.put(propertyMapping,
+                    CypherLoadingUtils.newWeightMapping(true, dimensions.nodePropertyDefaultValue(propertyMapping.propertyName), capacity));
+        }
+        return nodeProperties;
+    }
+
     private <T> T get(String message, Future<T> future) {
         try {
             return future.get();
@@ -160,10 +136,6 @@ class NodeLoader {
         } catch (ExecutionException e) {
             throw new RuntimeException(message, e);
         }
-    }
-
-    private WeightMap newWeightMapping(boolean needWeights, double defaultValue, int capacity) {
-        return needWeights ? new WeightMap(capacity, defaultValue, -2) : null;
     }
 
     private Map<String, Object> params(long offset, int batchSize) {
@@ -175,17 +147,4 @@ class NodeLoader {
         return params;
     }
 
-    private Object getProperty(Result.ResultRow row, String propertyName) {
-        try {
-            return row.get(propertyName);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
-
-    private boolean canBatchLoad(int batchSize, String statement) {
-        return setup.loadConcurrent() && batchSize > 0 &&
-                (statement.contains("{" + LIMIT + "}") || statement.contains("$" + LIMIT)) &&
-                (statement.contains("{" + SKIP + "}") || statement.contains("$" + SKIP));
-    }
 }

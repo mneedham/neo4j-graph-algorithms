@@ -59,7 +59,7 @@ public class Nodes {
         return offset;
     }
 
-    public long rows() {
+    long rows() {
         return rows;
     }
 }
