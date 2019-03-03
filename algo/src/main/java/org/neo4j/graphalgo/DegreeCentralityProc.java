@@ -23,6 +23,7 @@ import org.neo4j.graphalgo.api.GraphFactory;
 import org.neo4j.graphalgo.api.HugeGraph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
+import org.neo4j.graphalgo.core.ProcedureConstants;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
@@ -43,6 +44,8 @@ import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import static org.neo4j.graphalgo.core.ProcedureConstants.CYPHER_QUERY;
 
 public final class DegreeCentralityProc {
 
@@ -73,7 +76,7 @@ public final class DegreeCentralityProc {
 
         DegreeCentralityScore.Stats.Builder statsBuilder = new DegreeCentralityScore.Stats.Builder();
         AllocationTracker tracker = AllocationTracker.create();
-        Direction direction = configuration.getDirection(Direction.INCOMING);
+        Direction direction = getDirection(configuration);
         final Graph graph = load(label, relationship, tracker, configuration.getGraphImpl(), statsBuilder, configuration, weightPropertyKey, direction);
 
         if(graph.nodeCount() == 0) {
@@ -91,6 +94,12 @@ public final class DegreeCentralityProc {
         return Stream.of(statsBuilder.build());
     }
 
+    private Direction getDirection(ProcedureConfiguration configuration) {
+        String graphName = configuration.getGraphName(ProcedureConstants.DEFAULT_GRAPH_IMPL);
+        Direction direction = configuration.getDirection(Direction.INCOMING);
+        return CYPHER_QUERY.equals(graphName) ? Direction.OUTGOING : direction;
+    }
+
     @Procedure(value = "algo.degree.stream", mode = Mode.READ)
     @Description("CALL algo.degree.stream(label:String, relationship:String, " +
             "{weightProperty: null, concurrency:4}) " +
@@ -105,7 +114,7 @@ public final class DegreeCentralityProc {
         final String weightPropertyKey = configuration.getString(CONFIG_WEIGHT_KEY, null);
 
         DegreeCentralityScore.Stats.Builder statsBuilder = new DegreeCentralityScore.Stats.Builder();
-        Direction direction = configuration.getDirection(Direction.INCOMING);
+        Direction direction = getDirection(configuration);
         AllocationTracker tracker = AllocationTracker.create();
         final Graph graph = load(label, relationship, tracker, configuration.getGraphImpl(), statsBuilder, configuration, weightPropertyKey, direction);
 
