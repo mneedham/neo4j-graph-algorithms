@@ -38,12 +38,12 @@ public abstract class BaseComputeStep implements ComputeStep {
     private final double alpha;
     private final double dampingFactor;
 
-    private double[] pageRank;
+    double[] pageRank;
     double[] deltas;
     int[][] nextScores;
     private int[][] prevScores;
 
-    private final int partitionSize;
+    final int partitionSize;
     final int startNode;
     final int endNode;
 
@@ -88,8 +88,9 @@ public abstract class BaseComputeStep implements ComputeStep {
 
         double[] partitionRank = new double[partitionSize];
 
+        double initialValue = initialValue();
         if(sourceNodeIds.length == 0) {
-            Arrays.fill(partitionRank, alpha);
+            Arrays.fill(partitionRank, initialValue);
         } else {
             Arrays.fill(partitionRank,0);
 
@@ -98,13 +99,17 @@ public abstract class BaseComputeStep implements ComputeStep {
                     .toArray();
 
             for (int sourceNodeId : partitionSourceNodeIds) {
-                partitionRank[sourceNodeId - this.startNode] = alpha;
+                partitionRank[sourceNodeId - this.startNode] = initialValue;
             }
         }
 
 
         this.pageRank = partitionRank;
         this.deltas = Arrays.copyOf(partitionRank, partitionSize);
+    }
+
+    double initialValue() {
+        return alpha;
     }
 
     abstract void singleIteration();
@@ -131,7 +136,7 @@ public abstract class BaseComputeStep implements ComputeStep {
         return allScores;
     }
 
-    private void synchronizeScores(int[] allScores) {
+    void synchronizeScores(int[] allScores) {
         double dampingFactor = this.dampingFactor;
         double[] pageRank = this.pageRank;
 
@@ -139,11 +144,15 @@ public abstract class BaseComputeStep implements ComputeStep {
         for (int i = 0; i < length; i++) {
             int sum = allScores[i];
 
-            double delta = dampingFactor * (sum / 100_000.0);
+            double delta = dampenValue(dampingFactor, sum);
             pageRank[i] += delta;
             deltas[i] = delta;
             allScores[i] = 0;
         }
+    }
+
+    private double dampenValue(double dampingFactor, int sum) {
+        return dampingFactor * (sum / 100_000.0);
     }
 
     @Override

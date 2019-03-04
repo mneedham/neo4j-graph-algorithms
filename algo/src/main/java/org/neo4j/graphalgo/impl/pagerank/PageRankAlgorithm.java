@@ -28,6 +28,7 @@ import java.util.stream.LongStream;
 
 public interface PageRankAlgorithm {
 
+
     PageRankAlgorithm compute(int iterations);
 
     PageRankResult result();
@@ -209,4 +210,23 @@ public interface PageRankAlgorithm {
                 sourceNodeIds,
                 pageRankVariant);
     }
+
+    static PageRankAlgorithm eigenvectorCentralityOf(AllocationTracker tracker,
+                                                     Graph graph,
+                                                     double dampingFactor,
+                                                     LongStream sourceNodeIds,
+                                                     ExecutorService pool,
+                                                     int concurrency,
+                                                     int batchSize) {
+        PageRankVariant variant = new EigenvectorCentralityVariant();
+        return new PageRank(pool,
+                concurrency,
+                batchSize,
+                graph,
+                dampingFactor,
+                sourceNodeIds,
+                variant);
+    }
+
+
 }
