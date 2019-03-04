@@ -23,6 +23,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.neo4j.graphalgo.PropertyMapping;
 import org.neo4j.graphalgo.TestDatabaseCreator;
+import org.neo4j.graphalgo.core.DuplicateRelationshipsStrategy;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -71,6 +72,7 @@ public class HeavyCypherGraphFactoryDeduplicationTest {
         final HeavyGraph graph = (HeavyGraph) new GraphLoader((GraphDatabaseAPI) db)
                 .withLabel(nodes)
                 .withRelationshipType(rels)
+                .withDuplicateRelationshipsStrategy(DuplicateRelationshipsStrategy.SKIP)
                 .load(HeavyCypherGraphFactory.class);
 
         assertEquals(2, graph.nodeCount());
