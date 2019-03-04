@@ -44,44 +44,19 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
             return true;
         }
 
-        if (duplicateRelationshipsStrategy == DuplicateRelationshipsStrategy.NONE) {
-                matrix.addOutgoing(source, target);
-                if (hasRelationshipWeights) {
-                    long relId = RawValues.combineIntInt(source, target);
-                    Object weight = extractWeight(row);
-                    if (weight instanceof Number) {
-                        relWeights.put(relId, ((Number) weight).doubleValue());
-                    }
-                }
-        } else {
-            boolean hasRelationship = matrix.hasOutgoing(source, target);
-
-            if (!hasRelationship) {
-                matrix.addOutgoing(source, target);
-            }
-
-            if (hasRelationshipWeights) {
-                long relationship = RawValues.combineIntInt(source, target);
-
-                double oldWeight = relWeights.get(relationship, 0d);
-                Object weight = extractWeight(row);
-
-                if (weight instanceof Number) {
-                    double thisWeight = ((Number) weight).doubleValue();
-                    double newWeight = hasRelationship? duplicateRelationshipsStrategy.merge(oldWeight, thisWeight) : thisWeight;
-                    relWeights.put(relationship, newWeight);
-                }
-            }
-        }
+        duplicateRelationshipsStrategy.handle(source, target, matrix, hasRelationshipWeights, relWeights, () -> extractWeight(row));
 
         return true;
     }
 
-    private Object extractWeight(Result.ResultRow row) {
-        return CypherLoadingUtils.getProperty(row, "weight");
+    private Number extractWeight(Result.ResultRow row) {
+        Object weight = CypherLoadingUtils.getProperty(row, "weight");
+        return weight instanceof  Number ? ((Number) weight).doubleValue() : null;
     }
 
     public long rows() {
         return rows;
     }
+
+
 }

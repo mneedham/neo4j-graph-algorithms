@@ -6,6 +6,8 @@ import org.neo4j.graphalgo.core.DuplicateRelationshipsStrategy;
 import org.neo4j.graphalgo.core.WeightMap;
 import org.neo4j.graphdb.Direction;
 
+import java.util.function.Supplier;
+
 import static org.neo4j.graphalgo.core.heavyweight.CypherLoadingUtils.newWeightMapping;
 import static org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory.ESTIMATED_DEGREE;
 
@@ -33,34 +35,13 @@ public class MergedRelationships implements RelationshipConsumer {
         WeightMap resultWeights = hasRelationshipWeights && result.relWeights().size() > 0 ? result.relWeights() : null;
         result.matrix().nodesWithRelationships(Direction.OUTGOING).forEachNode(
                 node -> {
-                    result.matrix().forEach(node, Direction.OUTGOING, getRelationshipConsumer(resultWeights));
+                    result.matrix().forEach(node, Direction.OUTGOING, (source, target, relationship) -> {
+                        Supplier<Number> weightSupplier = () -> resultWeights.get(relationship);
+                        duplicateRelationshipsStrategy.handle(source, target, matrix, resultWeights != null, relWeights, weightSupplier);
+                        return true;
+                    });
                     return true;
                 });
-    }
-
-    private RelationshipConsumer getRelationshipConsumer(WeightMap resultWeights) {
-        boolean hasRelationshipWeights = resultWeights != null;
-        return (source, target, relationship) -> {
-            if (duplicateRelationshipsStrategy == DuplicateRelationshipsStrategy.NONE) {
-                matrix.addOutgoing(source, target);
-                if (hasRelationshipWeights) {
-                    relWeights.put(relationship, resultWeights.get(relationship));
-                }
-            } else {
-                boolean hasRelationship = matrix.hasOutgoing(source, target);
-
-                if (!hasRelationship) {
-                    matrix.addOutgoing(source, target);
-                }
-
-                if (hasRelationshipWeights) {
-                    double oldWeight = relWeights.get(relationship, 0d);
-                    double newWeight = resultWeights.get(relationship);
-                    relWeights.put(relationship, hasRelationship ? duplicateRelationshipsStrategy.merge(oldWeight, newWeight) : newWeight);
-                }
-            }
-            return true;
-        };
     }
 
     public AdjacencyMatrix matrix() {
