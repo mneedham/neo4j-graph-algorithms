@@ -34,7 +34,7 @@ public class CypherRelationshipLoader {
         int threads = setup.concurrency();
         int nodeCount = nodes.idMap.size();
 
-        MergedRelationships mergedRelationships = new MergedRelationships(nodeCount, setup, setup.accumulateWeights);
+        MergedRelationships mergedRelationships = new MergedRelationships(nodeCount, setup, setup.duplicateRelationshipsStrategy);
 
         long offset = 0;
         long lastOffset = 0;
@@ -77,7 +77,7 @@ public class CypherRelationshipLoader {
         boolean hasRelationshipWeights = setup.shouldLoadRelationshipWeight();
         final WeightMap relWeights = newWeightMapping(hasRelationshipWeights, setup.relationDefaultWeight, capacity);
 
-        RelationshipRowVisitor visitor = new RelationshipRowVisitor(idMap, hasRelationshipWeights, relWeights, matrix, setup.accumulateWeights);
+        RelationshipRowVisitor visitor = new RelationshipRowVisitor(idMap, hasRelationshipWeights, relWeights, matrix, setup.duplicateRelationshipsStrategy);
         api.execute(setup.relationshipType, CypherLoadingUtils.params(setup.params, offset, batchSize)).accept(visitor);
         return new Relationships(offset, visitor.rows(), matrix, relWeights, setup.relationDefaultWeight);
     }

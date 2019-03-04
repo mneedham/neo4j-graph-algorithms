@@ -1,5 +1,6 @@
 package org.neo4j.graphalgo.core.heavyweight;
 
+import org.neo4j.graphalgo.core.DuplicateRelationshipsStrategy;
 import org.neo4j.graphalgo.core.IdMap;
 import org.neo4j.graphalgo.core.WeightMap;
 import org.neo4j.graphalgo.core.utils.RawValues;
@@ -13,14 +14,14 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
     private boolean hasRelationshipWeights;
     private WeightMap relWeights;
     private AdjacencyMatrix matrix;
-    private boolean accumulateWeights;
+    private DuplicateRelationshipsStrategy duplicateRelationshipsStrategy;
 
-    RelationshipRowVisitor(IdMap idMap, boolean hasRelationshipWeights, WeightMap relWeights, AdjacencyMatrix matrix, boolean accumulateWeights) {
+    RelationshipRowVisitor(IdMap idMap, boolean hasRelationshipWeights, WeightMap relWeights, AdjacencyMatrix matrix, DuplicateRelationshipsStrategy duplicateRelationshipsStrategy) {
         this.idMap = idMap;
         this.hasRelationshipWeights = hasRelationshipWeights;
         this.relWeights = relWeights;
         this.matrix = matrix;
-        this.accumulateWeights = accumulateWeights;
+        this.duplicateRelationshipsStrategy = duplicateRelationshipsStrategy;
     }
 
     @Override
@@ -43,22 +44,7 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
             return true;
         }
 
-        if(accumulateWeights) {
-            if (!matrix.hasOutgoing(source, target)) {
-                matrix.addOutgoing(source, target);
-            }
-            if (hasRelationshipWeights) {
-                long relId = RawValues.combineIntInt(source, target);
-                double oldWeight = relWeights.get(relId, 0d);
-                Object weight = extractWeight(row);
-                if (weight instanceof Number) {
-                    double thisWeight = ((Number) weight).doubleValue();
-                    double newWeight = oldWeight + thisWeight;
-                    relWeights.put(relId, newWeight);
-                }
-            }
-        } else {
-            if (!matrix.hasOutgoing(source, target)) {
+        if (duplicateRelationshipsStrategy == DuplicateRelationshipsStrategy.NONE) {
                 matrix.addOutgoing(source, target);
                 if (hasRelationshipWeights) {
                     long relId = RawValues.combineIntInt(source, target);
@@ -66,6 +52,24 @@ class RelationshipRowVisitor implements Result.ResultVisitor<RuntimeException> {
                     if (weight instanceof Number) {
                         relWeights.put(relId, ((Number) weight).doubleValue());
                     }
+                }
+        } else {
+            boolean hasRelationship = matrix.hasOutgoing(source, target);
+
+            if (!hasRelationship) {
+                matrix.addOutgoing(source, target);
+            }
+
+            if (hasRelationshipWeights) {
+                long relationship = RawValues.combineIntInt(source, target);
+
+                double oldWeight = relWeights.get(relationship, 0d);
+                Object weight = extractWeight(row);
+
+                if (weight instanceof Number) {
+                    double thisWeight = ((Number) weight).doubleValue();
+                    double newWeight = hasRelationship? duplicateRelationshipsStrategy.merge(oldWeight, thisWeight) : thisWeight;
+                    relWeights.put(relationship, newWeight);
                 }
             }
         }

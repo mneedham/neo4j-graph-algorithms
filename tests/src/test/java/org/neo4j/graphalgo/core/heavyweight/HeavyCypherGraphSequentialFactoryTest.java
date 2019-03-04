@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.core.DuplicateRelationshipsStrategy;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphdb.Direction;
@@ -87,7 +88,7 @@ public class HeavyCypherGraphSequentialFactoryTest {
     private void loadAndTestGraph(String nodeStatement, String relStatement, boolean accumulateWeights) {
         final Graph graph = new GraphLoader((GraphDatabaseAPI) db)
                 .withBatchSize(1000)
-                .withAccumulateWeights(accumulateWeights)
+                .withDuplicateRelationshipsStrategy(accumulateWeights ? DuplicateRelationshipsStrategy.SUM : DuplicateRelationshipsStrategy.NONE)
                 .withRelationshipWeightsFromProperty("prop",0d)
                 .withLabel(nodeStatement)
                 .withRelationshipType(relStatement)
