@@ -3,8 +3,6 @@ package org.neo4j.graphalgo.impl.results;
 import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.core.write.Translators;
 
-import java.util.Arrays;
-
 public final class DoubleArrayResult implements CentralityResult {
     private final double[] result;
 
