@@ -25,15 +25,13 @@ import org.neo4j.graphalgo.core.utils.ParallelUtil;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.results.CentralityResult;
+import org.neo4j.graphalgo.impl.results.DoubleArrayResult;
 import org.neo4j.graphalgo.impl.results.PartitionedPrimitiveDoubleArrayResult;
-import org.neo4j.graphalgo.impl.results.PrimitiveDoubleArrayResult;
 import org.neo4j.graphdb.Direction;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.LongStream;
-
-import static org.neo4j.graphalgo.core.utils.ArrayUtil.binaryLookup;
 
 
 /**
@@ -339,7 +337,7 @@ public class PageRank extends Algorithm<PageRank> implements PageRankAlgorithm {
         CentralityResult getPageRank() {
             ComputeStep firstStep = steps.get(0);
             if (steps.size() == 1) {
-                return new PrimitiveDoubleArrayResult(firstStep.pageRank());
+                return new DoubleArrayResult(firstStep.pageRank());
             }
             double[][] results = new double[steps.size()][];
             Iterator<ComputeStep> iterator = steps.iterator();

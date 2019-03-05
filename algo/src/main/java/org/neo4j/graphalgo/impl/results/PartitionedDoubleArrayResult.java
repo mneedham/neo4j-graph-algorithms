@@ -22,6 +22,21 @@ public final class PartitionedDoubleArrayResult implements CentralityResult, Pro
     }
 
     @Override
+    public double max() {
+        return 0;
+    }
+
+    @Override
+    public double l2Norm() {
+        return 0;
+    }
+
+    @Override
+    public double l1Norm() {
+        return 0;
+    }
+
+    @Override
     public double toDouble(final double[][] data, final long nodeId) {
         int idx = binaryLookup(nodeId, starts);
         return data[idx][(int) (nodeId - starts[idx])];

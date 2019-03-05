@@ -25,14 +25,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.neo4j.graphalgo.EigenvectorCentralityProc;
 import org.neo4j.graphalgo.PageRankProc;
-import org.neo4j.graphalgo.TestDatabaseCreator;
 import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
-import org.neo4j.io.fs.FileUtils;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.test.TestGraphDatabaseFactory;
@@ -43,13 +40,12 @@ import java.util.function.Consumer;
 
 import static org.junit.Assert.*;
 
-@RunWith(Parameterized.class)
-public class EigenvectorCentralityProcIntegrationTest {
+public class EigenvectorCentralityProcNormalizationIntegrationTest {
 
     private static GraphDatabaseAPI db;
     private static Map<Long, Double> expected = new HashMap<>();
-    private static Map<Long, Double> weightedExpected = new HashMap<>();
-
+    private static Map<Long, Double> maxNormExpected = new HashMap<>();
+    
     @AfterClass
     public static void tearDown() throws Exception {
         if (db != null) db.shutdown();
@@ -57,7 +53,7 @@ public class EigenvectorCentralityProcIntegrationTest {
 
     @BeforeClass
     public static void setup() throws KernelException {
-        ClassLoader classLoader = EigenvectorCentralityProcIntegrationTest.class.getClassLoader();
+        ClassLoader classLoader = EigenvectorCentralityProcNormalizationIntegrationTest.class.getClassLoader();
         File file = new File(classLoader.getResource("got/got-s1-nodes.csv").getFile());
 
         db = (GraphDatabaseAPI)new TestGraphDatabaseFactory()
@@ -101,28 +97,28 @@ public class EigenvectorCentralityProcIntegrationTest {
             expected.put(db.findNode(label, "name", "Arya").getId(), 73.32532401574804	);
             expected.put(db.findNode(label, "name", "Petyr").getId(), 72.26733401574802);
             expected.put(db.findNode(label, "name", "Sansa").getId(), 71.56470401574803);
-            tx.success();
+        }
+
+        try (Transaction tx = db.beginTx()) {
+            final Label label = Label.label("Character");
+            maxNormExpected.put(db.findNode(label, "name", "Ned").getId(), 1.0);
+            maxNormExpected.put(db.findNode(label, "name", "Robert").getId(), 0.78823475553106);
+            maxNormExpected.put(db.findNode(label, "name", "Cersei").getId(), 		0.7567972769062152);
+            maxNormExpected.put(db.findNode(label, "name", "Catelyn").getId(), 	0.7561096813631987);
+            maxNormExpected.put(db.findNode(label, "name", "Tyrion").getId(), 0.7335541239126161);
+            maxNormExpected.put(db.findNode(label, "name", "Joffrey").getId(), 0.694695640231341);
+            maxNormExpected.put(db.findNode(label, "name", "Robb").getId(), 0.6578162827292336);
+            maxNormExpected.put(db.findNode(label, "name", "Arya").getId(), 0.6556602308561643);
+            maxNormExpected.put(db.findNode(label, "name", "Petyr").getId(), 0.6461632437992975);
+            maxNormExpected.put(db.findNode(label, "name", "Sansa").getId(), 0.6398561255696676);
         }
     }
 
-    @Parameterized.Parameters(name = "{0}")
-    public static Collection<Object[]> data() {
-        return Arrays.asList(
-                new Object[]{"Heavy"},
-                new Object[]{"Light"},
-                new Object[]{"Kernel"},
-                new Object[]{"Huge"}
-        );
-    }
-
-    @Parameterized.Parameter
-    public String graphImpl;
-
     @Test
-    public void testStream() throws Exception {
+    public void noNormalizing() throws Exception {
         final Map<Long, Double> actual = new HashMap<>();
         runQuery(
-                "CALL algo.eigenvector.stream('Character', 'INTERACTS_SEASON1', {graph:'"+graphImpl+"', direction: 'BOTH'}) " +
+                "CALL algo.eigenvector.stream('Character', 'INTERACTS_SEASON1', {direction: 'BOTH'}) " +
                         "YIELD nodeId, score " +
                         "RETURN nodeId, score " +
                         "ORDER BY score DESC " +
@@ -134,113 +130,20 @@ public class EigenvectorCentralityProcIntegrationTest {
         assertMapEquals(expected, actual);
     }
 
-//    @Test
-//    public void testWeightedPageRankStream() throws Exception {
-//        final Map<Long, Double> actual = new HashMap<>();
-//        runQuery(
-//                "CALL algo.pageRank.stream('Label1', 'TYPE1', {graph:'"+graphImpl+"', weightProperty: 'foo'}) YIELD nodeId, score",
-//                row -> actual.put(
-//                        (Long)row.get("nodeId"),
-//                        (Double) row.get("score")));
-//
-//        assertMapEquals(weightedExpected, actual);
-//    }
-
-//    @Test
-//    public void testWeightedPageRankWithCachedWeightsStream() throws Exception {
-//        final Map<Long, Double> actual = new HashMap<>();
-//        runQuery(
-//                "CALL algo.pageRank.stream('Label1', 'TYPE1', {graph:'"+graphImpl+"', weightProperty: 'foo', cacheWeights: true}) YIELD nodeId, score",
-//                row -> actual.put(
-//                        (Long)row.get("nodeId"),
-//                        (Double) row.get("score")));
-//
-//        assertMapEquals(weightedExpected, actual);
-//    }
-
-//    @Test
-//    public void testWeightedPageRankWithAllRelationshipsEqualStream() throws Exception {
-//        final Map<Long, Double> actual = new HashMap<>();
-//        runQuery(
-//                "CALL algo.pageRank.stream('Label1', 'TYPE1', {graph:'"+graphImpl+"', weightProperty: 'madeUp', defaultValue: 1.0}) YIELD nodeId, score",
-//                row -> actual.put(
-//                        (Long)row.get("nodeId"),
-//                        (Double) row.get("score")));
-//
-//        assertMapEquals(expected, actual);
-//    }
-
     @Test
-    public void testWriteBack() throws Exception {
-        runQuery(
-                "CALL algo.eigenvector('Character', 'INTERACTS_SEASON1', {graph:'"+graphImpl+"', direction: 'BOTH'}) " +
-                        "YIELD writeMillis, write, writeProperty ",
-                row -> {
-                    assertTrue(row.getBoolean("write"));
-                    assertEquals("eigenvector", row.getString("writeProperty"));
-                    assertTrue(
-                            "write time not set",
-                            row.getNumber("writeMillis").intValue() >= 0);
-                });
-
-        assertResult("eigenvector", expected);
-    }
-
-//    @Test
-//    public void testWeightedPageRankWriteBack() throws Exception {
-//        runQuery(
-//                "CALL algo.pageRank('Label1', 'TYPE1', {graph:'"+graphImpl+"', weightProperty: 'foo'}) YIELD writeMillis, write, writeProperty",
-//                row -> {
-//                    assertTrue(row.getBoolean("write"));
-//                    assertEquals("pagerank", row.getString("writeProperty"));
-//                    assertTrue(
-//                            "write time not set",
-//                            row.getNumber("writeMillis").intValue() >= 0);
-//                });
-//
-//        assertResult("pagerank", weightedExpected);
-//    }
-
-    @Test
-    public void testWriteBackUnderDifferentProperty() throws Exception {
-        runQuery(
-                "CALL algo.eigenvector('Character', 'INTERACTS_SEASON1', {writeProperty:'foobar', graph:'"+graphImpl+"', direction: 'BOTH'}) YIELD writeMillis, write, writeProperty",
-                row -> {
-                    assertTrue(row.getBoolean("write"));
-                    assertEquals("foobar", row.getString("writeProperty"));
-                    assertTrue(
-                            "write time not set",
-                            row.getNumber("writeMillis").intValue() >= 0);
-                });
-
-        assertResult("foobar", expected);
-    }
-
-    @Test
-    public void testParallelWriteBack() throws Exception {
-        runQuery(
-                "CALL algo.eigenvector('Character', 'INTERACTS_SEASON1', {batchSize:3, write:true, graph:'"+graphImpl+"', direction: 'BOTH'}) YIELD writeMillis, write, writeProperty",
-                row -> assertTrue(
-                        "write time not set",
-                        row.getNumber("writeMillis").intValue() >= 0));
-
-        assertResult("eigenvector", expected);
-    }
-
-    @Test
-    public void testParallelExecution() throws Exception {
+    public void maxNormalizing() throws Exception {
         final Map<Long, Double> actual = new HashMap<>();
         runQuery(
-                "CALL algo.eigenvector.stream('Character', 'INTERACTS_SEASON1', {batchSize:2, graph:'"+graphImpl+"', direction: 'BOTH'}) " +
+                "CALL algo.eigenvector.stream('Character', 'INTERACTS_SEASON1', {direction: 'BOTH', normalization: 'max'}) " +
                         "YIELD nodeId, score " +
                         "RETURN nodeId, score " +
                         "ORDER BY score DESC " +
                         "LIMIT 10",
-                row -> {
-                    final long nodeId = row.getNumber("nodeId").longValue();
-                    actual.put(nodeId, (Double) row.get("score"));
-                });
-        assertMapEquals(expected, actual);
+                row -> actual.put(
+                        (Long)row.get("nodeId"),
+                        (Double) row.get("score")));
+
+        assertMapEquals(maxNormExpected, actual);
     }
 
     private static void runQuery(

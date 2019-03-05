@@ -20,7 +20,6 @@ package org.neo4j.graphalgo;
 
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.GraphFactory;
-import org.neo4j.graphalgo.api.HugeGraph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.utils.Pools;
@@ -29,7 +28,6 @@ import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
-import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
 import org.neo4j.graphalgo.impl.results.CentralityResult;
 import org.neo4j.graphalgo.results.CentralityScore;
 import org.neo4j.graphalgo.results.PageRankScore;
@@ -43,7 +41,6 @@ import org.neo4j.procedure.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -114,9 +111,19 @@ public final class EigenvectorCentralityProc {
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
         CentralityResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder);
 
+
+        Normalization normalization = getNormalization(configuration);
+        CentralityResult normalizedScores = normalization.apply(scores);
+
+
         log.info("Eigenvector Centrality: overall memory usage: %s", tracker.getUsageString());
 
         return CentralityUtils.streamResults(graph, scores);
+    }
+
+    public Normalization getNormalization(ProcedureConfiguration configuration) {
+        String normalization = configuration.getString("normalization", null);
+        return normalization != null ? Normalization.valueOf(normalization) : Normalization.NONE;
     }
 
     private Graph load(
