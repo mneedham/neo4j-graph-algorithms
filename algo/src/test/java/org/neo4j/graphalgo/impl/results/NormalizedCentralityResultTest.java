@@ -15,7 +15,7 @@ public class NormalizedCentralityResultTest {
         when(centralityResult.score(1)).thenReturn(2.0);
         when(centralityResult.score(2)).thenReturn(3.0);
         when(centralityResult.score(3)).thenReturn(4.0);
-        when(centralityResult.max()).thenReturn(4.0);
+        when(centralityResult.computeMax()).thenReturn(4.0);
 
         CentralityResult normalizedResult = Normalization.MAX.apply(centralityResult);
 
@@ -32,7 +32,7 @@ public class NormalizedCentralityResultTest {
         when(centralityResult.score(1)).thenReturn(2.0);
         when(centralityResult.score(2)).thenReturn(3.0);
         when(centralityResult.score(3)).thenReturn(4.0);
-        when(centralityResult.max()).thenReturn(4.0);
+        when(centralityResult.computeMax()).thenReturn(4.0);
 
         CentralityResult normalizedResult = Normalization.NONE.apply(centralityResult);
 
@@ -49,7 +49,7 @@ public class NormalizedCentralityResultTest {
         when(centralityResult.score(1)).thenReturn(2.0);
         when(centralityResult.score(2)).thenReturn(3.0);
         when(centralityResult.score(3)).thenReturn(4.0);
-        when(centralityResult.l2Norm()).thenReturn(4.0);
+        when(centralityResult.computeL2Norm()).thenReturn(4.0);
 
         CentralityResult normalizedResult = Normalization.L2NORM.apply(centralityResult);
 
@@ -66,7 +66,7 @@ public class NormalizedCentralityResultTest {
         when(centralityResult.score(1)).thenReturn(2.0);
         when(centralityResult.score(2)).thenReturn(3.0);
         when(centralityResult.score(3)).thenReturn(4.0);
-        when(centralityResult.l1Norm()).thenReturn(4.0);
+        when(centralityResult.computeL1Norm()).thenReturn(4.0);
 
         CentralityResult normalizedResult = Normalization.L1NORM.apply(centralityResult);
 

@@ -12,19 +12,22 @@ public enum Normalization {
     MAX {
         @Override
         public CentralityResult apply(CentralityResult scores) {
-            return new NormalizedCentralityResult(scores, (score, result) -> score / result.max());
+            double norm = scores.computeMax();
+            return new NormalizedCentralityResult(scores, (score) -> score / norm);
         }
     },
     L1NORM {
         @Override
         public CentralityResult apply(CentralityResult scores) {
-            return new NormalizedCentralityResult(scores, (score, result) -> score / result.l1Norm());
+            double norm = scores.computeL1Norm();
+            return new NormalizedCentralityResult(scores, (score) -> score / norm);
         }
     },
     L2NORM {
         @Override
         public CentralityResult apply(CentralityResult scores) {
-            return new NormalizedCentralityResult(scores, (score, result) -> score / result.l2Norm());
+            double norm = scores.computeL2Norm();
+            return new NormalizedCentralityResult(scores, (score) -> score / norm);
         }
     };
 

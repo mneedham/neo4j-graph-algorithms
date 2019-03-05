@@ -28,9 +28,9 @@ public interface CentralityResult {
 
     void export(String propertyName, Exporter exporter);
 
-    double max();
+    double computeMax();
 
-    double l2Norm();
+    double computeL2Norm();
 
-    double l1Norm();
+    double computeL1Norm();
 }

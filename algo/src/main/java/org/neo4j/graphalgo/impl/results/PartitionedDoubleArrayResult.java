@@ -22,17 +22,17 @@ public final class PartitionedDoubleArrayResult implements CentralityResult, Pro
     }
 
     @Override
-    public double max() {
+    public double computeMax() {
         return 0;
     }
 
     @Override
-    public double l2Norm() {
+    public double computeL2Norm() {
         return 0;
     }
 
     @Override
-    public double l1Norm() {
+    public double computeL1Norm() {
         return 0;
     }
 

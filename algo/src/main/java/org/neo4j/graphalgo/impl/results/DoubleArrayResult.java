@@ -8,15 +8,9 @@ import java.util.OptionalDouble;
 
 public final class DoubleArrayResult implements CentralityResult {
     private final double[] result;
-    private final double max;
-    private final double l2Norm;
-    private final double l1Norm;
 
     public DoubleArrayResult(double[] result) {
         this.result = result;
-        this.max = Arrays.stream(result).parallel().max().orElse(1);
-        this.l2Norm = Math.sqrt(Arrays.stream(result).parallel().map(value -> value * value).sum());
-        this.l1Norm = Arrays.stream(result).parallel().sum();
     }
 
     @Override
@@ -29,18 +23,18 @@ public final class DoubleArrayResult implements CentralityResult {
     }
 
     @Override
-    public double max() {
-        return max;
+    public double computeMax() {
+        return Arrays.stream(result).parallel().max().orElse(1);
     }
 
     @Override
-    public double l2Norm() {
-        return l2Norm;
+    public double computeL2Norm() {
+        return Math.sqrt(Arrays.stream(result).parallel().map(value -> value * value).sum());
     }
 
     @Override
-    public double l1Norm() {
-        return l1Norm;
+    public double computeL1Norm() {
+        return Arrays.stream(result).parallel().sum();
     }
 
     @Override

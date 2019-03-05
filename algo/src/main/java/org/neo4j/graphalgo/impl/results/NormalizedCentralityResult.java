@@ -2,13 +2,13 @@ package org.neo4j.graphalgo.impl.results;
 
 import org.neo4j.graphalgo.core.write.Exporter;
 
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public  class NormalizedCentralityResult implements CentralityResult {
     private CentralityResult result;
-    private BiFunction<Double, CentralityResult, Double> normalizationFunction;
+    private Function<Double, Double> normalizationFunction;
 
-    public NormalizedCentralityResult(CentralityResult result, BiFunction<Double, CentralityResult, Double> normalizationFunction) {
+    public NormalizedCentralityResult(CentralityResult result, Function<Double, Double> normalizationFunction) {
         this.result = result;
         this.normalizationFunction = normalizationFunction;
     }
@@ -20,26 +20,26 @@ public  class NormalizedCentralityResult implements CentralityResult {
 
     @Override
     public double score(int nodeId) {
-        return normalizationFunction.apply(result.score(nodeId), result);
+        return normalizationFunction.apply(result.score(nodeId));
     }
 
     @Override
     public double score(long nodeId) {
-        return normalizationFunction.apply(result.score(nodeId), result);
+        return normalizationFunction.apply(result.score(nodeId));
     }
 
     @Override
-    public double max() {
-        return result.max();
+    public double computeMax() {
+        return result.computeMax();
     }
 
     @Override
-    public double l2Norm() {
+    public double computeL2Norm() {
         return 0;
     }
 
     @Override
-    public double l1Norm() {
+    public double computeL1Norm() {
         return 0;
     }
 }
