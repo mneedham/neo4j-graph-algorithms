@@ -23,10 +23,10 @@ import org.neo4j.collection.primitive.PrimitiveIntIterator;
 import org.neo4j.graphalgo.api.*;
 import org.neo4j.graphalgo.core.utils.ParallelUtil;
 import org.neo4j.graphalgo.core.utils.Pools;
-import org.neo4j.graphalgo.core.write.Exporter;
-import org.neo4j.graphalgo.core.write.PropertyTranslator;
-import org.neo4j.graphalgo.core.write.Translators;
 import org.neo4j.graphalgo.impl.Algorithm;
+import org.neo4j.graphalgo.impl.results.CentralityResult;
+import org.neo4j.graphalgo.impl.results.PartitionedPrimitiveDoubleArrayResult;
+import org.neo4j.graphalgo.impl.results.PrimitiveDoubleArrayResult;
 import org.neo4j.graphdb.Direction;
 
 import java.util.*;
@@ -162,7 +162,7 @@ public class PageRank extends Algorithm<PageRank> implements PageRankAlgorithm {
     }
 
     @Override
-    public PageRankResult result() {
+    public CentralityResult result() {
         return computeSteps.getPageRank();
     }
 
@@ -336,7 +336,7 @@ public class PageRank extends Algorithm<PageRank> implements PageRankAlgorithm {
             Arrays.setAll(scores, i -> new int[stepSize][]);
         }
 
-        PageRankResult getPageRank() {
+        CentralityResult getPageRank() {
             ComputeStep firstStep = steps.get(0);
             if (steps.size() == 1) {
                 return new PrimitiveDoubleArrayResult(firstStep.pageRank());
@@ -389,69 +389,4 @@ public class PageRank extends Algorithm<PageRank> implements PageRankAlgorithm {
         }
     }
 
-    private static final class PartitionedPrimitiveDoubleArrayResult implements PageRankResult, PropertyTranslator.OfDouble<double[][]> {
-        private final double[][] partitions;
-        private final int[] starts;
-
-        private PartitionedPrimitiveDoubleArrayResult(
-                double[][] partitions,
-                int[] starts) {
-            this.partitions = partitions;
-            this.starts = starts;
-        }
-
-        @Override
-        public void export(
-                final String propertyName,
-                final Exporter exporter) {
-            exporter.write(
-                    propertyName,
-                    partitions,
-                    this
-            );
-        }
-
-        @Override
-        public double toDouble(final double[][] data, final long nodeId) {
-            int idx = binaryLookup((int) nodeId, starts);
-            return data[idx][(int) (nodeId - starts[idx])];
-        }
-
-        @Override
-        public double score(final int nodeId) {
-            int idx = binaryLookup(nodeId, starts);
-            return partitions[idx][nodeId - starts[idx]];
-        }
-
-        @Override
-        public double score(final long nodeId) {
-            return toDouble(partitions, nodeId);
-        }
-    }
-
-    private static final class PrimitiveDoubleArrayResult implements PageRankResult {
-        private final double[] result;
-
-        private PrimitiveDoubleArrayResult(double[] result) {
-            super();
-            this.result = result;
-        }
-
-        @Override
-        public double score(final int nodeId) {
-            return result[nodeId];
-        }
-
-        @Override
-        public double score(final long nodeId) {
-            return score((int) nodeId);
-        }
-
-        @Override
-        public void export(
-                final String propertyName,
-                final Exporter exporter) {
-            exporter.write(propertyName, result, Translators.DOUBLE_ARRAY_TRANSLATOR);
-        }
-    }
 }

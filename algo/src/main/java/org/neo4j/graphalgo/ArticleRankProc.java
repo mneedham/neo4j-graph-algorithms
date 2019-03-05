@@ -30,6 +30,8 @@ import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
+import org.neo4j.graphalgo.impl.results.CentralityResult;
+import org.neo4j.graphalgo.results.CentralityScore;
 import org.neo4j.graphalgo.results.PageRankScore;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -85,7 +87,7 @@ public final class ArticleRankProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        PageRankResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder);
+        CentralityResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder);
 
         log.info("ArticleRank: overall memory usage: %s", tracker.getUsageString());
 
@@ -98,12 +100,12 @@ public final class ArticleRankProc {
     @Description("CALL algo.articleRank.stream(label:String, relationship:String, " +
             "{iterations:20, dampingFactor:0.85, weightProperty: null, concurrency:4}) " +
             "YIELD node, score - calculates page rank and streams results")
-    public Stream<PageRankScore> articleRankStream(
+    public Stream<CentralityScore> articleRankStream(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
 
-            ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
+        ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
 
         PageRankScore.Stats.Builder statsBuilder = new PageRankScore.Stats.Builder();
         AllocationTracker tracker = AllocationTracker.create();
@@ -115,7 +117,7 @@ public final class ArticleRankProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        PageRankResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder);
+        CentralityResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder);
 
         log.info("ArticleRank: overall memory usage: %s", tracker.getUsageString());
 
@@ -149,7 +151,7 @@ public final class ArticleRankProc {
         }
     }
 
-    private PageRankResult runAlgorithm(
+    private CentralityResult runAlgorithm(
             Graph graph,
             AllocationTracker tracker,
             TerminationFlag terminationFlag,
@@ -185,7 +187,7 @@ public final class ArticleRankProc {
                 .withIterations(iterations)
                 .withDampingFactor(dampingFactor);
 
-        final PageRankResult pageRank = prAlgo.result();
+        final CentralityResult pageRank = prAlgo.result();
         algo.release();
         graph.release();
         return pageRank;

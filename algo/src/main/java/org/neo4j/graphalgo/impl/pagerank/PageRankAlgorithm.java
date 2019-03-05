@@ -22,6 +22,7 @@ import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.HugeGraph;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.impl.Algorithm;
+import org.neo4j.graphalgo.impl.results.CentralityResult;
 
 import java.util.concurrent.ExecutorService;
 import java.util.stream.LongStream;
@@ -31,7 +32,7 @@ public interface PageRankAlgorithm {
 
     PageRankAlgorithm compute(int iterations);
 
-    PageRankResult result();
+    CentralityResult result();
 
     Algorithm<?> algorithm();
 

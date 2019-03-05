@@ -20,7 +20,6 @@ package org.neo4j.graphalgo;
 
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.GraphFactory;
-import org.neo4j.graphalgo.api.HugeGraph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
 import org.neo4j.graphalgo.core.ProcedureConstants;
@@ -28,12 +27,11 @@ import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
-import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.degree.DegreeCentrality;
 import org.neo4j.graphalgo.impl.results.CentralityResult;
 import org.neo4j.graphalgo.impl.pagerank.DegreeCentralityAlgorithm;
-import org.neo4j.graphalgo.results.DegreeCentralityScore;
+import org.neo4j.graphalgo.results.CentralityScore;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -41,8 +39,6 @@ import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
 import java.util.Map;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.neo4j.graphalgo.core.ProcedureConstants.CYPHER_QUERY;
@@ -64,9 +60,15 @@ public final class DegreeCentralityProc {
     @Procedure(value = "algo.degree", mode = Mode.WRITE)
     @Description("CALL algo.degree(label:String, relationship:String, " +
             "{ weightProperty: null, write: true, writeProperty:'degree', concurrency:4}) " +
+<<<<<<< HEAD
             "YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, write, writeProperty" +
             " - calculates degree centrality and potentially writes back")
     public Stream<DegreeCentralityScore.Stats> degree(
+=======
+            "YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, dampingFactor, write, writeProperty" +
+            " - calculates page rank and potentially writes back")
+    public Stream<CentralityScore.Stats> degree(
+>>>>>>> make degree centrality and pagerank use the same results classes
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
@@ -74,7 +76,7 @@ public final class DegreeCentralityProc {
         ProcedureConfiguration configuration = ProcedureConfiguration.create(config);
         final String weightPropertyKey = configuration.getString(CONFIG_WEIGHT_KEY, null);
 
-        DegreeCentralityScore.Stats.Builder statsBuilder = new DegreeCentralityScore.Stats.Builder();
+        CentralityScore.Stats.Builder statsBuilder = new CentralityScore.Stats.Builder();
         AllocationTracker tracker = AllocationTracker.create();
         Direction direction = getDirection(configuration);
         final Graph graph = load(label, relationship, tracker, configuration.getGraphImpl(), statsBuilder, configuration, weightPropertyKey, direction);
@@ -104,7 +106,7 @@ public final class DegreeCentralityProc {
     @Description("CALL algo.degree.stream(label:String, relationship:String, " +
             "{weightProperty: null, concurrency:4}) " +
             "YIELD node, score - calculates degree centrality and streams results")
-    public Stream<DegreeCentralityScore> degreeStream(
+    public Stream<CentralityScore> degreeStream(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
@@ -113,7 +115,7 @@ public final class DegreeCentralityProc {
 
         final String weightPropertyKey = configuration.getString(CONFIG_WEIGHT_KEY, null);
 
-        DegreeCentralityScore.Stats.Builder statsBuilder = new DegreeCentralityScore.Stats.Builder();
+        CentralityScore.Stats.Builder statsBuilder = new CentralityScore.Stats.Builder();
         Direction direction = getDirection(configuration);
         AllocationTracker tracker = AllocationTracker.create();
         final Graph graph = load(label, relationship, tracker, configuration.getGraphImpl(), statsBuilder, configuration, weightPropertyKey, direction);
@@ -140,7 +142,7 @@ public final class DegreeCentralityProc {
             String relationship,
             AllocationTracker tracker,
             Class<? extends GraphFactory> graphFactory,
-            DegreeCentralityScore.Stats.Builder statsBuilder,
+            CentralityScore.Stats.Builder statsBuilder,
             ProcedureConfiguration configuration,
             String weightPropertyKey, Direction direction) {
         GraphLoader graphLoader = new GraphLoader(api, Pools.DEFAULT)
@@ -162,7 +164,7 @@ public final class DegreeCentralityProc {
             AllocationTracker tracker,
             TerminationFlag terminationFlag,
             ProcedureConfiguration configuration,
-            DegreeCentralityScore.Stats.Builder statsBuilder,
+            CentralityScore.Stats.Builder statsBuilder,
             String weightPropertyKey, Direction direction) {
 
         final int concurrency = configuration.getConcurrency(Pools.getNoThreadsInDefaultPool());
@@ -176,10 +178,10 @@ public final class DegreeCentralityProc {
         Algorithm<?> algorithm = algo.algorithm();
         algorithm.withTerminationFlag(terminationFlag);
 
-        final CentralityResult pageRank = algo.result();
+        final CentralityResult result = algo.result();
         algo.algorithm().release();
         graph.release();
-        return pageRank;
+        return result;
     }
 
 

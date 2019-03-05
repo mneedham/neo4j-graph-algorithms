@@ -33,6 +33,7 @@ import org.neo4j.graphalgo.core.huge.HugeGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
+import org.neo4j.graphalgo.impl.results.CentralityResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
@@ -147,7 +148,7 @@ public final class PersonalizedPageRankTest {
             sourceNodeIds = LongStream.of(node.getId());
         }
 
-        final PageRankResult rankResult = PageRankAlgorithm
+        final CentralityResult rankResult = PageRankAlgorithm
                 .of(graph,0.85, sourceNodeIds, Pools.DEFAULT, 2, 1)
                 .compute(40)
                 .result();
