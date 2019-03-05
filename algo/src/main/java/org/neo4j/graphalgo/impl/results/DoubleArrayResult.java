@@ -4,7 +4,6 @@ import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.core.write.Translators;
 
 import java.util.Arrays;
-import java.util.OptionalDouble;
 
 public final class DoubleArrayResult implements CentralityResult {
     private final double[] result;
@@ -24,17 +23,17 @@ public final class DoubleArrayResult implements CentralityResult {
 
     @Override
     public double computeMax() {
-        return Arrays.stream(result).parallel().max().orElse(1);
+        return NormalizationComputations.max(result, 1.0);
     }
 
     @Override
     public double computeL2Norm() {
-        return Math.sqrt(Arrays.stream(result).parallel().map(value -> value * value).sum());
+        return Math.sqrt(NormalizationComputations.squaredSum(result));
     }
 
     @Override
     public double computeL1Norm() {
-        return Arrays.stream(result).parallel().sum();
+        return NormalizationComputations.l1Norm(result);
     }
 
     @Override

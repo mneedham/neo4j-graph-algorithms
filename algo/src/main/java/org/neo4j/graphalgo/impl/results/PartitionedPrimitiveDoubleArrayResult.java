@@ -29,19 +29,19 @@ public final class PartitionedPrimitiveDoubleArrayResult implements CentralityRe
 
     @Override
     public double computeMax() {
-        return 0;
+        return NormalizationComputations.max(partitions);
+
     }
 
     @Override
     public double computeL2Norm() {
-        return 0;
+        return NormalizationComputations.l2Norm(partitions);
     }
 
     @Override
     public double computeL1Norm() {
-        return 0;
+        return NormalizationComputations.l1Norm(partitions);
     }
-
     @Override
     public double toDouble(final double[][] data, final long nodeId) {
         int idx = binaryLookup((int) nodeId, starts);
