@@ -117,7 +117,7 @@ public final class EigenvectorCentralityProc {
         return CentralityUtils.streamResults(graph, scores);
     }
 
-    public Normalization getNormalization(ProcedureConfiguration configuration) {
+    public Normalization normalization(ProcedureConfiguration configuration) {
         String normalization = configuration.getString("normalization", null);
         return normalization != null ? Normalization.valueOf(normalization.toUpperCase()) : Normalization.NONE;
     }
@@ -177,7 +177,7 @@ public final class EigenvectorCentralityProc {
         final CentralityResult results = prAlgo.result();
         algo.release();
         graph.release();
-        return getNormalization(configuration).apply(results);
+        return normalization(configuration).apply(results);
     }
 
     private PageRankAlgorithm selectAlgorithm(Graph graph, AllocationTracker tracker, int batchSize, int concurrency, LongStream sourceNodeIds) {
