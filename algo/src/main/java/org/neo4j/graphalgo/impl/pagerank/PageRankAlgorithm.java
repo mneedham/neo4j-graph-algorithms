@@ -219,13 +219,28 @@ public interface PageRankAlgorithm {
                                                      int concurrency,
                                                      int batchSize) {
         PageRankVariant variant = new EigenvectorCentralityVariant();
-        return new PageRank(pool,
-                concurrency,
-                batchSize,
-                graph,
-                1.0,
-                sourceNodeIds,
-                variant);
+        if (graph instanceof HugeGraph) {
+            HugeGraph huge = (HugeGraph) graph;
+            return new HugePageRank(
+                    pool,
+                    concurrency,
+                    batchSize,
+                    tracker,
+                    huge,
+                    1.0,
+                    sourceNodeIds,
+                    variant
+            );
+        } else {
+
+            return new PageRank(pool,
+                    concurrency,
+                    batchSize,
+                    graph,
+                    1.0,
+                    sourceNodeIds,
+                    variant);
+        }
     }
 
 

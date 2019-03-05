@@ -107,8 +107,9 @@ public abstract class HugeBaseComputeStep implements HugeComputeStep {
         tracker.add(sizeOfDoubleArray(partitionSize) << 1);
 
         double[] partitionRank = new double[partitionSize];
+        double initialValue = initialValue();
         if(sourceNodeIds.length == 0) {
-            Arrays.fill(partitionRank, alpha);
+            Arrays.fill(partitionRank, initialValue);
         } else {
             Arrays.fill(partitionRank,0);
 
@@ -117,12 +118,16 @@ public abstract class HugeBaseComputeStep implements HugeComputeStep {
                     .toArray();
 
             for (long sourceNodeId : partitionSourceNodeIds) {
-                partitionRank[Math.toIntExact(sourceNodeId - this.startNode)] = alpha;
+                partitionRank[Math.toIntExact(sourceNodeId - this.startNode)] = initialValue;
             }
         }
 
         this.pageRank = partitionRank;
         this.deltas = Arrays.copyOf(partitionRank, partitionSize);
+    }
+
+    double initialValue() {
+        return alpha;
     }
 
     abstract void singleIteration();
@@ -131,7 +136,7 @@ public abstract class HugeBaseComputeStep implements HugeComputeStep {
         this.prevScores = prevScores;
     }
 
-    private void combineScores() {
+    void combineScores() {
         assert prevScores != null;
         assert prevScores.length >= 1;
 

@@ -290,7 +290,7 @@ public class HugePageRank extends Algorithm<HugePageRank> implements PageRankAlg
                     tracker,
                     partitionSize,
                     start,
-                    degreeCache));
+                    degreeCache, nodeCount));
         }
 
         long[] startArray = starts.toArray();

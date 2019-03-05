@@ -44,7 +44,7 @@ public class ArticleRankVariant implements PageRankVariant {
             double dampingFactor, long[] sourceNodeIds,
             HugeRelationshipIterator relationshipIterator, HugeDegrees degrees,
             HugeRelationshipWeights relationshipWeights, AllocationTracker tracker,
-            int partitionCount, long start, DegreeCache degreeCache) {
+            int partitionCount, long start, DegreeCache degreeCache, long nodeCount) {
         return new HugeArticleRankComputeStep(
                 dampingFactor,
                 sourceNodeIds,

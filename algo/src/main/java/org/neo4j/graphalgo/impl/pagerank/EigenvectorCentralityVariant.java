@@ -44,8 +44,8 @@ public class EigenvectorCentralityVariant implements PageRankVariant {
             double dampingFactor, long[] sourceNodeIds,
             HugeRelationshipIterator relationshipIterator, HugeDegrees degrees,
             HugeRelationshipWeights relationshipWeights, AllocationTracker tracker,
-            int partitionCount, long start, DegreeCache degreeCache) {
-        return new HugeArticleRankComputeStep(
+            int partitionCount, long start, DegreeCache degreeCache, long nodeCount) {
+        return new HugeEigenvectorCentralityComputeStep(
                 dampingFactor,
                 sourceNodeIds,
                 relationshipIterator,
@@ -53,7 +53,7 @@ public class EigenvectorCentralityVariant implements PageRankVariant {
                 tracker,
                 partitionCount,
                 start,
-                degreeCache
+                nodeCount
         );
     }
 
