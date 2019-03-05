@@ -34,6 +34,8 @@ import org.neo4j.graphalgo.results.PageRankScore;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.kernel.api.KernelTransaction;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
 import java.util.ArrayList;
@@ -43,9 +45,15 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public final class EigenvectorProc extends PageRankVariantProc {
+public final class EigenvectorProc  {
     public static final Integer DEFAULT_ITERATIONS = 20;
     public static final String DEFAULT_SCORE_PROPERTY = "articlerank";
+
+    @Context
+    public GraphDatabaseAPI api;
+
+    @Context
+    public Log log;
 
     @Context
     public KernelTransaction transaction;
@@ -76,7 +84,7 @@ public final class EigenvectorProc extends PageRankVariantProc {
 
         log.info("Eigenvector Centrality: overall memory usage: %s", tracker.getUsageString());
 
-        write(graph, terminationFlag, scores, configuration, statsBuilder, DEFAULT_SCORE_PROPERTY);
+        CentralityUtils.write(api, log, graph, terminationFlag, scores, configuration, statsBuilder, DEFAULT_SCORE_PROPERTY);
 
         return Stream.of(statsBuilder.build());
     }
@@ -106,7 +114,7 @@ public final class EigenvectorProc extends PageRankVariantProc {
 
         log.info("Eigenvector Centrality: overall memory usage: %s", tracker.getUsageString());
 
-        return streamResults(graph, scores);
+        return CentralityUtils.streamResults(graph, scores);
     }
 
     private Graph load(
