@@ -89,7 +89,7 @@ public final class DegreeCentralityProc {
 
         logMemoryUsage(tracker);
 
-        write(graph, terminationFlag, scores, configuration, statsBuilder);
+        CentralityUtils.write(api, log, graph, terminationFlag, scores, configuration, statsBuilder, DEFAULT_SCORE_PROPERTY);
 
         return Stream.of(statsBuilder.build());
     }
@@ -128,26 +128,7 @@ public final class DegreeCentralityProc {
 
         logMemoryUsage(tracker);
 
-        if (graph instanceof HugeGraph) {
-            HugeGraph hugeGraph = (HugeGraph) graph;
-            return LongStream.range(0, hugeGraph.nodeCount())
-                    .mapToObj(i -> {
-                        final long nodeId = hugeGraph.toOriginalNodeId(i);
-                        return new DegreeCentralityScore(
-                                nodeId,
-                                scores.score(i)
-                        );
-                    });
-        }
-
-        return IntStream.range(0, Math.toIntExact(graph.nodeCount()))
-                .mapToObj(i -> {
-                    final long nodeId = graph.toOriginalNodeId(i);
-                    return new DegreeCentralityScore(
-                            nodeId,
-                            scores.score(i)
-                    );
-                });
+        return CentralityUtils.streamResults(graph, scores);
     }
 
     private void logMemoryUsage(AllocationTracker tracker) {
@@ -201,30 +182,6 @@ public final class DegreeCentralityProc {
         return pageRank;
     }
 
-    private void write(
-            Graph graph,
-            TerminationFlag terminationFlag,
-            CentralityResult result,
-            ProcedureConfiguration configuration,
-            final DegreeCentralityScore.Stats.Builder statsBuilder) {
-        if (configuration.isWriteFlag(true)) {
-            log.debug("Writing results");
-            String propertyName = configuration.getWriteProperty(DEFAULT_SCORE_PROPERTY);
-            try (ProgressTimer timer = statsBuilder.timeWrite()) {
-                Exporter exporter = Exporter
-                        .of(api, graph)
-                        .withLog(log)
-                        .parallel(Pools.DEFAULT, configuration.getConcurrency(), terminationFlag)
-                        .build();
-                result.export(propertyName, exporter);
-            }
-            statsBuilder
-                    .withWrite(true)
-                    .withProperty(propertyName);
-        } else {
-            statsBuilder.withWrite(false);
-        }
-    }
 
 
 }

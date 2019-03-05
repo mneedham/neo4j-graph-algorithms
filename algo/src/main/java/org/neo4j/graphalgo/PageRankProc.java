@@ -49,7 +49,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public final class PageRankProc extends PageRankVariantProc {
+public final class PageRankProc {
 
     public static final String CONFIG_DAMPING = "dampingFactor";
 
@@ -96,7 +96,7 @@ public final class PageRankProc extends PageRankVariantProc {
 
         log.info("PageRank: overall memory usage: %s", tracker.getUsageString());
 
-        write(graph, terminationFlag, scores, configuration, statsBuilder, DEFAULT_SCORE_PROPERTY);
+        CentralityUtils.write(api, log, graph, terminationFlag, scores, configuration, statsBuilder, DEFAULT_SCORE_PROPERTY);
 
         return Stream.of(statsBuilder.build());
     }
@@ -128,26 +128,7 @@ public final class PageRankProc extends PageRankVariantProc {
 
         log.info("PageRank: overall memory usage: %s", tracker.getUsageString());
 
-        if (graph instanceof HugeGraph) {
-            HugeGraph hugeGraph = (HugeGraph) graph;
-            return LongStream.range(0, hugeGraph.nodeCount())
-                    .mapToObj(i -> {
-                        final long nodeId = hugeGraph.toOriginalNodeId(i);
-                        return new PageRankScore(
-                                nodeId,
-                                scores.score(i)
-                        );
-                    });
-        }
-
-        return IntStream.range(0, Math.toIntExact(graph.nodeCount()))
-                .mapToObj(i -> {
-                    final long nodeId = graph.toOriginalNodeId(i);
-                    return new PageRankScore(
-                            nodeId,
-                            scores.score(i)
-                    );
-                });
+        return CentralityUtils.streamResults(graph, scores);
     }
 
     private Graph load(

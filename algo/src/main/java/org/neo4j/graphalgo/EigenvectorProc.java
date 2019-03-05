@@ -106,55 +106,8 @@ public final class EigenvectorProc extends PageRankVariantProc {
 
         log.info("Eigenvector Centrality: overall memory usage: %s", tracker.getUsageString());
 
-        if (graph instanceof HugeGraph) {
-            HugeGraph hugeGraph = (HugeGraph) graph;
-            return LongStream.range(0, hugeGraph.nodeCount())
-                    .mapToObj(i -> {
-                        final long nodeId = hugeGraph.toOriginalNodeId(i);
-                        return new PageRankScore(
-                                nodeId,
-                                scores.score(i)
-                        );
-                    });
-        }
-
-        return IntStream.range(0, Math.toIntExact(graph.nodeCount()))
-                .mapToObj(i -> {
-                    final long nodeId = graph.toOriginalNodeId(i);
-                    return new PageRankScore(
-                            nodeId,
-                            scores.score(i)
-                    );
-                });
+        return streamResults(graph, scores);
     }
-
-//    class NormalizedPageRankResult implements  PageRankResult {
-//
-//        private PageRankResult scores;
-//
-//        NormalizedPageRankResult(PageRankResult scores) {
-//            this.scores = scores;
-//            scores.min();
-//            scores.max();
-//            scores.l1Norm();
-//            scores.l2Norm();
-//        }
-//
-//        @Override
-//        public double score(int nodeId) {
-//            return scores.score(nodeId);
-//        }
-//
-//        @Override
-//        public double score(long nodeId) {
-//            return scores.score(nodeId);
-//        }
-//
-//        @Override
-//        public void export(String propertyName, Exporter exporter) {
-//            scores.export(propertyName, exporter);
-//        }
-//    }
 
     private Graph load(
             String label,

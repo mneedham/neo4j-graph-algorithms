@@ -34,6 +34,8 @@ import org.neo4j.graphalgo.results.PageRankScore;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.kernel.api.KernelTransaction;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
 import java.util.ArrayList;
@@ -43,13 +45,20 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public final class ArticleRankProc extends PageRankVariantProc {
+public final class ArticleRankProc {
 
     public static final String CONFIG_DAMPING = "dampingFactor";
 
     public static final Double DEFAULT_DAMPING = 0.85;
     public static final Integer DEFAULT_ITERATIONS = 20;
     public static final String DEFAULT_SCORE_PROPERTY = "articlerank";
+
+    @Context
+    public GraphDatabaseAPI api;
+
+    @Context
+    public Log log;
+
 
     @Context
     public KernelTransaction transaction;
@@ -80,7 +89,7 @@ public final class ArticleRankProc extends PageRankVariantProc {
 
         log.info("ArticleRank: overall memory usage: %s", tracker.getUsageString());
 
-        write(graph, terminationFlag, scores, configuration, statsBuilder, DEFAULT_SCORE_PROPERTY);
+        CentralityUtils.write(api, log, graph, terminationFlag, scores, configuration, statsBuilder, DEFAULT_SCORE_PROPERTY);
 
         return Stream.of(statsBuilder.build());
     }
@@ -110,26 +119,7 @@ public final class ArticleRankProc extends PageRankVariantProc {
 
         log.info("ArticleRank: overall memory usage: %s", tracker.getUsageString());
 
-        if (graph instanceof HugeGraph) {
-            HugeGraph hugeGraph = (HugeGraph) graph;
-            return LongStream.range(0, hugeGraph.nodeCount())
-                    .mapToObj(i -> {
-                        final long nodeId = hugeGraph.toOriginalNodeId(i);
-                        return new PageRankScore(
-                                nodeId,
-                                scores.score(i)
-                        );
-                    });
-        }
-
-        return IntStream.range(0, Math.toIntExact(graph.nodeCount()))
-                .mapToObj(i -> {
-                    final long nodeId = graph.toOriginalNodeId(i);
-                    return new PageRankScore(
-                            nodeId,
-                            scores.score(i)
-                    );
-                });
+        return CentralityUtils.streamResults(graph, scores);
     }
 
     private Graph load(
