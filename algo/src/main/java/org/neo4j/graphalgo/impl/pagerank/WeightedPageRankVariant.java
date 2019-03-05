@@ -34,7 +34,7 @@ public class WeightedPageRankVariant implements PageRankVariant {
                                          WeightedRelationshipIterator weightedRelationshipIterator,
                                          Degrees degrees,
                                          int partitionCount, int start,
-                                         DegreeCache degreeCache) {
+                                         DegreeCache degreeCache, long nodeCount) {
         if(cacheWeights ){
             return new WeightedWithCachedWeightsComputeStep(
                     dampingFactor,

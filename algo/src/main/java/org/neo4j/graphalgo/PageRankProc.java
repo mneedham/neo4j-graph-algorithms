@@ -27,7 +27,6 @@ import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
-import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
@@ -50,7 +49,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public final class PageRankProc {
+public final class PageRankProc extends PageRankVariantProc {
 
     public static final String CONFIG_DAMPING = "dampingFactor";
 
@@ -93,11 +92,11 @@ public final class PageRankProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        PageRankResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey);
+        PageRankResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey);
 
         log.info("PageRank: overall memory usage: %s", tracker.getUsageString());
 
-        write(graph, terminationFlag, scores, configuration, statsBuilder);
+        write(graph, terminationFlag, scores, configuration, statsBuilder, DEFAULT_SCORE_PROPERTY);
 
         return Stream.of(statsBuilder.build());
     }
@@ -125,7 +124,7 @@ public final class PageRankProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        PageRankResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey);
+        PageRankResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder, weightPropertyKey);
 
         log.info("PageRank: overall memory usage: %s", tracker.getUsageString());
 
@@ -171,7 +170,6 @@ public final class PageRankProc {
             graphLoader.withDirection(direction);
         }
 
-
         try (ProgressTimer timer = statsBuilder.timeLoad()) {
             Graph graph = graphLoader.load(graphFactory);
             statsBuilder.withNodes(graph.nodeCount());
@@ -179,7 +177,7 @@ public final class PageRankProc {
         }
     }
 
-    private PageRankResult evaluate(
+    private PageRankResult runAlgorithm(
             Graph graph,
             AllocationTracker tracker,
             TerminationFlag terminationFlag,
@@ -193,14 +191,30 @@ public final class PageRankProc {
         final int concurrency = configuration.getConcurrency(Pools.getNoThreadsInDefaultPool());
         log.debug("Computing page rank with damping of " + dampingFactor + " and " + iterations + " iterations.");
 
-
         List<Node> sourceNodes = configuration.get("sourceNodes", new ArrayList<>());
         LongStream sourceNodeIds = sourceNodes.stream().mapToLong(Node::getId);
 
-        PageRankAlgorithm prAlgo;
+        PageRankAlgorithm prAlgo = selectAlgorithm(graph, tracker, configuration, weightPropertyKey, dampingFactor, batchSize, concurrency, sourceNodeIds);
+
+        Algorithm<?> algo = prAlgo
+                .algorithm()
+                .withLog(log)
+                .withTerminationFlag(terminationFlag);
+
+
+        statsBuilder.timeEval(() -> prAlgo.compute(iterations));
+        statsBuilder.withIterations(iterations).withDampingFactor(dampingFactor);
+
+        final PageRankResult pageRank = prAlgo.result();
+        algo.release();
+        graph.release();
+        return pageRank;
+    }
+
+    private PageRankAlgorithm selectAlgorithm(Graph graph, AllocationTracker tracker, ProcedureConfiguration configuration, String weightPropertyKey, double dampingFactor, int batchSize, int concurrency, LongStream sourceNodeIds) {
         if(weightPropertyKey != null) {
             final boolean cacheWeights = configuration.get("cacheWeights", false);
-            prAlgo = PageRankAlgorithm.weightedOf(
+            return PageRankAlgorithm.weightedOf(
                     tracker,
                     graph,
                     dampingFactor,
@@ -210,7 +224,7 @@ public final class PageRankProc {
                     batchSize,
                     cacheWeights);
         } else {
-            prAlgo = PageRankAlgorithm.of(
+            return PageRankAlgorithm.of(
                     tracker,
                     graph,
                     dampingFactor,
@@ -218,49 +232,6 @@ public final class PageRankProc {
                     Pools.DEFAULT,
                     concurrency,
                     batchSize);
-        }
-
-
-        Algorithm<?> algo = prAlgo
-                .algorithm()
-                .withLog(log)
-                .withTerminationFlag(terminationFlag);
-
-
-        statsBuilder.timeEval(() -> prAlgo.compute(iterations));
-
-        statsBuilder
-                .withIterations(iterations)
-                .withDampingFactor(dampingFactor);
-
-        final PageRankResult pageRank = prAlgo.result();
-        algo.release();
-        graph.release();
-        return pageRank;
-    }
-
-    private void write(
-            Graph graph,
-            TerminationFlag terminationFlag,
-            PageRankResult result,
-            ProcedureConfiguration configuration,
-            final PageRankScore.Stats.Builder statsBuilder) {
-        if (configuration.isWriteFlag(true)) {
-            log.debug("Writing results");
-            String propertyName = configuration.getWriteProperty(DEFAULT_SCORE_PROPERTY);
-            try (ProgressTimer timer = statsBuilder.timeWrite()) {
-                Exporter exporter = Exporter
-                        .of(api, graph)
-                        .withLog(log)
-                        .parallel(Pools.DEFAULT, configuration.getConcurrency(), terminationFlag)
-                        .build();
-                result.export(propertyName, exporter);
-            }
-            statsBuilder
-                    .withWrite(true)
-                    .withProperty(propertyName);
-        } else {
-            statsBuilder.withWrite(false);
         }
     }
 }

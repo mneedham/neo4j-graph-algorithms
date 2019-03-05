@@ -147,7 +147,8 @@ public class PageRank extends Algorithm<PageRank> implements PageRankAlgorithm {
                 partitions,
                 executor,
                 pageRankVariant,
-                degreeComputer);
+                degreeComputer,
+                graph.nodeCount());
     }
 
     /**
@@ -224,7 +225,8 @@ public class PageRank extends Algorithm<PageRank> implements PageRankAlgorithm {
             List<Partition> partitions,
             ExecutorService pool,
             PageRankVariant pageRankVariant,
-            DegreeComputer degreeComputer) {
+            DegreeComputer degreeComputer,
+            long nodeCount) {
         if (concurrency <= 0) {
             concurrency = Pools.DEFAULT_QUEUE_SIZE;
         }
@@ -261,7 +263,8 @@ public class PageRank extends Algorithm<PageRank> implements PageRankAlgorithm {
                     degrees,
                     partitionCount,
                     start,
-                    degreeCache
+                    degreeCache,
+                    nodeCount
             ));
         }
 

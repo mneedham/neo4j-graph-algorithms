@@ -27,7 +27,6 @@ import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
-import org.neo4j.graphalgo.core.write.Exporter;
 import org.neo4j.graphalgo.impl.Algorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
 import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
@@ -35,8 +34,6 @@ import org.neo4j.graphalgo.results.PageRankScore;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.kernel.api.KernelTransaction;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
 import java.util.ArrayList;
@@ -46,19 +43,9 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public final class EigenvectorProc {
-
-    public static final String CONFIG_DAMPING = "dampingFactor";
-
-    public static final Double DEFAULT_DAMPING = 0.85;
+public final class EigenvectorProc extends PageRankVariantProc {
     public static final Integer DEFAULT_ITERATIONS = 20;
     public static final String DEFAULT_SCORE_PROPERTY = "articlerank";
-
-    @Context
-    public GraphDatabaseAPI api;
-
-    @Context
-    public Log log;
 
     @Context
     public KernelTransaction transaction;
@@ -85,11 +72,11 @@ public final class EigenvectorProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        PageRankResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder);
+        PageRankResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder);
 
         log.info("Eigenvector Centrality: overall memory usage: %s", tracker.getUsageString());
 
-        write(graph, terminationFlag, scores, configuration, statsBuilder);
+        write(graph, terminationFlag, scores, configuration, statsBuilder, DEFAULT_SCORE_PROPERTY);
 
         return Stream.of(statsBuilder.build());
     }
@@ -115,7 +102,7 @@ public final class EigenvectorProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
-        PageRankResult scores = evaluate(graph, tracker, terminationFlag, configuration, statsBuilder);
+        PageRankResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder);
 
         log.info("Eigenvector Centrality: overall memory usage: %s", tracker.getUsageString());
 
@@ -140,6 +127,34 @@ public final class EigenvectorProc {
                     );
                 });
     }
+
+//    class NormalizedPageRankResult implements  PageRankResult {
+//
+//        private PageRankResult scores;
+//
+//        NormalizedPageRankResult(PageRankResult scores) {
+//            this.scores = scores;
+//            scores.min();
+//            scores.max();
+//            scores.l1Norm();
+//            scores.l2Norm();
+//        }
+//
+//        @Override
+//        public double score(int nodeId) {
+//            return scores.score(nodeId);
+//        }
+//
+//        @Override
+//        public double score(long nodeId) {
+//            return scores.score(nodeId);
+//        }
+//
+//        @Override
+//        public void export(String propertyName, Exporter exporter) {
+//            scores.export(propertyName, exporter);
+//        }
+//    }
 
     private Graph load(
             String label,
@@ -168,31 +183,22 @@ public final class EigenvectorProc {
         }
     }
 
-    private PageRankResult evaluate(
+    private PageRankResult runAlgorithm(
             Graph graph,
             AllocationTracker tracker,
             TerminationFlag terminationFlag,
             ProcedureConfiguration configuration,
             PageRankScore.Stats.Builder statsBuilder) {
-
-        double dampingFactor = configuration.get(CONFIG_DAMPING, DEFAULT_DAMPING);
+        double dampingFactor = 1.0;
         int iterations = configuration.getIterations(DEFAULT_ITERATIONS);
         final int batchSize = configuration.getBatchSize();
         final int concurrency = configuration.getConcurrency(Pools.getNoThreadsInDefaultPool());
-        log.debug("Computing article rank with damping of " + dampingFactor + " and " + iterations + " iterations.");
-
+        log.debug("Computing eigenvector centrality with " + iterations + " iterations.");
 
         List<Node> sourceNodes = configuration.get("sourceNodes", new ArrayList<>());
         LongStream sourceNodeIds = sourceNodes.stream().mapToLong(Node::getId);
 
-        PageRankAlgorithm prAlgo = PageRankAlgorithm.eigenvectorCentralityOf(
-                    tracker,
-                    graph,
-                    dampingFactor,
-                    sourceNodeIds,
-                    Pools.DEFAULT,
-                    concurrency,
-                    batchSize);
+        PageRankAlgorithm prAlgo = selectAlgorithm(graph, tracker, batchSize, concurrency, sourceNodeIds);
 
         Algorithm<?> algo = prAlgo
                 .algorithm()
@@ -200,10 +206,7 @@ public final class EigenvectorProc {
                 .withTerminationFlag(terminationFlag);
 
         statsBuilder.timeEval(() -> prAlgo.compute(iterations));
-
-        statsBuilder
-                .withIterations(iterations)
-                .withDampingFactor(dampingFactor);
+        statsBuilder.withIterations(iterations).withDampingFactor(dampingFactor);
 
         final PageRankResult pageRank = prAlgo.result();
         algo.release();
@@ -211,28 +214,15 @@ public final class EigenvectorProc {
         return pageRank;
     }
 
-    private void write(
-            Graph graph,
-            TerminationFlag terminationFlag,
-            PageRankResult result,
-            ProcedureConfiguration configuration,
-            final PageRankScore.Stats.Builder statsBuilder) {
-        if (configuration.isWriteFlag(true)) {
-            log.debug("Writing results");
-            String propertyName = configuration.getWriteProperty(DEFAULT_SCORE_PROPERTY);
-            try (ProgressTimer timer = statsBuilder.timeWrite()) {
-                Exporter exporter = Exporter
-                        .of(api, graph)
-                        .withLog(log)
-                        .parallel(Pools.DEFAULT, configuration.getConcurrency(), terminationFlag)
-                        .build();
-                result.export(propertyName, exporter);
-            }
-            statsBuilder
-                    .withWrite(true)
-                    .withProperty(propertyName);
-        } else {
-            statsBuilder.withWrite(false);
-        }
+    private PageRankAlgorithm selectAlgorithm(Graph graph, AllocationTracker tracker, int batchSize, int concurrency, LongStream sourceNodeIds) {
+        return PageRankAlgorithm.eigenvectorCentralityOf(
+                        tracker,
+                        graph,
+                    sourceNodeIds,
+                        Pools.DEFAULT,
+                        concurrency,
+                        batchSize);
     }
+
+
 }

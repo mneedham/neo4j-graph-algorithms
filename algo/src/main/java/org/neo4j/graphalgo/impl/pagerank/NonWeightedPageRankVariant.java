@@ -27,7 +27,7 @@ public class NonWeightedPageRankVariant implements PageRankVariant {
                                          WeightedRelationshipIterator weightedRelationshipIterator,
                                          Degrees degrees,
                                          int partitionSize, int start,
-                                         DegreeCache degreeCache) {
+                                         DegreeCache degreeCache, long nodeCount) {
         return new NonWeightedComputeStep(
                 dampingFactor,
                 sourceNodeIds,

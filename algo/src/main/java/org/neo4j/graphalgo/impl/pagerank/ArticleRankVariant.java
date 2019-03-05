@@ -27,7 +27,7 @@ public class ArticleRankVariant implements PageRankVariant {
                                          WeightedRelationshipIterator weightedRelationshipIterator,
                                          Degrees degrees,
                                          int partitionCount, int start,
-                                         DegreeCache degreeCache) {
+                                         DegreeCache degreeCache, long nodeCount) {
             return new ArticleRankComputeStep(
                     dampingFactor,
                     sourceNodeIds,

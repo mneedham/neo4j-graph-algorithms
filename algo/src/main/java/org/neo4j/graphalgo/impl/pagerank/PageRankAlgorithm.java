@@ -213,7 +213,6 @@ public interface PageRankAlgorithm {
 
     static PageRankAlgorithm eigenvectorCentralityOf(AllocationTracker tracker,
                                                      Graph graph,
-                                                     double dampingFactor,
                                                      LongStream sourceNodeIds,
                                                      ExecutorService pool,
                                                      int concurrency,
@@ -223,7 +222,7 @@ public interface PageRankAlgorithm {
                 concurrency,
                 batchSize,
                 graph,
-                dampingFactor,
+                1.0,
                 sourceNodeIds,
                 variant);
     }

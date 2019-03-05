@@ -31,15 +31,18 @@ import static org.neo4j.graphalgo.core.utils.ArrayUtil.binaryLookup;
 final class EigenvectorCentralityComputeStep extends BaseComputeStep implements RelationshipConsumer   {
 
     private final RelationshipIterator relationshipIterator;
+    private final long nodeCount;
 
     EigenvectorCentralityComputeStep(
-            int[] sourceNodeIds,
+            double dampingFactor, int[] sourceNodeIds,
             RelationshipIterator relationshipIterator,
             Degrees degrees,
             int partitionSize,
-            int startNode) {
-        super(1.0, sourceNodeIds, degrees, partitionSize, startNode);
+            int startNode,
+            long nodeCount) {
+        super(dampingFactor, sourceNodeIds, degrees, partitionSize, startNode);
         this.relationshipIterator = relationshipIterator;
+        this.nodeCount = nodeCount;
     }
 
 
@@ -63,10 +66,20 @@ final class EigenvectorCentralityComputeStep extends BaseComputeStep implements 
     }
 
     @Override
-    protected double initialValue() {
-        return 1.0 / partitionSize;
+    public boolean accept(int sourceNodeId, int targetNodeId, long relationId) {
+        if (srcRankDelta != 0) {
+            int idx = binaryLookup(targetNodeId, starts);
+            nextScores[idx][targetNodeId - starts[idx]] += srcRankDelta;
+        }
+        return true;
     }
 
+    @Override
+    protected double initialValue() {
+        return 1.0 / nodeCount;
+    }
+
+    @Override
     void synchronizeScores(int[] allScores) {
         double[] pageRank = this.pageRank;
 
@@ -74,35 +87,24 @@ final class EigenvectorCentralityComputeStep extends BaseComputeStep implements 
         for (int i = 0; i < length; i++) {
             int sum = allScores[i];
 
-            double delta = (sum / 100_000.0);
+            double delta = sum / 100_000.0;
             pageRank[i] += delta;
             deltas[i] = delta;
             allScores[i] = 0;
         }
 
+        normalizeDeltas();
+    }
+
+    private void normalizeDeltas() {
         double norm = computeNorm(deltas);
         for (int i = 0; i < deltas.length; i++) {
             deltas[i] = deltas[i] / norm;
         }
-
-//        double pageRankNorm = computeNorm(pageRank);
-//        for (int i = 0; i < pageRank.length; i++) {
-//            pageRank[i] = pageRank[i] / pageRankNorm;
-//        }
-
     }
 
     private double computeNorm(double[] allScores) {
         double norm = Arrays.stream(allScores).map(score -> score * score).sum();
         return norm < 0.0 ? 1.0 : norm;
-    }
-
-    @Override
-    public boolean accept(int sourceNodeId, int targetNodeId, long relationId) {
-        if (srcRankDelta != 0) {
-            int idx = binaryLookup(targetNodeId, starts);
-            nextScores[idx][targetNodeId - starts[idx]] += srcRankDelta;
-        }
-        return true;
     }
 }

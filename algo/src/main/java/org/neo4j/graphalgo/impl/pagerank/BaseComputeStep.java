@@ -144,15 +144,11 @@ public abstract class BaseComputeStep implements ComputeStep {
         for (int i = 0; i < length; i++) {
             int sum = allScores[i];
 
-            double delta = dampenValue(dampingFactor, sum);
+            double delta = dampingFactor * (sum / 100_000.0);
             pageRank[i] += delta;
             deltas[i] = delta;
             allScores[i] = 0;
         }
-    }
-
-    private double dampenValue(double dampingFactor, int sum) {
-        return dampingFactor * (sum / 100_000.0);
     }
 
     @Override

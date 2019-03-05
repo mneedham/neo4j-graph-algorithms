@@ -27,13 +27,15 @@ public class EigenvectorCentralityVariant implements PageRankVariant {
                                          WeightedRelationshipIterator weightedRelationshipIterator,
                                          Degrees degrees,
                                          int partitionCount, int start,
-                                         DegreeCache degreeCache) {
+                                         DegreeCache degreeCache, long nodeCount) {
             return new EigenvectorCentralityComputeStep(
+                    dampingFactor,
                     sourceNodeIds,
                     relationshipIterator,
                     degrees,
                     partitionCount,
-                    start
+                    start,
+                    nodeCount
             );
     }
 
