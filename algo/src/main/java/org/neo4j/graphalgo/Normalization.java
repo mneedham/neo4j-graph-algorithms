@@ -15,13 +15,13 @@ public enum Normalization {
             return new NormalizedCentralityResult(scores, (score, result) -> score / result.max());
         }
     },
-    L1_NORM {
+    L1NORM {
         @Override
         public CentralityResult apply(CentralityResult scores) {
             return new NormalizedCentralityResult(scores, (score, result) -> score / result.l1Norm());
         }
     },
-    L2_NORM {
+    L2NORM {
         @Override
         public CentralityResult apply(CentralityResult scores) {
             return new NormalizedCentralityResult(scores, (score, result) -> score / result.l2Norm());

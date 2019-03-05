@@ -109,12 +109,8 @@ public final class EigenvectorCentralityProc {
         }
 
         TerminationFlag terminationFlag = TerminationFlag.wrap(transaction);
+
         CentralityResult scores = runAlgorithm(graph, tracker, terminationFlag, configuration, statsBuilder);
-
-
-        Normalization normalization = getNormalization(configuration);
-        CentralityResult normalizedScores = normalization.apply(scores);
-
 
         log.info("Eigenvector Centrality: overall memory usage: %s", tracker.getUsageString());
 
@@ -123,7 +119,7 @@ public final class EigenvectorCentralityProc {
 
     public Normalization getNormalization(ProcedureConfiguration configuration) {
         String normalization = configuration.getString("normalization", null);
-        return normalization != null ? Normalization.valueOf(normalization) : Normalization.NONE;
+        return normalization != null ? Normalization.valueOf(normalization.toUpperCase()) : Normalization.NONE;
     }
 
     private Graph load(
@@ -178,10 +174,10 @@ public final class EigenvectorCentralityProc {
         statsBuilder.timeEval(() -> prAlgo.compute(iterations));
         statsBuilder.withIterations(iterations).withDampingFactor(dampingFactor);
 
-        final CentralityResult pageRank = prAlgo.result();
+        final CentralityResult results = prAlgo.result();
         algo.release();
         graph.release();
-        return pageRank;
+        return getNormalization(configuration).apply(results);
     }
 
     private PageRankAlgorithm selectAlgorithm(Graph graph, AllocationTracker tracker, int batchSize, int concurrency, LongStream sourceNodeIds) {

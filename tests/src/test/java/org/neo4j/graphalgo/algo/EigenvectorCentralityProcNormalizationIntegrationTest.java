@@ -45,7 +45,9 @@ public class EigenvectorCentralityProcNormalizationIntegrationTest {
     private static GraphDatabaseAPI db;
     private static Map<Long, Double> expected = new HashMap<>();
     private static Map<Long, Double> maxNormExpected = new HashMap<>();
-    
+    private static Map<Long, Double> l2NormExpected = new HashMap<>();
+    private static Map<Long, Double> l1NormExpected = new HashMap<>();
+
     @AfterClass
     public static void tearDown() throws Exception {
         if (db != null) db.shutdown();
@@ -112,6 +114,34 @@ public class EigenvectorCentralityProcNormalizationIntegrationTest {
             maxNormExpected.put(db.findNode(label, "name", "Petyr").getId(), 0.6461632437992975);
             maxNormExpected.put(db.findNode(label, "name", "Sansa").getId(), 0.6398561255696676);
         }
+
+        try (Transaction tx = db.beginTx()) {
+            final Label label = Label.label("Character");
+            l2NormExpected.put(db.findNode(label, "name", "Ned").getId(), 0.31424020248680057);
+            l2NormExpected.put(db.findNode(label, "name", "Robert").getId(), 0.2478636701002979);
+            l2NormExpected.put(db.findNode(label, "name", "Cersei").getId(), 		0.23800978296539527);
+            l2NormExpected.put(db.findNode(label, "name", "Catelyn").getId(), 	0.23779426030989856);
+            l2NormExpected.put(db.findNode(label, "name", "Tyrion").getId(), 0.23072435753445136);
+            l2NormExpected.put(db.findNode(label, "name", "Joffrey").getId(), 0.21854440134273145);
+            l2NormExpected.put(db.findNode(label, "name", "Robb").getId(), 0.2069847902565455);
+            l2NormExpected.put(db.findNode(label, "name", "Arya").getId(), 0.20630898886459065);
+            l2NormExpected.put(db.findNode(label, "name", "Petyr").getId(), 0.20333221583209818);
+            l2NormExpected.put(db.findNode(label, "name", "Sansa").getId(), 0.20135528784996212);
+        }
+
+        try (Transaction tx = db.beginTx()) {
+            final Label label = Label.label("Character");
+            l1NormExpected.put(db.findNode(label, "name", "Ned").getId(), 0.04193172127455592);
+            l1NormExpected.put(db.findNode(label, "name", "Robert").getId(), 0.03307454057909963);
+            l1NormExpected.put(db.findNode(label, "name", "Cersei").getId(), 		0.031759653287334266);
+            l1NormExpected.put(db.findNode(label, "name", "Catelyn").getId(), 	0.03173089428117553);
+            l1NormExpected.put(db.findNode(label, "name", "Tyrion").getId(), 0.030787497509304138);
+            l1NormExpected.put(db.findNode(label, "name", "Joffrey").getId(), 0.029162223199633484);
+            l1NormExpected.put(db.findNode(label, "name", "Robb").getId(), 0.027619726770875055);
+            l1NormExpected.put(db.findNode(label, "name", "Arya").getId(), 0.027529548889814154);
+            l1NormExpected.put(db.findNode(label, "name", "Petyr").getId(), 0.027132332950834063);
+            l1NormExpected.put(db.findNode(label, "name", "Sansa").getId(), 0.026868534772018032);
+        }
     }
 
     @Test
@@ -131,7 +161,7 @@ public class EigenvectorCentralityProcNormalizationIntegrationTest {
     }
 
     @Test
-    public void maxNormalizing() throws Exception {
+    public void maxNorm() throws Exception {
         final Map<Long, Double> actual = new HashMap<>();
         runQuery(
                 "CALL algo.eigenvector.stream('Character', 'INTERACTS_SEASON1', {direction: 'BOTH', normalization: 'max'}) " +
@@ -144,6 +174,42 @@ public class EigenvectorCentralityProcNormalizationIntegrationTest {
                         (Double) row.get("score")));
 
         assertMapEquals(maxNormExpected, actual);
+    }
+
+    @Test
+    public void l2Norm() throws Exception {
+        final Map<Long, Double> actual = new HashMap<>();
+        runQuery(
+                "CALL algo.eigenvector.stream('Character', 'INTERACTS_SEASON1', {direction: 'BOTH', normalization: 'l2Norm'}) " +
+                        "YIELD nodeId, score " +
+                        "RETURN nodeId, score " +
+                        "ORDER BY score DESC " +
+                        "LIMIT 10",
+                row -> actual.put(
+                        (Long)row.get("nodeId"),
+                        (Double) row.get("score")));
+
+        System.out.println("actual = " + actual);
+
+        assertMapEquals(l2NormExpected, actual);
+    }
+
+    @Test
+    public void l1Norm() throws Exception {
+        final Map<Long, Double> actual = new HashMap<>();
+        runQuery(
+                "CALL algo.eigenvector.stream('Character', 'INTERACTS_SEASON1', {direction: 'BOTH', normalization: 'l1Norm'}) " +
+                        "YIELD nodeId, score " +
+                        "RETURN nodeId, score " +
+                        "ORDER BY score DESC " +
+                        "LIMIT 10",
+                row -> actual.put(
+                        (Long)row.get("nodeId"),
+                        (Double) row.get("score")));
+
+        System.out.println("actual = " + actual);
+
+        assertMapEquals(l1NormExpected, actual);
     }
 
     private static void runQuery(

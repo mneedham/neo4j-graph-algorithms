@@ -51,7 +51,7 @@ public class NormalizedCentralityResultTest {
         when(centralityResult.score(3)).thenReturn(4.0);
         when(centralityResult.l2Norm()).thenReturn(4.0);
 
-        CentralityResult normalizedResult = Normalization.L2_NORM.apply(centralityResult);
+        CentralityResult normalizedResult = Normalization.L2NORM.apply(centralityResult);
 
         assertEquals(0.25, normalizedResult.score(0), 0.01);
         assertEquals(0.5, normalizedResult.score(1), 0.01);
@@ -68,7 +68,7 @@ public class NormalizedCentralityResultTest {
         when(centralityResult.score(3)).thenReturn(4.0);
         when(centralityResult.l1Norm()).thenReturn(4.0);
 
-        CentralityResult normalizedResult = Normalization.L1_NORM.apply(centralityResult);
+        CentralityResult normalizedResult = Normalization.L1NORM.apply(centralityResult);
 
         assertEquals(0.25, normalizedResult.score(0), 0.01);
         assertEquals(0.5, normalizedResult.score(1), 0.01);
