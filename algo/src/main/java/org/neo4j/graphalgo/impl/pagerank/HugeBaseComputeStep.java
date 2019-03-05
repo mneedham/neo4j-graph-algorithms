@@ -35,6 +35,7 @@ public abstract class HugeBaseComputeStep implements HugeComputeStep {
     private static final int S_INIT = 0;
     private static final int S_CALC = 1;
     private static final int S_SYNC = 2;
+    private static final int S_NORM = 3;
 
     private int state;
 
@@ -56,6 +57,7 @@ public abstract class HugeBaseComputeStep implements HugeComputeStep {
     final long startNode;
     final long endNode;
     private final int partitionSize;
+    double l2Norm;
 
     HugeBaseComputeStep(
             double dampingFactor,
@@ -89,12 +91,17 @@ public abstract class HugeBaseComputeStep implements HugeComputeStep {
             state = S_SYNC;
         } else if (state == S_SYNC) {
             combineScores();
+            state = S_NORM;
+        } else if(state == S_NORM) {
+            normalizeDeltas();
             state = S_CALC;
         } else if (state == S_INIT) {
             initialize();
             state = S_CALC;
         }
     }
+
+    void normalizeDeltas() {}
 
     private void initialize() {
         this.nextScores = new int[starts.length][];
@@ -132,11 +139,16 @@ public abstract class HugeBaseComputeStep implements HugeComputeStep {
 
     abstract void singleIteration();
 
+    @Override
+    public void prepareNormalizeDeltas(double l2Norm) {
+        this.l2Norm = l2Norm;
+    }
+
     public void prepareNextIteration(int[][] prevScores) {
         this.prevScores = prevScores;
     }
 
-    void combineScores() {
+    private void combineScores() {
         assert prevScores != null;
         assert prevScores.length >= 1;
 
@@ -168,4 +180,6 @@ public abstract class HugeBaseComputeStep implements HugeComputeStep {
     public long[] starts() {
         return starts;
     }
+
+    public double[] deltas() { return deltas;}
 }

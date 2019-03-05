@@ -27,6 +27,7 @@ public abstract class BaseComputeStep implements ComputeStep {
     private static final int S_INIT = 0;
     private static final int S_CALC = 1;
     private static final int S_SYNC = 2;
+    private static final int S_NORM = 3;
 
     private int state;
 
@@ -46,6 +47,7 @@ public abstract class BaseComputeStep implements ComputeStep {
     final int partitionSize;
     final int startNode;
     final int endNode;
+    double l2Norm;
 
     BaseComputeStep(
             double dampingFactor,
@@ -75,12 +77,17 @@ public abstract class BaseComputeStep implements ComputeStep {
             state = S_SYNC;
         } else if (state == S_SYNC) {
             synchronizeScores(combineScores());
+            state = S_NORM;
+        } else if(state == S_NORM) {
+            normalizeDeltas();
             state = S_CALC;
         } else if (state == S_INIT) {
             initialize();
             state = S_CALC;
         }
     }
+
+    void normalizeDeltas() {}
 
     private void initialize() {
         this.nextScores = new int[starts.length][];
@@ -113,6 +120,11 @@ public abstract class BaseComputeStep implements ComputeStep {
     }
 
     abstract void singleIteration();
+
+    @Override
+    public void prepareNormalizeDeltas(double l2Norm) {
+        this.l2Norm = l2Norm;
+    }
 
     public void prepareNextIteration(int[][] prevScores) {
         this.prevScores = prevScores;
@@ -155,6 +167,12 @@ public abstract class BaseComputeStep implements ComputeStep {
     public int[][] nextScores() {
         return nextScores;
     }
+
+    @Override
+    public double[] deltas() {
+        return deltas;
+    }
+
 
     @Override
     public double[] pageRank() {

@@ -146,7 +146,6 @@ public final class EigenvectorCentralityTest {
             expected.put(db.findNode(label, "name", "h").getId(), 0.1);
             expected.put(db.findNode(label, "name", "i").getId(), 0.1);
             expected.put(db.findNode(label, "name", "j").getId(), 0.1);
-            tx.close();
         }
 
         final Graph graph;

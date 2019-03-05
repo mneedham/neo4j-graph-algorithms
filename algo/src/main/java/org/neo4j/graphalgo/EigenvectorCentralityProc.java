@@ -47,9 +47,9 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public final class EigenvectorProc  {
+public final class EigenvectorCentralityProc {
     public static final Integer DEFAULT_ITERATIONS = 20;
-    public static final String DEFAULT_SCORE_PROPERTY = "articlerank";
+    public static final String DEFAULT_SCORE_PROPERTY = "eigenvector";
 
     @Context
     public GraphDatabaseAPI api;
@@ -65,7 +65,7 @@ public final class EigenvectorProc  {
             "{weightProperty: null, write: true, writeProperty:'articlerank', concurrency:4}) " +
             "YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, dampingFactor, write, writeProperty" +
             " - calculates eigenvector centrality and potentially writes back")
-    public Stream<PageRankScore.Stats> articleRank(
+    public Stream<PageRankScore.Stats> write(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
@@ -94,8 +94,8 @@ public final class EigenvectorProc  {
     @Procedure(value = "algo.eigenvector.stream", mode = Mode.READ)
     @Description("CALL algo.eigenvector.stream(label:String, relationship:String, " +
             "{weightProperty: null, concurrency:4}) " +
-            "YIELD node, score - calculates page rank and streams results")
-    public Stream<CentralityScore> articleRankStream(
+            "YIELD node, score - calculates eigenvector centrality and streams results")
+    public Stream<CentralityScore> stream(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {

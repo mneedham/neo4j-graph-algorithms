@@ -45,7 +45,6 @@ final class EigenvectorCentralityComputeStep extends BaseComputeStep implements 
         this.nodeCount = nodeCount;
     }
 
-
     private int srcRankDelta;
 
 
@@ -92,19 +91,13 @@ final class EigenvectorCentralityComputeStep extends BaseComputeStep implements 
             deltas[i] = delta;
             allScores[i] = 0;
         }
-
-        normalizeDeltas();
     }
 
-    private void normalizeDeltas() {
-        double norm = computeNorm(deltas);
+    @Override
+    void normalizeDeltas() {
         for (int i = 0; i < deltas.length; i++) {
-            deltas[i] = deltas[i] / norm;
+            deltas[i] = deltas[i] / l2Norm;
         }
     }
 
-    private double computeNorm(double[] allScores) {
-        double norm = Arrays.stream(allScores).map(score -> score * score).sum();
-        return norm < 0.0 ? 1.0 : norm;
-    }
 }

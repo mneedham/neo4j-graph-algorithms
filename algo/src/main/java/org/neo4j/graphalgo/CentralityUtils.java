@@ -41,29 +41,6 @@ public class CentralityUtils {
         }
     }
 
-    static Stream<PageRankScore> streamResults(Graph graph, PageRankResult scores) {
-        if (graph instanceof HugeGraph) {
-            HugeGraph hugeGraph = (HugeGraph) graph;
-            return LongStream.range(0, hugeGraph.nodeCount())
-                    .mapToObj(i -> {
-                        final long nodeId = hugeGraph.toOriginalNodeId(i);
-                        return new PageRankScore(
-                                nodeId,
-                                scores.score(i)
-                        );
-                    });
-        }
-
-        return IntStream.range(0, Math.toIntExact(graph.nodeCount()))
-                .mapToObj(i -> {
-                    final long nodeId = graph.toOriginalNodeId(i);
-                    return new PageRankScore(
-                            nodeId,
-                            scores.score(i)
-                    );
-                });
-    }
-
     static Stream<CentralityScore> streamResults(Graph graph, CentralityResult scores) {
         if (graph instanceof HugeGraph) {
             HugeGraph hugeGraph = (HugeGraph) graph;

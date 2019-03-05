@@ -32,6 +32,7 @@ import org.neo4j.graphdb.Direction;
 import org.neo4j.logging.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -500,11 +501,38 @@ public class HugePageRank extends Algorithm<HugePageRank> implements PageRankAlg
                 // calculate scores
                 ParallelUtil.runWithConcurrency(concurrency, steps, pool);
                 getProgressLogger().logProgress(++op, operations, tracker);
-                synchronizeScores();
+
                 // sync scores
+                synchronizeScores();
+                ParallelUtil.runWithConcurrency(concurrency, steps, pool);
+                getProgressLogger().logProgress(++op, operations, tracker);
+
+                // normalize deltas
+                normalizeDeltas();
                 ParallelUtil.runWithConcurrency(concurrency, steps, pool);
                 getProgressLogger().logProgress(++op, operations, tracker);
             }
+        }
+
+        private void normalizeDeltas() {
+            double l2Norm = computeNorm();
+
+            for (HugeComputeStep step : steps) {
+                step.prepareNormalizeDeltas(l2Norm);
+            }
+        }
+
+        private double computeNorm() {
+            double l2Norm = 0.0;
+            for (HugeComputeStep step : steps) {
+                double[] deltas = step.deltas();
+                l2Norm += Arrays.stream(deltas).parallel().map(score -> score * score).sum();
+            }
+
+//            l2Norm = Math.sqrt(l2Norm);
+
+            l2Norm = l2Norm < 0 ? 1: l2Norm;
+            return l2Norm;
         }
 
         private void synchronizeScores() {

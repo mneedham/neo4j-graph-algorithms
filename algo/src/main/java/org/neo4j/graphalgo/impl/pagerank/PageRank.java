@@ -356,22 +356,48 @@ public class PageRank extends Algorithm<PageRank> implements PageRankAlgorithm {
             for (int i = 0; i < iterations && running(); i++) {
                 // calculate scores
                 ParallelUtil.runWithConcurrency(concurrency, steps, pool);
-                synchronizeScores();
+
                 // sync scores
+                synchronizeScores();
+                ParallelUtil.runWithConcurrency(concurrency, steps, pool);
+
+                // normalize deltas
+                normalizeDeltas();
                 ParallelUtil.runWithConcurrency(concurrency, steps, pool);
             }
         }
 
-        private void synchronizeScores() {
-            int stepSize = steps.size();
-            int[][][] scores = this.scores;
-            int i;
-            for (i = 0; i < stepSize; i++) {
-                synchronizeScores(steps.get(i), i, scores);
+        private void normalizeDeltas() {
+            double l2Norm = computeNorm();
+
+            for (ComputeStep step : steps) {
+                step.prepareNormalizeDeltas(l2Norm);
             }
         }
 
-        private void synchronizeScores(
+        private double computeNorm() {
+            double l2Norm = 0.0;
+            for (ComputeStep step : steps) {
+                double[] deltas = step.deltas();
+                l2Norm += Arrays.stream(deltas).parallel().map(score -> score * score).sum();
+            }
+
+//            l2Norm = Math.sqrt(l2Norm);
+
+            l2Norm = l2Norm < 0 ? 1: l2Norm;
+            return l2Norm;
+        }
+
+        private void synchronizeScores() {
+            int numberOfSteps = steps.size();
+            int[][][] scores = this.scores;
+            int stepIndex;
+            for (stepIndex = 0; stepIndex < numberOfSteps; stepIndex++) {
+                synchronizeScoresForStep(steps.get(stepIndex), stepIndex, scores);
+            }
+        }
+
+        private void synchronizeScoresForStep(
                 ComputeStep step,
                 int idx,
                 int[][][] scores) {
