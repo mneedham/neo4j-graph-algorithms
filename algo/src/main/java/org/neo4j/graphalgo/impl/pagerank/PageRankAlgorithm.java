@@ -30,6 +30,16 @@ import java.util.stream.LongStream;
 public interface PageRankAlgorithm {
 
 
+    static PageRankAlgorithm eigenvectorCentralityOf(Graph graph, LongStream sourceNodeIds) {
+        PageRankVariant pageRankVariant = new EigenvectorCentralityVariant();
+        if (graph instanceof HugeGraph) {
+            HugeGraph huge = (HugeGraph) graph;
+            return new HugePageRank(AllocationTracker.EMPTY, huge, 1.0, sourceNodeIds, pageRankVariant);
+        }
+
+        return new PageRank(graph, 1.0, sourceNodeIds, pageRankVariant);
+    }
+
     PageRankAlgorithm compute(int iterations);
 
     CentralityResult result();
