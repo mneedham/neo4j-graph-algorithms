@@ -136,16 +136,16 @@ public class EigenvectorCentralityProcIntegrationTest {
 
         try (Transaction tx = db.beginTx()) {
             final Label label = Label.label("Character");
-            expected.put(db.findNode(label, "name", "Ned").getId(), 53.90179401574803);
-            expected.put(db.findNode(label, "name", "Robert").getId(), 42.598284015748035);
-            expected.put(db.findNode(label, "name", "Catelyn").getId(), 40.93116401574803);
-            expected.put(db.findNode(label, "name", "Cersei").getId(), 	40.87522401574804);
-            expected.put(db.findNode(label, "name", "Tyrion").getId(), 39.722854015748034);
-            expected.put(db.findNode(label, "name", "Joffrey").getId(), 37.579774015748036);
-            expected.put(db.findNode(label, "name", "Robb").getId(), 35.630514015748034);
-            expected.put(db.findNode(label, "name", "Arya").getId(), 35.49330401574803	);
-            expected.put(db.findNode(label, "name", "Petyr").getId(), 34.91983401574804);
-            expected.put(db.findNode(label, "name", "Sansa").getId(), 34.58581401574803);
+            expected.put(db.findNode(label, "name", "Ned").getId(), 111.68570401574802);
+            expected.put(db.findNode(label, "name", "Robert").getId(), 88.09448401574804);
+            expected.put(db.findNode(label, "name", "Cersei").getId(), 		84.59226401574804);
+            expected.put(db.findNode(label, "name", "Catelyn").getId(), 	84.51566401574803);
+            expected.put(db.findNode(label, "name", "Tyrion").getId(), 82.00291401574802);
+            expected.put(db.findNode(label, "name", "Joffrey").getId(), 77.67397401574803);
+            expected.put(db.findNode(label, "name", "Robb").getId(), 73.56551401574802);
+            expected.put(db.findNode(label, "name", "Arya").getId(), 73.32532401574804	);
+            expected.put(db.findNode(label, "name", "Petyr").getId(), 72.26733401574802);
+            expected.put(db.findNode(label, "name", "Sansa").getId(), 71.56470401574803);
             tx.success();
         }
     }

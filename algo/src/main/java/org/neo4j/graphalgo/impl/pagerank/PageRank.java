@@ -382,8 +382,7 @@ public class PageRank extends Algorithm<PageRank> implements PageRankAlgorithm {
                 l2Norm += Arrays.stream(deltas).parallel().map(score -> score * score).sum();
             }
 
-//            l2Norm = Math.sqrt(l2Norm);
-
+            l2Norm = Math.sqrt(l2Norm);
             l2Norm = l2Norm < 0 ? 1: l2Norm;
             return l2Norm;
         }
