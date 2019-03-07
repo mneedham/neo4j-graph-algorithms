@@ -60,15 +60,9 @@ public final class DegreeCentralityProc {
     @Procedure(value = "algo.degree", mode = Mode.WRITE)
     @Description("CALL algo.degree(label:String, relationship:String, " +
             "{ weightProperty: null, write: true, writeProperty:'degree', concurrency:4}) " +
-<<<<<<< HEAD
-            "YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, write, writeProperty" +
-            " - calculates degree centrality and potentially writes back")
-    public Stream<DegreeCentralityScore.Stats> degree(
-=======
             "YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, dampingFactor, write, writeProperty" +
-            " - calculates page rank and potentially writes back")
+            " - calculates degree centrality and potentially writes back")
     public Stream<CentralityScore.Stats> degree(
->>>>>>> make degree centrality and pagerank use the same results classes
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationship,
             @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
