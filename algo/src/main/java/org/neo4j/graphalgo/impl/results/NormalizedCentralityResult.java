@@ -35,11 +35,11 @@ public  class NormalizedCentralityResult implements CentralityResult {
 
     @Override
     public double computeL2Norm() {
-        return 0;
+        return result.computeL2Norm();
     }
 
     @Override
     public double computeL1Norm() {
-        return 0;
+        return result.computeL1Norm();
     }
 }
