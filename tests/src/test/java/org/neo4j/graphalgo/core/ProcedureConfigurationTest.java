@@ -49,6 +49,4 @@ public class ProcedureConfigurationTest {
         String value = procedureConfiguration.get("writeProperty", "partitionProperty", "defaultValue");
         assertEquals(value, "defaultValue");
     }
-
-
 }
