@@ -74,13 +74,24 @@ public final class LabelPropagationProc {
     public Stream<LabelPropagationStats> labelPropagation(
             @Name(value = "label", defaultValue = "") String label,
             @Name(value = "relationship", defaultValue = "") String relationshipType,
-            @Name(value = "direction", defaultValue = "OUTGOING") String directionName,
-            @Name(value = "config", defaultValue = "{}") Map<String, Object> config) {
+            @Name(value = "config", defaultValue="null") Object directionOrConfig,
+            @Name(value = "deprecatedConfig", defaultValue = "{}") Map<String, Object> config) {
+        Map<String, Object> rawConfig = config;
+        if (directionOrConfig == null) {
+            if (!config.isEmpty()) {
+                directionOrConfig = "OUTGOING";
+            }
+        } else if (directionOrConfig instanceof Map) {
+            rawConfig = (Map<String, Object>) directionOrConfig;
+        }
 
-        final ProcedureConfiguration configuration = ProcedureConfiguration.create(config)
+        final ProcedureConfiguration configuration = ProcedureConfiguration.create(rawConfig)
                 .overrideNodeLabelOrQuery(label)
-                .overrideRelationshipTypeOrQuery(relationshipType)
-                .overrideDirection(directionName);
+                .overrideRelationshipTypeOrQuery(relationshipType);
+
+        if(directionOrConfig instanceof String) {
+            configuration.overrideDirection((String) directionOrConfig);
+        }
 
         final int iterations = configuration.getIterations(DEFAULT_ITERATIONS);
         final int batchSize = configuration.getBatchSize();

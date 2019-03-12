@@ -103,7 +103,20 @@ public class LabelPropagationProcIntegrationTest {
 
     @Test
     public void explicitWriteProperty() {
-        String query = "CALL algo.labelPropagation(null, null, 'BOTH', {writeProperty: 'lpa'})";
+        String query = "CALL algo.labelPropagation(null, null, null, {writeProperty: 'lpa'})";
+
+        runQuery(query, row -> {
+            assertEquals(1, row.getNumber("iterations").intValue());
+            assertEquals("weight", row.getString("weightProperty"));
+            assertEquals("partition", row.getString("partitionProperty"));
+            assertEquals("lpa", row.getString("writeProperty"));
+            assertTrue(row.getBoolean("write"));
+        });
+    }
+
+    @Test
+    public void explicitWritePropertyWithConfigAs3rdParameter() {
+        String query = "CALL algo.labelPropagation(null, null, {writeProperty: 'lpa'})";
 
         runQuery(query, row -> {
             assertEquals(1, row.getNumber("iterations").intValue());
