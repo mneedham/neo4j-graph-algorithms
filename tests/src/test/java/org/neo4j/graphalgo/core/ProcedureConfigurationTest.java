@@ -15,7 +15,7 @@ public class ProcedureConfigurationTest {
         Map<String, Object> map = Collections.emptyMap();
         ProcedureConfiguration procedureConfiguration = new ProcedureConfiguration(map);
         String value = procedureConfiguration.get("partitionProperty", "defaultValue");
-        assertEquals(value, "defaultValue");
+        assertEquals("defaultValue", value);
     }
 
     @Test
@@ -23,7 +23,7 @@ public class ProcedureConfigurationTest {
         Map<String, Object> map = MapUtil.map("partitionProperty", "partition");
         ProcedureConfiguration procedureConfiguration = new ProcedureConfiguration(map);
         String value = procedureConfiguration.get("partitionProperty", "defaultValue");
-        assertEquals(value, "partition");
+        assertEquals("partition", value);
     }
 
     @Test
@@ -31,7 +31,7 @@ public class ProcedureConfigurationTest {
         Map<String, Object> map = MapUtil.map("partitionProperty", "old", "writeProperty", "new");
         ProcedureConfiguration procedureConfiguration = new ProcedureConfiguration(map);
         String value = procedureConfiguration.get("writeProperty", "partitionProperty", "defaultValue");
-        assertEquals(value, "new");
+        assertEquals("new", value);
     }
 
     @Test
@@ -39,7 +39,7 @@ public class ProcedureConfigurationTest {
         Map<String, Object> map = MapUtil.map("partitionProperty", "old");
         ProcedureConfiguration procedureConfiguration = new ProcedureConfiguration(map);
         String value = procedureConfiguration.get("writeProperty", "partitionProperty", "defaultValue");
-        assertEquals(value, "old");
+        assertEquals("old", value);
     }
 
     @Test
@@ -47,6 +47,27 @@ public class ProcedureConfigurationTest {
         Map<String, Object> map = Collections.emptyMap();
         ProcedureConfiguration procedureConfiguration = new ProcedureConfiguration(map);
         String value = procedureConfiguration.get("writeProperty", "partitionProperty", "defaultValue");
-        assertEquals(value, "defaultValue");
+        assertEquals("defaultValue", value);
+    }
+
+    @Test
+    public void defaultIfKeyMissing() {
+        Map<String, Object> map = Collections.emptyMap();
+        ProcedureConfiguration procedureConfiguration = new ProcedureConfiguration(map);
+        assertEquals("defaultValue", procedureConfiguration.getString("writeProperty", "defaultValue"));
+    }
+
+    @Test
+    public void defaultIfKeyPresentButNoValue() {
+        Map<String, Object> map = MapUtil.map("writeProperty", "");
+        ProcedureConfiguration procedureConfiguration = new ProcedureConfiguration(map);
+        assertEquals("defaultValue", procedureConfiguration.getString("writeProperty", "defaultValue"));
+    }
+
+    @Test
+    public void valueIfKeyPresent() {
+        Map<String, Object> map = MapUtil.map("writeProperty", "scc");
+        ProcedureConfiguration procedureConfiguration = new ProcedureConfiguration(map);
+        assertEquals("scc", procedureConfiguration.getString("writeProperty", "defaultValue"));
     }
 }

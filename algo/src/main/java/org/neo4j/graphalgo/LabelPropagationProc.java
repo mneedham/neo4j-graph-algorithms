@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 public final class LabelPropagationProc {
 
     public static final String CONFIG_WEIGHT_KEY = "weightProperty";
+    public static final String CONFIG_WRITE_KEY = "writeProperty";
     public static final String CONFIG_PARTITION_KEY = "partitionProperty";
     public static final Integer DEFAULT_ITERATIONS = 1;
     public static final Boolean DEFAULT_WRITE = Boolean.TRUE;
@@ -85,11 +86,13 @@ public final class LabelPropagationProc {
         final int batchSize = configuration.getBatchSize();
         final int concurrency = configuration.getConcurrency();
         final String partitionProperty = configuration.getString(CONFIG_PARTITION_KEY, DEFAULT_PARTITION_KEY);
+        final String writeProperty = configuration.get(CONFIG_WRITE_KEY, CONFIG_PARTITION_KEY, DEFAULT_PARTITION_KEY);
         final String weightProperty = configuration.getString(CONFIG_WEIGHT_KEY, DEFAULT_WEIGHT_KEY);
 
         LabelPropagationStats.Builder stats = new LabelPropagationStats.Builder()
                 .iterations(iterations)
                 .partitionProperty(partitionProperty)
+                .writeProperty(writeProperty)
                 .weightProperty(weightProperty);
 
         GraphLoader graphLoader = graphLoader(configuration, partitionProperty, weightProperty, createPropertyMappings(partitionProperty, weightProperty));
@@ -109,9 +112,9 @@ public final class LabelPropagationProc {
         }
 
         final int[] labels = compute(direction, iterations, batchSize, concurrency, graph, stats);
-        if (configuration.isWriteFlag(DEFAULT_WRITE) && partitionProperty != null) {
+        if (configuration.isWriteFlag(DEFAULT_WRITE) && writeProperty != null) {
             stats.withWrite(true);
-            write(concurrency, partitionProperty, graph, labels, stats);
+            write(concurrency, writeProperty, graph, labels, stats);
         }
 
         return Stream.of(stats.build(graph.nodeCount(), l -> (long) labels[(int) l]));
