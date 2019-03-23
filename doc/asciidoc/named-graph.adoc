@@ -1,0 +1,46 @@
+[[named-graph]]
+= Named Graph
+
+ifdef::env-docs[]
+[abstract]
+--
+This chapter explains the named graph feature in the Neo4j Graph Algorithms library.
+--
+endif::env-docs[]
+
+As it can take some time to load large graphs into the algorithm data structures, you can pre-load graphs and then later refer to them by name when calling graph algorithm procedures.
+After usage they can be removed from memory to free resources used:
+
+== Loading a named graph
+
+.The following will load a named graph with the name `my-graph`
+[source,cypher]
+----
+CALL algo.graph.load('my-graph','Label','REL_TYPE',{graph:'heavy',..other config...})
+YIELD name, graph, direction, undirected, sorted, nodes, loadMillis, alreadyLoaded,
+      nodeWeight, relationshipWeight, nodeProperty, loadNodes, loadRelationships;
+----
+
+.The following will return details about a named graph
+[source,cypher]
+----
+CALL algo.graph.info('my-graph')
+YIELD name, type, exists, removed, nodes;
+----
+
+== Using a named graph
+
+.The following will run the PageRank algorithm on the `my-graph` named graph
+[source,cypher]
+----
+CALL algo.pageRank(null,null,{graph:'my-graph',...})
+----
+
+== Remove named graph
+
+.The following will remove the `my-graph` named graph
+[source,cypher]
+----
+CALL algo.graph.remove('my-graph')
+  YIELD name, type, exists, removed, nodes;
+----
