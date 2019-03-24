@@ -4,7 +4,7 @@
 ifdef::env-docs[]
 [abstract]
 --
-This chapter explains the projected graph model used by the Neo4j Graph Algorithms library.
+This section explains the projected graph model used by the Neo4j Graph Algorithms library.
 --
 endif::env-docs[]
 
@@ -25,7 +25,7 @@ We can project the graph on which we want to run algorithms with either label an
 ----
 
 
-During projection, only one relationship between a pai`r of nodes per direction (in, out) is allowed in the directed case, but two relationships are allowed for BOTH the undirected cases.
+During projection, only one relationship between a pair of nodes per direction (in, out) is allowed in the directed case, but two relationships are allowed for BOTH the undirected cases.
 
 The library supports two approaches for loading projected graphs:
 
