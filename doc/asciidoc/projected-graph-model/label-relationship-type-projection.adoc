@@ -1,0 +1,54 @@
+[[label-relationship-type-projection]]
+// tag::header[]
+= Label and relationship-type projection
+// end::header[]
+
+ifdef::env-docs[]
+[abstract]
+--
+This chapter explains label and relationship-type projection in the Neo4j Graph Algorithms library.
+--
+endif::env-docs[]
+
+We can project the subgraph we want to run the algorithm on by using the label parameter to describe nodes, and relationship-type to describe relationships.
+
+The general call syntax is:
+
+[source,cypher]
+----
+CALL algo.<name>('NodeLabel', "RelationshipType", {config})
+----
+
+For example, PageRank on DBpedia (11M nodes, 116M relationships):
+
+[source,cypher]
+----
+CALL algo.pageRank('Page','Link',{iterations:5, dampingFactor:0.85, write: true, writeProperty:'pagerank'});
+// YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, dampingFactor, write, writeProperty
+
+CALL algo.pageRank.stream('Page','Link',{iterations:5, dampingFactor:0.85})
+YIELD node, score
+RETURN node.title, score
+ORDER BY score DESC LIMIT 10;
+----
+
+[[huge-projection]]
+== Huge graph projection
+
+The default label and relationship-type projection has a limitation of 2 billion nodes and 2 billion relationships, so if our project graph is bigger than this we need to use a huge graph projection.
+This can be enabled by setting `graph:'huge'` in the config.
+
+The general call syntax is:
+
+[source,cypher]
+----
+CALL algo.<name>('NodeLabel', "RelationshipType", {graph: "huge"})
+----
+
+For example, PageRank on DBpedia:
+
+[source,cypher]
+----
+CALL algo.pageRank('Page','Link',{iterations:5, dampingFactor:0.85, writeProperty:'pagerank',graph:'huge'});
+YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, dampingFactor, writeProperty
+----

@@ -25,107 +25,17 @@ We can project the graph we want to run algorithms on with either label and rela
 ----
 
 
-During projection, only one relationship between a pair of nodes per direction (in, out) is allowed in the directed case, but two relationships are allowed for BOTH the undirected cases.
+During projection, only one relationship between a pai`r of nodes per direction (in, out) is allowed in the directed case, but two relationships are allowed for BOTH the undirected cases.
+
+The library supports two approaches for loading projected graphs:
+
+* <<label-relationship-type-projection, Label and relationship-type projection>>
+* <<cypher-projection, Cypher projection>>
+
+include::projected-graph-model/label-relationship-type-projection.adoc[leveloffset=2]
+include::projected-graph-model/cypher-projection.adoc[tag=overview,leveloffset=2]
 
 
-[[label-relationship-type-projection]]
-== Label and relationship-type projection
-
-We can project the subgraph we want to run the algorithm on by using the label parameter to describe nodes, and relationship-type to describe relationships.
-
-The general call syntax is:
-
-[source,cypher]
-----
-CALL algo.<name>('NodeLabel', "RelationshipType", {config})
-----
-
-For example, PageRank on DBpedia (11M nodes, 116M relationships):
-
-[source,cypher]
-----
-CALL algo.pageRank('Page','Link',{iterations:5, dampingFactor:0.85, write: true, writeProperty:'pagerank'});
-// YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, dampingFactor, write, writeProperty
-
-CALL algo.pageRank.stream('Page','Link',{iterations:5, dampingFactor:0.85})
-YIELD node, score
-RETURN node.title, score
-ORDER BY score DESC LIMIT 10;
-----
-
-[[huge-projection]]
-=== Huge graph projection
-
-The default label and relationship-type projection has a limitation of 2 billion nodes and 2 billion relationships, so if our project graph is bigger than this we need to use a huge graph projection.
-This can be enabled by setting `graph:'huge'` in the config.
-
-The general call syntax is:
-
-[source,cypher]
-----
-CALL algo.<name>('NodeLabel', "RelationshipType", {graph: "huge"})
-----
-
-For example, PageRank on DBpedia:
-
-[source,cypher]
-----
-CALL algo.pageRank('Page','Link',{iterations:5, dampingFactor:0.85, writeProperty:'pagerank',graph:'huge'});
-YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, dampingFactor, writeProperty
-----
 
 
-[[cypher-projection]]
-== Cypher projection
 
-If label and relationship-type projection is not selective enough to describe our subgraph to run the algorithm on, we can use Cypher statements to project subsets of our graph.
-Use a node-statement instead of the label parameter and a relationship-statement instead of the relationship-type, and use `graph:'cypher'` in the config.
-
-Relationships described in the relationship-statement will only be projected if both source and target nodes are described in the node-statement.
-Relationships that don't have both source and target nodes described in the node-statement will be ignored.
-
-We can also return a property value or weight (according to our config) in addition to the ids from these statements.
-
-Cypher projection enables us to be more expressive in describing our subgraph that we want to analyse, but might take longer to project the graph with more complex cypher queries.
-
-The general call syntax is:
-
-[source,cypher]
-----
-CALL algo.<name>(
-  'MATCH (n) RETURN id(n) AS id',
-  "MATCH (n)-->(m) RETURN id(n) AS source, id(m) AS target",
-  {graph: "cypher"})
-----
-
-* The first query `MATCH (n) RETURN id(n) AS id` returns node ids.
-The Cypher loader expects the query to return an `id` field.
-
-* The second query `MATCH (n)-->(m) RETURN id(n) AS source, id(m) AS target` returns pairs of node ids that have a relationship between them in our projected graph.
-The Cypher loader expects the query to return `source` and `target` fields.
-We can also return an optional `weight` field.
-
-Note that in both queries we use the `id` function to return the node id.
-
-
-For example, PageRank on DBpedia:
-
-[source,cypher]
-----
-CALL algo.pageRank(
-'MATCH (p:Page) RETURN id(p) as id',
-'MATCH (p1:Page)-[:Link]->(p2:Page) RETURN id(p1) as source, id(p2) as target',
-{graph:'cypher', iterations:5, write: true});
-----
-
-Cypher projection can also be used to project a virtual (non-stored) graph.
-Here is an example of how to project an undirected graph of people who visited the same web page and run the Louvain community detection algorithm on it, using the number of common visited web pages between pairs of people as relationship weight:
-
-[source,cypher]
-----
-CALL algo.louvain(
-'MATCH (p:Person) RETURN id(p) as id',
-'MATCH (p1:Person)-[:Visit]->(:Page)<-[:Visit]-(p2:Person)
-RETURN id(p1) as source, id(p2) as target, count(*) as weight',
-{graph:'cypher', iterations:5, write: true});
-----

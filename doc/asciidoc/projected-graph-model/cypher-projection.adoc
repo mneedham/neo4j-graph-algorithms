@@ -1,0 +1,76 @@
+// tag::overview[]
+[[cypher-projection]]
+= Cypher projection
+
+If label and relationship-type projection is not selective enough to describe our subgraph to run the algorithm on, we can use Cypher statements to project subsets of our graph.
+Use a node-statement instead of the label parameter and a relationship-statement instead of the relationship-type, and use `graph:'cypher'` in the config.
+
+Relationships described in the relationship-statement will only be projected if both source and target nodes are described in the node-statement.
+Relationships that don't have both source and target nodes described in the node-statement will be ignored.
+
+We can also return a property value or weight (according to our config) in addition to the ids from these statements.
+
+Cypher projection enables us to be more expressive in describing our subgraph that we want to analyse, but might take longer to project the graph with more complex cypher queries.
+
+The general call syntax is:
+
+[source,cypher]
+----
+CALL algo.<name>(
+  'MATCH (n) RETURN id(n) AS id',
+  "MATCH (n)-->(m) RETURN id(n) AS source, id(m) AS target",
+  {graph: "cypher"})
+----
+
+* The first query `MATCH (n) RETURN id(n) AS id` returns node ids.
+The Cypher loader expects the query to return an `id` field.
+
+* The second query `MATCH (n)-->(m) RETURN id(n) AS source, id(m) AS target` returns pairs of node ids that have a relationship between them in our projected graph.
+The Cypher loader expects the query to return `source` and `target` fields.
+We can also return an optional `weight` field.
+
+Note that in both queries we use the `id` function to return the node id.
+
+
+For example, PageRank on DBpedia:
+
+[source,cypher]
+----
+CALL algo.pageRank(
+'MATCH (p:Page) RETURN id(p) as id',
+'MATCH (p1:Page)-[:Link]->(p2:Page) RETURN id(p1) as source, id(p2) as target',
+{graph:'cypher', iterations:5, write: true});
+----
+
+Cypher projection can also be used to project a virtual (non-stored) graph.
+Here is an example of how to project an undirected graph of people who visited the same web page and run the Louvain community detection algorithm on it, using the number of common visited web pages between pairs of people as relationship weight:
+
+[source,cypher]
+----
+CALL algo.louvain(
+'MATCH (p:Person) RETURN id(p) as id',
+'MATCH (p1:Person)-[:Visit]->(:Page)<-[:Visit]-(p2:Person)
+RETURN id(p1) as source, id(p2) as target, count(*) as weight',
+{graph:'cypher', iterations:5, write: true});
+----
+
+// end::overview[]
+
+
+
+// tag::explanation[]
+If label and relationship-type are not selective enough to describe your subgraph to run the algorithm on, you can use Cypher statements to load or project subsets of your graph.
+This can also be used to run algorithms on a virtual graph.
+You can learn more in the <<cypher-projection>> section of the manual.
+// end::explanation[]
+
+// tag::similarity-explanation[]
+If the similarity lists are very large they can take up a lot of memory.
+For cases where those lists contain lots of values that should be skipped, you can use the less memory-intensive approach of using Cypher statements to project the graph instead.
+
+The Cypher loader expects to receive 3 fields:
+
+* `item` - should contain node ids, which we can return using the `id` function.
+* `category` - should contain node ids, which we can return using the `id` function.
+* `weight` - should contain a double value.
+// end::similarity-explanation[]
