@@ -15,8 +15,10 @@ This section includes:
 
 * <<algorithms-similarity-jaccard-context, History and explanation>>
 * <<algorithms-similarity-jaccard-usecase, Use-cases - when to use the Jaccard Similarity algorithm>>
-* <<algorithms-similarity-jaccard-sample, Jaccard Similarity algorithm sample>>
-
+* <<algorithms-similarity-jaccard-function-sample, Jaccard Similarity algorithm function sample>>
+* <<algorithms-similarity-jaccard-procedure-sample, Jaccard Similarity algorithm procedure sample>>
+* <<algorithms-similarity-jaccard-source-target-ids, Specifying source and target ids>>
+* <<algorithms-similarity-jaccard-syntax, Syntax>>
 
 [[algorithms-similarity-jaccard-context]]
 == History and explanation
@@ -49,8 +51,12 @@ For example, you can use the Jaccard Similarity algorithm to show the products t
 // end::use-case[]
 
 
-[[algorithms-similarity-jaccard-sample]]
-== Jaccard Similarity algorithm sample
+[[algorithms-similarity-jaccard-function-sample]]
+== Jaccard Similarity algorithm function sample
+
+The Jaccard similarity function computes the similarity of two lists of numbers.
+
+We can use it to compute the similarity of two hardcoded lists.
 
 .The following will return the Jaccard similarity of two lists of numbers:
 [source, cypher]
@@ -78,6 +84,8 @@ J(A,B) = 2 / 3 + 4 - 2
        = 0.4
 ```
 // end::function-explanation[]
+
+We can also use it to compute the similarity of nodes based on lists computed by a Cypher query.
 
 .The following will create a sample graph:
 [source, cypher]
@@ -119,6 +127,22 @@ include::scripts/similarity-jaccard.cypher[tag=function-cypher-all]
 
 |===
 // end::function-cypher-all[]
+
+[[algorithms-similarity-jaccard-procedure-sample]]
+== Jaccard Similarity algorithm procedure sample
+
+The Jaccard Similarity procedure computes similarity between all pairs of items.
+It is a symmetrical algorithm, which means that the result from computing the similarity of Item A to Item B is the same as computing the similarity of Item B to Item A.
+We can therefore compute the score for each pair of nodes once.
+We don't compute the similarity of items to themselves.
+
+The number of computations is `((# items)^2 / 2) - # items`, which can be very computationally expensive if we have a lot of items.
+
+.The following will create a sample graph:
+[source, cypher]
+----
+include::scripts/similarity-jaccard.cypher[tag=create-sample-graph-procedure]
+----
 
 .The following will return a stream of node pairs along with their intersection and Jaccard similarities:
 [source, cypher]
@@ -195,29 +219,7 @@ include::scripts/similarity-jaccard.cypher[tag=stream-topk]
 These results will not be symmetrical.
 For example, the person most similar to Praveena is Zhen, but the person most similar to Zhen is actually Michael.
 
-.Parameters
-[opts="header",cols="1,1,1,1,4"]
-|===
-| Name               | Type   | Default        | Optional | Description
-| `data`             | list   | null           | no       | A list of maps of the following structure: `{item: nodeId, categories: [nodeId, nodeId, nodeId]}`
-| `top`              | int    | 0              | yes      | The number of similar pairs to return. If `0`, it will return as many as it finds.
-| `topK`             | int    | 0              | yes      | The number of similar values to return per node. If `0`, it  will return as many as it finds.
-| `similarityCutoff` | int    | -1             | yes      | The threshold for Jaccard similarity. Values below this will not be returned.
-| `degreeCutoff`     | int    | 0              | yes      | The threshold for the number of items in the `targets` list. If the list contains less than this amount, that node will be excluded from the calculation.
-| `concurrency`      | int    | available CPUs | yes      | The number of concurrent threads.
-|===
 
-.Results
-[opts="header",cols="1,1,6"]
-|===
-| Name           | Type | Description
-| `item1`        | int  | The ID of one node in the similarity pair.
-| `item2`        | int  | The ID of other node in the similarity pair.
-| `count1`       | int  | The size of the `targets` list of one node.
-| `count2`       | int  | The size of the `targets` list of other node.
-| `intersection` | int  | The number of intersecting values in the two nodes `targets` lists.
-| `similarity`   | int  | The Jaccard similarity of the two nodes.
-|===
 
 .The following will find the most similar user for each user, and store a relationship between those users:
 [source, cypher]
@@ -250,6 +252,72 @@ include::scripts/similarity-jaccard.cypher[tag=query]
 | French
 |===
 // end::query[]
+
+[[algorithms-similarity-jaccard-source-target-ids]]
+== Specifying source and target ids
+
+Sometimes we don't want to compute all pairs similarity, but would rather specify sub sets of items to compare to each other.
+We do this using the `sourceIds` and `targetIds` keys in the config.
+
+We might want to use this technique when comparing nodes with different labels that intersect on a common label.
+In our sample dataset, recipes and people both have relationships to cuisines, which means we have a way of computing similarities between recipes and people.
+
+.The following will find similarities between recipes and people, based on the cuisines that they have in common:
+[source, cypher]
+----
+include::scripts/similarity-jaccard.cypher[tag=source-target-ids]
+----
+
+// tag::source-target-ids[]
+.Results
+[opts="header",cols="1,1,1"]
+|===
+| `from`   | `to`     | `similarity`
+| Peri Peri Naan         | Praveena | 1.0
+| Shrimp Bolognese       | Michael  | 0.6666666666666666
+| Saltimbocca alla roman | Michael  | 0.6666666666666666
+| Peri Peri Naan         | Zhen     | 0.3333333333333333
+| Shrimp Bolognese       | Karin    | 0.3333333333333333
+| Shrimp Bolognese       | Praveena | 0.3333333333333333
+| Saltimbocca alla roman | Zhen     | 0.3333333333333333
+| Shrimp Bolognese       | Zhen     | 0.3333333333333333
+| Saltimbocca alla roman | Karin    | 0.3333333333333333
+| Peri Peri Naan         | Arya     | 0.25
+|===
+// end::source-target-ids[]
+
+The Peri Peri Naan and Praveena have a perfect score of 1.0 because they overlap via Portuguese and Indian cuisines.
+Michael likes French, Indian, and Italian food, and two of the fusion recipes combine two of those cuisines, giving us a score of 0.66.
+
+We could also use this technique to compute the similarity of a subset of items to all other items.
+
+.The following will find the most similar (`topK=1`) person to Arya and Praveena:
+[source, cypher]
+----
+include::scripts/similarity-jaccard.cypher[tag=source-target-ids-2]
+----
+
+// tag::source-target-ids-2[]
+.Results
+[opts="header",cols="1,1,1"]
+|===
+| `from`   | `to`     | `similarity`
+| Arya     | Karin | 0.6666666666666666 
+| Praveena | Zhen  | 0.3333333333333333 
+|===
+// end::source-target-ids-2[]
+
+[[algorithms-similarity-jaccard-syntax]]
+== Syntax
+
+.The following will run the algorithm and write back results:
+[source, cypher]
+----
+CALL algo.similarity.jaccard(userData:List<Map>, {
+    topK: 1, similarityCutoff: 0.1, write:true, writeProperty: "jaccardSimilarity"
+})
+YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, max, mean, stdDev, p25, p50, p75, p90, p95, p99, p999, p100
+----
 
 .Parameters
 [opts="header",cols="1,1,1,1,4"]
@@ -289,3 +357,38 @@ include::scripts/similarity-jaccard.cypher[tag=query]
 | `p999`                  | double  | The 99.9 percentile of similarities scores computed.
 | `p100`                  | double  | The 25 percentile of similarities scores computed.
 |===
+
+.The following will run the algorithm and stream results:
+[source,cypher]
+----
+CALL algo.similarity.jaccard.stream(userData:List<Map>, {
+    degreeCutoff: 10, similarityCutoff: 0.1, concurrency:4
+})
+YIELD item1, item2, count1, count2, intersection, similarity
+
+----
+
+.Parameters
+[opts="header",cols="1,1,1,1,4"]
+|===
+| Name               | Type   | Default        | Optional | Description
+| `data`             | list   | null           | no       | A list of maps of the following structure: `{item: nodeId, categories: [nodeId, nodeId, nodeId]}`
+| `top`              | int    | 0              | yes      | The number of similar pairs to return. If `0`, it will return as many as it finds.
+| `topK`             | int    | 0              | yes      | The number of similar values to return per node. If `0`, it  will return as many as it finds.
+| `similarityCutoff` | int    | -1             | yes      | The threshold for Jaccard similarity. Values below this will not be returned.
+| `degreeCutoff`     | int    | 0              | yes      | The threshold for the number of items in the `targets` list. If the list contains less than this amount, that node will be excluded from the calculation.
+| `concurrency`      | int    | available CPUs | yes      | The number of concurrent threads.
+|===
+
+.Results
+[opts="header",cols="1,1,6"]
+|===
+| Name           | Type | Description
+| `item1`        | int  | The ID of one node in the similarity pair.
+| `item2`        | int  | The ID of other node in the similarity pair.
+| `count1`       | int  | The size of the `targets` list of one node.
+| `count2`       | int  | The size of the `targets` list of other node.
+| `intersection` | int  | The number of intersecting values in the two nodes `targets` lists.
+| `similarity`   | int  | The Jaccard similarity of the two nodes.
+|===
+

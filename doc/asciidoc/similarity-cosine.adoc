@@ -274,7 +274,7 @@ include::scripts/similarity-cosine.cypher[tag=embedding-graph-stream]
 .The following will run the algorithm and write back results:
 [source, cypher]
 ----
-CALL algo.similarity.cosine(userData:List<Map>> or String, {
+CALL algo.similarity.cosine(userData:List<Map> or String, {
     topK: 1, similarityCutoff: 0.1, write:true, writeProperty: "cosineSimilarity"
 })
 YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, max, mean, stdDev, p25, p50, p75, p90, p95, p99, p999, p100
@@ -325,7 +325,7 @@ YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, 
 .The following will run the algorithm and stream results:
 [source,cypher]
 ----
-CALL algo.similarity.cosine.stream(userData:List<Map>> or String, {
+CALL algo.similarity.cosine.stream(userData:List<Map> or String, {
     degreeCutoff: 10, similarityCutoff: 0.1, concurrency:4
 })
 YIELD item1, item2, count1, count2, intersection, similarity
