@@ -9,17 +9,36 @@ This chapter explains the named graph feature in the Neo4j Graph Algorithms libr
 endif::env-docs[]
 
 As it can take some time to load large graphs into the algorithm data structures, you can pre-load graphs and then later refer to them by name when calling graph algorithm procedures.
-After usage they can be removed from memory to free resources used:
+After usage they can be removed from memory to free resources used.
+
+Named graphs are only stored in memory, so if we restart Neo4j they will be lost and will need to be reloaded.
 
 == Loading a named graph
 
-.The following will load a named graph with the name `my-graph`
+We can load named graphs using any of the approaches described in the <<projected-graph-model, projected graph model section>>.
+
+.The following will load a named graph with the name `my-graph` for node label `Label` and relationship type `REL_TYPE`
 [source,cypher]
 ----
 CALL algo.graph.load('my-graph','Label','REL_TYPE',{graph:'heavy',..other config...})
 YIELD name, graph, direction, undirected, sorted, nodes, loadMillis, alreadyLoaded,
       nodeWeight, relationshipWeight, nodeProperty, loadNodes, loadRelationships;
 ----
+
+If we want to load a graph based on a <<cypher-projection, Cypher projection>>, we should specify `graph:'cypher'` in the config.
+
+.The following will load a named graph using Cypher projections for nodes and relationships.
+[source,cypher]
+----
+CALL algo.graph.load('my-graph',
+  'MATCH (n) RETURN id(n) AS id',
+  'MATCH (a)-->(b) RETURN id(a) AS source, id(b) AS target',
+  {graph:'cypher',..other config...})
+YIELD name, graph, direction, undirected, sorted, nodes, loadMillis, alreadyLoaded,
+      nodeWeight, relationshipWeight, nodeProperty, loadNodes, loadRelationships;
+----
+
+Once we've loaded a named graph we can return details about it.
 
 .The following will return details about a named graph
 [source,cypher]
@@ -30,6 +49,8 @@ YIELD name, type, exists, removed, nodes;
 
 == Using a named graph
 
+We can use our named graph in queries by specifiying its name in the `graph` key of config.
+
 .The following will run the PageRank algorithm on the `my-graph` named graph
 [source,cypher]
 ----
@@ -37,6 +58,8 @@ CALL algo.pageRank(null,null,{graph:'my-graph',...})
 ----
 
 == Remove named graph
+
+Once we've finished using the named graph we can remove them to free up memory.
 
 .The following will remove the `my-graph` named graph
 [source,cypher]

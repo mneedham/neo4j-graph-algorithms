@@ -26,6 +26,8 @@ This is the user guide for Neo4j Graph Algorithms version {docs-version}, author
 The guide covers the following areas:
 
 * <<introduction>> -- An introduction to Neo4j Graph Algorithms.
+* <<projected-graph-model>> -- A detailed guide to the projected graph model.
+* <<named-graph>> -- A short guide explaining the named graph feature.
 * <<yelp-example>> -- An illustration of how to use graph algorithms on a social network of friends.
 * <<procedures>> -- A list of Neo4j Graph Algorithm procedures.
 * <<algorithms-centrality>> -- A detailed guide to each of the centrality algorithms, including use-cases and examples.
