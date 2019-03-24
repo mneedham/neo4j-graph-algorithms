@@ -9,8 +9,6 @@
     </d:tocentry>
     <d:tocentry linkend="cypher-projection"><?dbhtml filename="projected-graph-model/cypher-projection/index.html"?>
     </d:tocentry>
-    <d:tocentry linkend="named-graph"><?dbhtml filename="named-graph/index.html"?>
-    </d:tocentry>
     <d:tocentry linkend="yelp-example"><?dbhtml filename="yelp-example/index.html"?>
     </d:tocentry>
     <d:tocentry linkend="procedures"><?dbhtml filename="procedures/index.html"?>

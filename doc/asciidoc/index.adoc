@@ -72,8 +72,6 @@ include::../../readme.adoc[tags=usage,leveloffset=1]
 
 include::projected-graph-model.adoc[leveloffset=1]
 
-include::named-graph.adoc[leveloffset=1]
-
 [[yelp-example]]
 == The Yelp example
 

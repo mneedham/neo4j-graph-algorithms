@@ -36,6 +36,6 @@ include::projected-graph-model/label-relationship-type-projection.adoc[leveloffs
 include::projected-graph-model/cypher-projection.adoc[tag=overview,leveloffset=2]
 
 
-
+include::named-graph.adoc[leveloffset=2]
 
 

@@ -8,9 +8,7 @@ image:https://travis-ci.org/neo4j-contrib/neo4j-graph-algorithms.svg?branch=3.3[
 This library provides efficiently implemented, parallel versions of common graph algorithms for Neo4j 3.x, exposed as Cypher procedures.
 
 ifndef::env-docs[]
-You can find the documentation here: https://neo4j.com/docs/graph-algorithms/current/
-
-Releases are available here: https://github.com/neo4j-contrib/neo4j-graph-algorithms/releases
+You can find documentation at *https://neo4j.com/docs/graph-algorithms/current/[neo4j.com/docs/graph-algorithms^]*
 endif::env-docs[]
 
 
@@ -29,6 +27,9 @@ Fortunately, optimized algorithms exist that utilize certain structures of the g
 Whenever possible, we've applied these optimizations.
 // end::algorithms-intro[]
 
+ifndef::env-docs[]
+The library supports the following algorithms:
+endif::env-docs[]
 
 === Centralities
 
@@ -92,39 +93,48 @@ These algorithms can be used as part of Link Prediction solution:
 
 These are utility functions and procedures that transform data for use further along the data pipeline:
 
-** <<algorithms-one-hot-encoding, One Hot Encoding>> (`algo.ml.oneHotEncoding`)
-
-
-These procedures work either on the whole graph, or on a subgraph filtered by label and relationship-type.
-You can also use link:#cypher-projection[filtering and projection using Cypher queries].
-
-
-ifndef::env-docs[]
-== Feedback
-
-*We'd love your feedback*, so please try out these algorithms and let us know how well they work for your use-case.
-Also please note things that are missing from the installation instructions or documentation.
-
-Please raise https://github.com/neo4j-contrib/neo4j-graph-algorithms/issues[GitHub issues] for anything you encounter or join the http://neo4j.com/developer/slack[neo4j-users Slack group] and ask in the `#neo4j-graph-algorithm` channel.
-endif::env-docs[]
+** https://neo4j.com/docs/graph-algorithms/current/algorithms/one-hot-encoding/[One Hot Encoding^] (`algo.ml.oneHotEncoding`)
 
 // tag::installation[]
 
 == Installation
 
-Download `graph-algorithms-algo-[version].jar` from https://github.com/neo4j-contrib/neo4j-graph-algorithms/releases[the matching release] and copy it into your `$NEO4J_HOME/plugins` directory.
+=== Neo4j Desktop
 
-Because the algorithms use the lower level Kernel API to read from, and to write to Neo4j, for security purposes you will also have to enable them in the configuration:
+If we are using the https://neo4j.com/docs/operations-manual/current/installation/neo4j-desktop/index.html[Neo4j Desktop^], the library can be installed from the 'Plugins' tab of a database.
+
+image::neo4j-desktop.jpg[width=500]
+
+The installer will download a copy of the graph algorithms library and place it in the 'plugins' directory of the database.
+It will also add the following entry to the settings file:
+
+----
+dbms.security.procedures.unrestricted=algo.*
+----
+
+=== Neo4j Server
+
+If we are using a standalone Neo4j Server, the library will need to be installed and configured manually.
+
+. Download `graph-algorithms-algo-[version].jar` from https://github.com/neo4j-contrib/neo4j-graph-algorithms/releases[the matching release] and copy it into the `$NEO4J_HOME/plugins` directory.
+We can work out which release to download by referring to the https://github.com/neo4j-contrib/neo4j-graph-algorithms/blob/master/versions.json[versions file^].
+
 
 . Add the following to your `$NEO4J_HOME/conf/neo4j.conf` file:
 +
 ----
 dbms.security.procedures.unrestricted=algo.*
 ----
+We need to give the library unrestricted access because the algorithms use the lower level Kernel API to read from, and to write to Neo4j.
+
 +
 . Restart Neo4j
-. To see a list of all the algorithms, run the following query:
-+
+
+
+=== Verifying installation
+
+Once we've installed the library, to see a list of all the algorithms, run the following query:
+
 ----
 CALL algo.list()
 ----
@@ -152,6 +162,15 @@ For large graphs, the streaming procedure might return millions, or even billion
 In this case it may be more convenient to store the results of the algorithm, and then use them with later queries.
 
 // end::usage[]
+
+ifndef::env-docs[]
+== Feedback
+
+*We'd love your feedback*, so please try out these algorithms and let us know how well they work for your use-case.
+Also please note things that are missing from the installation instructions or documentation.
+
+Please raise https://github.com/neo4j-contrib/neo4j-graph-algorithms/issues[GitHub issues] for anything you encounter or join the https://community.neo4j.com/[Neo4j Community forum^] and ask in the https://community.neo4j.com/c/neo4j-graph-platform/graph-algorithms[Graph Algorithms Category^]
+endif::env-docs[]
 
 
 == Building locally
