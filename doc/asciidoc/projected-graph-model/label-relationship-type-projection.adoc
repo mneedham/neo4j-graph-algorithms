@@ -14,6 +14,7 @@ We can project the subgraph we want to run the algorithm on by using the label p
 
 The general call syntax is:
 
+.The following will run the algorithm for the label `NodeLabel` and relationship type `RelationshipType`
 [source,cypher]
 ----
 CALL algo.<name>('NodeLabel', "RelationshipType", {config})
@@ -36,7 +37,7 @@ RETURN algo.getNodeById(nodeId).title, score
 ORDER BY score DESC LIMIT 10;
 ----
 
-If we want to project a subgraph that includes all nodes and relationships in the underlying Neo4j graph, we can achieve this by passing `null` values for the node label and relationship type:
+If we want to project a subgraph that includes all nodes and relationships in the underlying Neo4j graph, we can achieve this by passing `null` values for the label and relationship type:
 
 .The following will run the algorithm over all nodes and relationships:
 [source,cypher]
@@ -65,7 +66,7 @@ For example, running the PageRank algorithm on DBpedia:
 CALL algo.pageRank('Page','Link',{iterations:5, dampingFactor:0.85, writeProperty:'pagerank',graph:'huge'});
 ----
 
-If we want to project a subgraph that includes all nodes and relationships in the underlying Neo4j graph, we can achieve this by passing `null` values for the node label and relationship type:
+If we want to project a subgraph that includes all nodes and relationships in the underlying Neo4j graph, we can achieve this by passing `null` values for the label and relationship type:
 
 .The following will run the algorithm over all nodes and relationships:
 [source,cypher]

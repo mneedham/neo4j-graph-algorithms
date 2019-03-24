@@ -49,7 +49,7 @@ YIELD name, type, exists, removed, nodes;
 
 == Using a named graph
 
-We can use our named graph in queries by specifiying its name in the `graph` key of config.
+We can use our named graph in queries by specifying its name in the `graph` key of config.
 
 .The following will run the PageRank algorithm on the `my-graph` named graph
 [source,cypher]
