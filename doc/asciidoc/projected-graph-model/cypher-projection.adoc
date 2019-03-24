@@ -73,7 +73,7 @@ CALL algo.louvain(
 [[cypher-projection-relationship-deduplication]]
 == Relationship deduplication
 
-By default the Cypher projection loader assumes that the relationships returned in the relationship projection are unique.
+By default the Cypher projection loader assumes that the relationship projection only contains one relationship between a pair of nodes.
 If we return more than one relationship we can pass the `duplicateRelationships` key in the config to decide what should happen with duplicates.
 
 `duplicateRelationships` supports the following options:
