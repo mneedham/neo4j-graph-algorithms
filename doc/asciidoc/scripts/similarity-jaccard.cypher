@@ -167,7 +167,7 @@ WITH recipeCuisines, personCuisines,
      [value in personCuisines | value.item] AS targetIds
 
 CALL algo.similarity.jaccard.stream(recipeCuisines + personCuisines, {sourceIds: sourceIds, targetIds: targetIds})
-YIELD item1, item2, count1, count2, intersection, similarity
+YIELD item1, item2, similarity
 WITH algo.getNodeById(item1) AS from, algo.getNodeById(item2) AS to, similarity
 RETURN from.title AS from, to.name AS to, similarity
 ORDER BY similarity DESC
