@@ -12,7 +12,7 @@ Graph algorithms run on an in memory projected graph model.
 The projected graph model is separate from Neo4j's stored graph model to enable fast caching for the topology of the graph, containing only relevant nodes, relationships and weights.
 The projected graph model does not support multiple relationships between a single pair of nodes.
 
-We can project the graph we want to run algorithms on with either label and relationship-type projection, or cypher projection.
+We can project the graph on which we want to run algorithms with either label and relationship-type projection, or Cypher projection.
 
 [ditaa]
 ----

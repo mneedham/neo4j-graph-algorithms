@@ -19,17 +19,29 @@ The general call syntax is:
 CALL algo.<name>('NodeLabel', "RelationshipType", {config})
 ----
 
-For example, PageRank on DBpedia (11M nodes, 116M relationships):
+For example, running the PageRank algorithm on DBpedia, which contains 11 million nodes and 116 million relationships:
 
+.The following will run the write version of the algorithm, storing results in the `pagerank` property:
 [source,cypher]
 ----
 CALL algo.pageRank('Page','Link',{iterations:5, dampingFactor:0.85, write: true, writeProperty:'pagerank'});
-// YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, dampingFactor, write, writeProperty
+----
 
+.The following will run the streaming version of the algorithm:
+[source,cypher]
+----
 CALL algo.pageRank.stream('Page','Link',{iterations:5, dampingFactor:0.85})
-YIELD node, score
-RETURN node.title, score
+YIELD nodeId, score
+RETURN algo.getNodeById(nodeId).title, score
 ORDER BY score DESC LIMIT 10;
+----
+
+If we want to project a subgraph that includes all nodes and relationships in the underlying Neo4j graph, we can achieve this by passing `null` values for the node label and relationship type:
+
+.The following will run the algorithm over all nodes and relationships:
+[source,cypher]
+----
+CALL algo.<name>(null, null)
 ----
 
 [[huge-projection]]
@@ -45,10 +57,18 @@ The general call syntax is:
 CALL algo.<name>('NodeLabel', "RelationshipType", {graph: "huge"})
 ----
 
-For example, PageRank on DBpedia:
+For example, running the PageRank algorithm on DBpedia:
 
+.The following will run the write version of the algorithm, storing results in the `pagerank` property:
 [source,cypher]
 ----
 CALL algo.pageRank('Page','Link',{iterations:5, dampingFactor:0.85, writeProperty:'pagerank',graph:'huge'});
-YIELD nodes, iterations, loadMillis, computeMillis, writeMillis, dampingFactor, writeProperty
+----
+
+If we want to project a subgraph that includes all nodes and relationships in the underlying Neo4j graph, we can achieve this by passing `null` values for the node label and relationship type:
+
+.The following will run the algorithm over all nodes and relationships:
+[source,cypher]
+----
+CALL algo.<name>(null, null, {graph: 'huge'})
 ----
