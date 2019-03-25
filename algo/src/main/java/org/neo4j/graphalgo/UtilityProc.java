@@ -52,30 +52,23 @@ public class UtilityProc {
 
         ProcedureConfiguration config = ProcedureConfiguration.create(rawConfig);
 
-        if (weights.size() > 0) {
+        if (!weights.isEmpty()) {
             boolean cumulativeWeights = config.get("cumulativeWeights", true);
             if (cumulativeWeights) {
-
-                if (nodeIds.size()  != weights.size()) {
+                if (nodeIds.size() != weights.size()) {
                     throw new RuntimeException(message(weights.size(), nodeIds.size(), "number of 'nodeIds'"));
                 }
 
-                return Stream.of(new PathResult(WalkPath.toPath((GraphDatabaseAPI) db,
-                        nodes,
-                        IntStream.range(0, weights.size() - 1).mapToDouble(index -> weights.get(index+1) - weights.get(index)).toArray())));
+                return Stream.of(new PathResult(WalkPath.toPath((GraphDatabaseAPI) db, nodes, IntStream.range(0, weights.size() - 1).mapToDouble(index -> weights.get(index + 1) - weights.get(index)).toArray())));
             } else {
                 if (nodeIds.size() - 1 != weights.size()) {
                     throw new RuntimeException(message(weights.size(), nodeIds.size() - 1, "number of 'nodeIds'-1"));
                 }
-                return Stream.of(new PathResult(WalkPath.toPath((GraphDatabaseAPI) db,
-                        nodes,
-                        weights.stream().mapToDouble(d -> d).toArray())));
+                return Stream.of(new PathResult(WalkPath.toPath((GraphDatabaseAPI) db, nodes, weights.stream().mapToDouble(d -> d).toArray())));
             }
         } else {
-            return Stream.of(new PathResult(WalkPath.toPath((GraphDatabaseAPI) db,
-                    nodes)));
+            return Stream.of(new PathResult(WalkPath.toPath((GraphDatabaseAPI) db, nodes)));
         }
-
     }
 
     private String message(int actualSize, int expectedSize, String explanation) {
