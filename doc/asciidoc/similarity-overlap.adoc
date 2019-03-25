@@ -17,6 +17,7 @@ This section includes:
 * <<algorithms-similarity-overlap-usecase, Use-cases - when to use the Overlap Similarity algorithm>>
 * <<algorithms-similarity-overlap-function-sample, Overlap Similarity algorithm function sample>>
 * <<algorithms-similarity-overlap-procedure-sample, Overlap Similarity algorithm procedures sample>>
+* <<algorithms-similarity-overlap-source-target-ids, Specifying source and target ids>>
 * <<algorithms-similarity-overlap-syntax, Syntax>>
 
 
@@ -153,7 +154,7 @@ include::scripts/similarity-overlap.cypher[tag=stream-topk]
 |===
 // end::stream-topk[]
 
-.The following will find the most similar user for each user, and store a relationship between those users:
+.The following will find the most similar genre for each genre, and store a relationship between those genres:
 [source, cypher]
 ----
 include::scripts/similarity-overlap.cypher[tag=write-back]
@@ -186,6 +187,30 @@ include::scripts/similarity-overlap.cypher[tag=query]
 | ["Fantasy", "Science Fiction", "Classics"]
 |===
 // end::query[]
+
+[[algorithms-similarity-jaccard-source-target-ids]]
+== Specifying source and target ids
+
+include::similarity.adoc[tag=source-target-ids]
+
+We could use this technique to compute the similarity of a subset of items to all other items.
+
+.The following will return the super genres for the `Fantasy` and `Classics` genres:
+[source, cypher]
+----
+include::scripts/similarity-overlap.cypher[tag=source-target-ids]
+----
+
+// tag::source-target-ids-2[]
+.Results
+[opts="header",cols="1,1,1"]
+|===
+| `from`   | `to`     | `similarity`
+| Fantasy  | Science Fiction | 1.0               
+| Classics | Science Fiction | 0.75              
+| Fantasy  | Classics        | 0.6666666666666666
+|===
+// end::source-target-ids-2[]
 
 [[algorithms-similarity-overlap-syntax]]
 == Syntax
