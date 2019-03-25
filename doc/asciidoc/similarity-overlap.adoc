@@ -188,7 +188,7 @@ include::scripts/similarity-overlap.cypher[tag=query]
 |===
 // end::query[]
 
-[[algorithms-similarity-jaccard-source-target-ids]]
+[[algorithms-similarity-overlap-source-target-ids]]
 == Specifying source and target ids
 
 include::similarity.adoc[tag=source-target-ids]

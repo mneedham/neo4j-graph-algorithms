@@ -19,8 +19,8 @@ This section includes:
 * <<algorithms-similarity-cosine-function-sample, Cosine Similarity function algorithm sample>>
 * <<algorithms-similarity-cosine-procedure-sample, Cosine Similarity procedures algorithm sample>>
 * <<algorithms-similarity-cosine-source-target-ids, Specifying source and target ids>>
-* <<algorithms-similarity-cosine-cypher-projection, Cypher projection>>
 * <<algorithms-similarity-cosine-skipping-values, Skipping values>>
+* <<algorithms-similarity-cosine-cypher-projection, Cypher projection>>
 * <<algorithms-similarity-cosine-syntax, Syntax>>
 
 
@@ -281,19 +281,6 @@ include::scripts/similarity-cosine.cypher[tag=source-target-ids]
 |===
 // end::source-target-ids[]
 
-
-[[algorithms-similarity-cosine-cypher-projection]]
-== Cypher projection
-
-include::cypher-projection.adoc[tag=similarity-explanation]
-
-.Set `graph:'cypher'` in the config:
-
-[source,cypher]
-----
-include::scripts/similarity-cosine.cypher[tag=cypher-projection]
-----
-
 [[algorithms-similarity-cosine-skipping-values]]
 == Skipping values
 
@@ -313,6 +300,17 @@ include::scripts/similarity-cosine.cypher[tag=create-sample-embedding-graph]
 include::scripts/similarity-cosine.cypher[tag=embedding-graph-stream]
 ----
 
+[[algorithms-similarity-cosine-cypher-projection]]
+== Cypher projection
+
+include::cypher-projection.adoc[tag=similarity-explanation]
+
+.Set `graph:'cypher'` in the config:
+
+[source,cypher]
+----
+include::scripts/similarity-cosine.cypher[tag=cypher-projection]
+----
 
 [[algorithms-similarity-cosine-syntax]]
 == Syntax
