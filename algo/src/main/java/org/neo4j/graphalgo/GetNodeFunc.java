@@ -35,7 +35,7 @@ public class GetNodeFunc {
     public GraphDatabaseAPI api;
 
     @UserFunction("algo.getNodeById")
-    @Description("CALL algo.asNode(value) - return node for nodeId. null if none exists")
+    @Description("CALL algo.getNodeById(value) - return node for nodeId. null if none exists")
     public Node getNodeById(@Name(value = "nodeId") Number nodeId) {
         try {
             return api.getNodeById(nodeId.longValue());
