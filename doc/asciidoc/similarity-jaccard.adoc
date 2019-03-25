@@ -291,7 +291,7 @@ Michael likes French, Indian, and Italian food, and two of the fusion recipes co
 
 We could also use this technique to compute the similarity of a subset of items to all other items.
 
-.The following will find the most similar (`topK=1`) person to Arya and Praveena:
+.The following will find the most similar person (i.e. `k=1`) to Arya and Praveena:
 [source, cypher]
 ----
 include::scripts/similarity-jaccard.cypher[tag=source-target-ids-2]
