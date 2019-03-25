@@ -58,7 +58,7 @@ public class GetNodeFunc {
 
 
     @UserFunction("algo.asNodes")
-    @Description("CALL algo.getNodesById(values) - return nodes for nodeIds. empty if none exists")
+    @Description("CALL algo.asNodes(values) - return nodes for nodeIds. empty if none exists")
     public List<Node> asNodes(@Name(value = "nodeIds") List<Number> nodeIds) {
         return getNodesById(nodeIds);
     }
