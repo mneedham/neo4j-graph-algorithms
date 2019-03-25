@@ -40,21 +40,31 @@ public class UtilityProc {
 
     @Procedure("algo.asPath")
     @Description("CALL algo.asPath - returns a path for the provided node ids and weights")
-    public Stream<Path> list(
+    public Stream<PathResult> list(
             @Name(value = "nodeIds", defaultValue = "") List<Long> nodeIds,
             @Name(value = "weights", defaultValue = "[]") List<Double> weights) {
 
-        if (weights.size() > 0) {
-            return Stream.of(WalkPath.toPath((GraphDatabaseAPI) db,
-                    nodeIds.stream().mapToLong(l -> l).toArray(),
-                    weights.stream().mapToDouble(d -> d).toArray()));
-        } else {
-            return Stream.of(WalkPath.toPath((GraphDatabaseAPI) db,
-                    nodeIds.stream().mapToLong(l -> l).toArray()));
+        if (nodeIds.size() <= 0) {
+            return Stream.empty();
         }
 
-
+        if (weights.size() > 0) {
+            return Stream.of(new PathResult(WalkPath.toPath((GraphDatabaseAPI) db,
+                    nodeIds.stream().mapToLong(l -> l).toArray(),
+                    weights.stream().mapToDouble(d -> d).toArray())));
+        } else {
+            return Stream.of(new PathResult(WalkPath.toPath((GraphDatabaseAPI) db,
+                    nodeIds.stream().mapToLong(l -> l).toArray())));
+        }
+        
     }
 
 
+    public static class PathResult {
+        public final Path path;
+
+        public PathResult(Path path) {
+            this.path = path;
+        }
+    }
 }
