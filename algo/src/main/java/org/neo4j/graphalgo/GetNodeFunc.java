@@ -35,7 +35,7 @@ public class GetNodeFunc {
     public GraphDatabaseAPI api;
 
     @UserFunction("algo.getNodeById")
-    @Description("CALL algo.getNodeById(value) - return node for nodeId. null if none exists")
+    @Description("CALL algo.asNode(value) - return node for nodeId. null if none exists")
     public Node getNodeById(@Name(value = "nodeId") Number nodeId) {
         try {
             return api.getNodeById(nodeId.longValue());
@@ -44,10 +44,23 @@ public class GetNodeFunc {
         }
     }
 
+    @UserFunction("algo.asNode")
+    @Description("CALL algo.asNode(value) - return node for nodeId. null if none exists")
+    public Node asNode(@Name(value = "nodeId") Number nodeId) {
+        return getNodeById(nodeId);
+    }
+
     @UserFunction("algo.getNodesById")
-    @Description("CALL algo.getNodesById(values) - return node for nodeIds. empty if none exists")
+    @Description("CALL algo.getNodesById(values) - return nodes for nodeIds. empty if none exists")
     public List<Node> getNodesById(@Name(value = "nodeIds") List<Number> nodeIds) {
         return nodeIds.stream().map(this::getNodeById).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+
+    @UserFunction("algo.asNodes")
+    @Description("CALL algo.getNodesById(values) - return nodes for nodeIds. empty if none exists")
+    public List<Node> asNodes(@Name(value = "nodeIds") List<Number> nodeIds) {
+        return getNodesById(nodeIds);
     }
 
 }
