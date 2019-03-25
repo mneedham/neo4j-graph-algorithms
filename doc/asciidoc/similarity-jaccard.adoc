@@ -16,7 +16,7 @@ This section includes:
 * <<algorithms-similarity-jaccard-context, History and explanation>>
 * <<algorithms-similarity-jaccard-usecase, Use-cases - when to use the Jaccard Similarity algorithm>>
 * <<algorithms-similarity-jaccard-function-sample, Jaccard Similarity algorithm function sample>>
-* <<algorithms-similarity-jaccard-procedure-sample, Jaccard Similarity algorithm procedure sample>>
+* <<algorithms-similarity-jaccard-procedure-sample, Jaccard Similarity algorithm procedures sample>>
 * <<algorithms-similarity-jaccard-source-target-ids, Specifying source and target ids>>
 * <<algorithms-similarity-jaccard-syntax, Syntax>>
 
@@ -129,7 +129,7 @@ include::scripts/similarity-jaccard.cypher[tag=function-cypher-all]
 // end::function-cypher-all[]
 
 [[algorithms-similarity-jaccard-procedure-sample]]
-== Jaccard Similarity algorithm procedure sample
+== Jaccard Similarity algorithm procedures sample
 
 :procedure-name: Jaccard Similarity
 include::similarity.adoc[tag=computation]

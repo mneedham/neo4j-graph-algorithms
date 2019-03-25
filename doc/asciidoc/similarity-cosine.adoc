@@ -16,7 +16,7 @@ This section includes:
 * <<algorithms-similarity-cosine-context, History and explanation>>
 * <<algorithms-similarity-cosine-usecase, Use-cases - when to use the Cosine Similarity algorithm>>
 * <<algorithms-similarity-cosine-function-sample, Cosine Similarity function algorithm sample>>
-* <<algorithms-similarity-cosine-procedure-sample, Cosine Similarity procedure algorithm sample>>
+* <<algorithms-similarity-cosine-procedure-sample, Cosine Similarity procedures algorithm sample>>
 * <<algorithms-similarity-cosine-source-target-ids, Specifying source and target ids>>
 * <<algorithms-similarity-cosine-cypher-projection, Cypher projection>>
 * <<algorithms-similarity-cosine-skipping-values, Skipping values>>
@@ -135,16 +135,11 @@ include::scripts/similarity-cosine.cypher[tag=function-cypher-all]
 
 
 [[algorithms-similarity-cosine-procedure-sample]]
-== Cosine Similarity algorithm procedure sample
+== Cosine Similarity algorithm procedures sample
 
 :procedure-name: Cosine Similarity
 include::similarity.adoc[tag=computation]
-
-[NOTE]
-====
-Cosine Similarity is only calculated over non-NULL dimensions.
-The procedures expect to receive the same length lists for all items, so we need to pad those lists with `algo.NaN()` where necessary.
-====
+include::similarity.adoc[tag=weighted-note]
 
 .The following will create a sample graph:
 [source, cypher]
@@ -279,7 +274,7 @@ We could use this technique to compute the similarity of a subset of items to al
 include::scripts/similarity-cosine.cypher[tag=source-target-ids]
 ----
 
-// tag::source-target-ids-2[]
+// tag::source-target-ids[]
 .Results
 [opts="header",cols="1,1,1"]
 |===
@@ -287,7 +282,7 @@ include::scripts/similarity-cosine.cypher[tag=source-target-ids]
 | Praveena | Karin   | 1.0                
 | Arya     | Michael | 0.9788908326303921 
 |===
-// end::source-target-ids-2[]
+// end::source-target-ids[]
 
 
 [[algorithms-similarity-cosine-cypher-projection]]
