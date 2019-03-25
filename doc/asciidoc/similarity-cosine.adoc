@@ -1,3 +1,4 @@
+:procedure-name: Cosine Similarity
 [[algorithms-similarity-cosine]]
 = The Cosine Similarity algorithm
 
@@ -55,11 +56,7 @@ For example, to get movie recommendations based on the preferences of users who 
 
 The Cosine Similarity function computes the similarity of two lists of numbers.
 
-[NOTE]
-====
-Cosine Similarity is only calculated over non-NULL dimensions.
-When calling the function, we should provide lists that contain the overlapping items.
-====
+include::similarity.adoc[tag=weighted-function-note]
 
 We can use it to compute the similarity of two hardcoded lists.
 
@@ -137,7 +134,7 @@ include::scripts/similarity-cosine.cypher[tag=function-cypher-all]
 [[algorithms-similarity-cosine-procedure-sample]]
 == Cosine Similarity algorithm procedures sample
 
-:procedure-name: Cosine Similarity
+
 include::similarity.adoc[tag=computation]
 include::similarity.adoc[tag=weighted-note]
 
