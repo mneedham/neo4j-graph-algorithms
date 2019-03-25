@@ -94,7 +94,6 @@ WITH collect(userData) as data
 WITH data,
      [value in data WHERE value.name IN ["Fantasy", "Classics"] | value.item ] AS sourceIds
 
-
 CALL algo.similarity.overlap.stream(data, {sourceIds: sourceIds})
 YIELD item1, item2, count1, count2, intersection, similarity
 RETURN algo.getNodeById(item1).name AS from, algo.getNodeById(item2).name AS to, similarity

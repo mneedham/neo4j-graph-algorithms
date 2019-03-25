@@ -331,6 +331,8 @@ YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, 
 | `writeBatchSize`            | int     | 10000 | yes      | The batch size to use when storing results.
 | `writeRelationshipType`  | string  | SIMILAR        | yes      | The relationship type to use when storing results.
 | `writeProperty`          | string  | score          | yes      | The property to use when storing results.
+| `sourceIds`          | long[] | null | yes | The ids of items from which we need to compute similarities. Defaults to all the items provided in the `data` parameter.
+| `targetIds`          | long[] | null | yes | The ids of items to which we need to compute similarities. Defaults to all the items provided in the `data` parameter.
 |===
 
 .Results
@@ -369,6 +371,8 @@ YIELD nodes, similarityPairs, write, writeRelationshipType, writeProperty, min, 
 | `skipValue`              | double  | algo.NaN()     | yes      | Value to skip when executing similarity computation. A value of `null` means that skipping is disabled.
 | `concurrency`      | int    | available CPUs | yes      | The number of concurrent threads.
 | `graph`                  | string  | dense          | yes      | The graph name ('dense' or 'cypher').
+| `sourceIds`          | long[] | null | yes | The ids of items from which we need to compute similarities. Defaults to all the items provided in the `data` parameter.
+| `targetIds`          | long[] | null | yes | The ids of items to which we need to compute similarities. Defaults to all the items provided in the `data` parameter.
 |===
 
 .Results
