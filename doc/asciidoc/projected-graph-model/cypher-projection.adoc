@@ -54,7 +54,7 @@ CALL algo.<name>(
 [[cypher-projection-basic-usage]]
 == Example Usage
 
-We could use Cypher projections to run the PageRank algorithm on DBpedia, as shown in the following examples.
+We could use Cypher projections to run the PageRank algorithm on *DBpedia*, as shown in the following examples.
 
 
 .The following will run the PageRank algorithm over a graph based on Cypher projections for nodes and relationships:
@@ -83,7 +83,7 @@ CALL algo.louvain(
 [[cypher-projection-relationship-deduplication]]
 == Relationship deduplication
 
-By default the Cypher projection loader assumes that the relationship projection only contains one relationship between a pair of nodes.
+By default, the Cypher projection loader assumes that the relationship projection only contains one relationship between a pair of nodes.
 If we return more than one relationship we can pass the `duplicateRelationships` key in the config to decide what should happen with duplicates.
 
 `duplicateRelationships` supports the following options:
@@ -94,7 +94,7 @@ If we return more than one relationship we can pass the `duplicateRelationships`
 * `min` - keeps the minimum weight of relationships encountered.
 * `max` - keeps the maximum weight of relationships encountered.
 
-If we know that there are no duplicates in our relationship query we should leave this parameter unset.
+If we know that there are no duplicates in our relationship query, we should leave this parameter unset.
 The other options will slow down relationship loading as they need to check for the existence of existing relationships.
 
 .The following runs shortest path over a graph based on Cypher projections, picking the `ROAD` relationship with minimum cost:
@@ -138,9 +138,9 @@ RETURN writeMillis,loadMillis,nodeCount,totalCost
 [[cypher-projection-parallel-loading]]
 == Parallel loading
 
-By default Cypher projection queries are run on a single thread.
+By default, Cypher projection queries are run on a single thread.
 
-We can parallelize loading by including `SKIP` clause and `$skip` parameter, as well as `LIMIT` clause and `$limit` parameter in our projection queries:
+We can parallelize loading by including `SKIP` clause and `$skip` parameter, as well as `LIMIT` clause and `$limit` parameter in our projection queries.
 Parallelization of the queries is based on the `batchSize` key in the config, which has a default value of 10,000.
 
 [NOTE]
