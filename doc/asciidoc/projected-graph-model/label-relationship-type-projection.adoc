@@ -45,6 +45,7 @@ If we want to project a subgraph that includes all nodes and relationships in th
 CALL algo.<name>(null, null)
 ----
 
+
 [[huge-projection]]
 == Huge graph projection
 

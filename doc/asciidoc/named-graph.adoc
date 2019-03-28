@@ -1,10 +1,15 @@
 [[named-graph]]
-= Named Graph
+= Named graphs
+
+[abstract]
+--
+This section describes named graphs, which are stored only in memory.
+When Neo4j is restarted, named graphs are lost and will need to be reloaded.
+--
 
 As it can take some time to load large graphs into the algorithm data structures, you can pre-load graphs and then later refer to them by name when calling graph algorithm procedures.
-After usage they can be removed from memory to free resources used.
+After usage, they can be removed from memory to free resources used.
 
-Named graphs are only stored in memory, so if we restart Neo4j they will be lost and will need to be reloaded.
 
 == Loading a named graph
 
@@ -40,6 +45,7 @@ CALL algo.graph.info('my-graph')
 YIELD name, type, exists, removed, nodes;
 ----
 
+
 == Using a named graph
 
 We can use our named graph in queries by specifying its name in the `graph` key of config.
@@ -49,6 +55,7 @@ We can use our named graph in queries by specifying its name in the `graph` key 
 ----
 CALL algo.pageRank(null,null,{graph:'my-graph',...})
 ----
+
 
 == Remove named graph
 

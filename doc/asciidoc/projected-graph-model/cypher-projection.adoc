@@ -2,6 +2,13 @@
 [[cypher-projection]]
 = Cypher projection
 
+ifdef::env-docs[]
+[abstract]
+--
+This chapter explains Cypher projection in the Neo4j Graph Algorithms library.
+--
+endif::env-docs[]
+
 If the label and relationship-type projection is not selective enough to describe our subgraph to run the algorithm on, we can use Cypher statements to project subsets of our graph.
 Use a node-statement instead of the label parameter and a relationship-statement instead of the relationship-type, and use `graph:'cypher'` in the config.
 
@@ -27,6 +34,7 @@ The Cypher loader expects the query to return `source` and `target` fields.
 
 Note that in both queries we use the `id` function to return the node id.
 
+
 [[cypher-projection-weights]]
 == Weights
 
@@ -41,6 +49,7 @@ CALL algo.<name>(
   "MATCH (n)-[r]->(m) RETURN id(n) AS source, id(m) AS target, r.score AS weight",
   {graph: "cypher"})
 ----
+
 
 [[cypher-projection-basic-usage]]
 == Example Usage
@@ -69,6 +78,7 @@ CALL algo.louvain(
    RETURN id(p1) as source, id(p2) as target, count(*) as weight',
   {graph:'cypher', iterations:5, write: true});
 ----
+
 
 [[cypher-projection-relationship-deduplication]]
 == Relationship deduplication
