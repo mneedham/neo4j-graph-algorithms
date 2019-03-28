@@ -1,5 +1,5 @@
 // tag::source-target-ids[]
-Sometimes we don't want to compute all pairs similarity, but would rather specify sub sets of items to compare to each other.
+Sometimes, we don't want to compute all pairs similarity, but would rather specify subsets of items to compare to each other.
 We do this using the `sourceIds` and `targetIds` keys in the config.
 // end::source-target-ids[]
 
