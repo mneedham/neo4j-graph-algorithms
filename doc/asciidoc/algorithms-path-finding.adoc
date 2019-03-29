@@ -22,11 +22,11 @@ The following path finding algorithms help find the shortest path or evaluate th
 
 [WARNING]
 ====
-As of the 3.4.7.0 release, all the Shortest Path procedures assume that they are being executed on undirected graphs
-i.e. the direction of a relationship can be ignored
+As of the 3.4.7.0 release, all the Shortest Path procedures assume that they are being executed on undirected graphs.
+Therefore, the direction of a relationship can be ignored.
 
-If you are running these algorithms on a graph where the direction is important you can override this by passing in the `direction` parameter
-e.g. `direction:"INCOMING"` or `direction:"OUTGOING"`
+If you are running these algorithms on a graph where the direction is important, you can use the `direction` parameter.
+For example, `direction:"INCOMING"` or `direction:"OUTGOING"`.
 ====
 
 include::minimum-weight-spanning-tree.adoc[leveloffset=2]
