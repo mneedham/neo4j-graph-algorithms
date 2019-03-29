@@ -14,15 +14,17 @@ The projected graph model does not support multiple relationships between a sing
 
 The library supports two approaches for loading projected graphs; either <<label-relationship-type-projection, Label and relationship-type projection>>, or <<cypher-projection, Cypher projection>>.
 
-[ditaa]
-----
-+----------+label/rel type projection +-----------+
-|  Neo4j   +------------------------->| Projected |  Execute algorithm
-| stored   |    cypher projection     |   graph   |<-------------------
-|  graph   +------------------------->|           |
-+----------+                          +-----------+
+//[ditaa]
+//----
+//+----------+label/rel type projection +-----------+
+//|  Neo4j   +------------------------->| Projected |  Execute algorithm
+//| stored   |    cypher projection     |   graph   |<-------------------
+//|  graph   +------------------------->|           |
+//+----------+                          +-----------+
+//
+//----
 
-----
+image::projected-graph-model.png[width="850px"]
 
 
 During projection, only one relationship between a pair of nodes per direction (in, out) is allowed in the directed case, but two relationships are allowed for BOTH the undirected cases.
