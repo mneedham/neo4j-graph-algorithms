@@ -19,8 +19,8 @@
 package org.neo4j.graphalgo.bench;
 
 import org.neo4j.graphalgo.BetweennessCentralityProc;
-import org.neo4j.graphalgo.LouvainProc;
 import org.neo4j.graphalgo.core.utils.Pools;
+import org.neo4j.graphalgo.helper.ldbc.LdbcDownloader;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
@@ -37,8 +37,8 @@ import java.util.function.Consumer;
  */
 @Threads(1)
 @Fork(value = 1, jvmArgs = {"-Xms4g", "-Xmx4g", "-XX:+UseG1GC"})
-@Warmup(iterations = 1)
-@Measurement(iterations = 1)
+@Warmup(iterations = 1, time = 1)
+@Measurement(iterations = 1, time = 1)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.SECONDS)

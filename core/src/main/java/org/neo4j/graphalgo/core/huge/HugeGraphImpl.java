@@ -20,15 +20,23 @@ package org.neo4j.graphalgo.core.huge;
 
 import org.neo4j.collection.primitive.PrimitiveLongIterable;
 import org.neo4j.collection.primitive.PrimitiveLongIterator;
-import org.neo4j.graphalgo.api.*;
+import org.neo4j.graphalgo.api.HugeGraph;
+import org.neo4j.graphalgo.api.HugeRelationshipConsumer;
+import org.neo4j.graphalgo.api.HugeWeightedRelationshipConsumer;
+import org.neo4j.graphalgo.api.RelationshipIntersect;
+import org.neo4j.graphalgo.api.HugeWeightMapping;
+import org.neo4j.graphalgo.api.RelationshipConsumer;
+import org.neo4j.graphalgo.api.WeightedRelationshipConsumer;
+import org.neo4j.graphalgo.core.huge.loader.HugeIdMap;
 import org.neo4j.graphalgo.core.utils.RawValues;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
-import org.neo4j.graphalgo.core.utils.paged.HugeLongArray;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.internal.kernel.api.CursorFactory;
 import org.neo4j.internal.kernel.api.NodeCursor;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.LongPredicate;
 
 /**
@@ -79,26 +87,29 @@ public class HugeGraphImpl implements HugeGraph {
     private final AllocationTracker tracker;
 
     private HugeWeightMapping weights;
+    private Map<String, HugeWeightMapping> nodeProperties;
     private HugeAdjacencyList inAdjacency;
     private HugeAdjacencyList outAdjacency;
-    private HugeLongArray inOffsets;
-    private HugeLongArray outOffsets;
+    private HugeAdjacencyOffsets inOffsets;
+    private HugeAdjacencyOffsets outOffsets;
     private HugeAdjacencyList.Cursor empty;
     private HugeAdjacencyList.Cursor inCache;
     private HugeAdjacencyList.Cursor outCache;
     private boolean canRelease = true;
 
-    HugeGraphImpl(
+    public HugeGraphImpl(
             final AllocationTracker tracker,
             final HugeIdMap idMapping,
             final HugeWeightMapping weights,
+            final Map<String, HugeWeightMapping> nodeProperties,
             final HugeAdjacencyList inAdjacency,
             final HugeAdjacencyList outAdjacency,
-            final HugeLongArray inOffsets,
-            final HugeLongArray outOffsets) {
+            final HugeAdjacencyOffsets inOffsets,
+            final HugeAdjacencyOffsets outOffsets) {
         this.idMapping = idMapping;
         this.tracker = tracker;
         this.weights = weights;
+        this.nodeProperties = nodeProperties;
         this.inAdjacency = inAdjacency;
         this.outAdjacency = outAdjacency;
         this.inOffsets = inOffsets;
@@ -131,6 +142,16 @@ public class HugeGraphImpl implements HugeGraph {
     @Override
     public double weightOf(final long sourceNodeId, final long targetNodeId) {
         return weights.weight(sourceNodeId, targetNodeId);
+    }
+
+    @Override
+    public HugeWeightMapping hugeNodeProperties(final String type) {
+        return nodeProperties.get(type);
+    }
+
+    @Override
+    public Set<String> availableNodeProperties() {
+        return nodeProperties.keySet();
     }
 
     @Override
@@ -271,6 +292,7 @@ public class HugeGraphImpl implements HugeGraph {
                 tracker,
                 idMapping,
                 weights,
+                nodeProperties,
                 inAdjacency,
                 outAdjacency,
                 inOffsets,
@@ -317,6 +339,9 @@ public class HugeGraphImpl implements HugeGraph {
         return consumer.found;
     }
 
+    /**
+     * O(n) !
+     */
     @Override
     public int getTarget(int nodeId, int index, Direction direction) {
         return Math.toIntExact(getTarget(
@@ -404,6 +429,9 @@ public class HugeGraphImpl implements HugeGraph {
         if (weights != null) {
             tracker.remove(weights.release());
         }
+        for (final HugeWeightMapping nodeMapping : nodeProperties.values()) {
+            tracker.remove(nodeMapping.release());
+        }
         empty = null;
         inCache = null;
         outCache = null;
@@ -414,7 +442,7 @@ public class HugeGraphImpl implements HugeGraph {
         return adjacency != null ? adjacency.newCursor() : null;
     }
 
-    private int degree(long node, HugeLongArray offsets, HugeAdjacencyList array) {
+    private int degree(long node, HugeAdjacencyOffsets offsets, HugeAdjacencyList array) {
         long offset = offsets.get(node);
         if (offset == 0L) {
             return 0;
@@ -425,7 +453,7 @@ public class HugeGraphImpl implements HugeGraph {
     private HugeAdjacencyList.Cursor cursor(
             long node,
             HugeAdjacencyList.Cursor reuse,
-            HugeLongArray offsets,
+            HugeAdjacencyOffsets offsets,
             HugeAdjacencyList array) {
         final long offset = offsets.get(node);
         if (offset == 0L) {

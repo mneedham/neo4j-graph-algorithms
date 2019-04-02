@@ -21,8 +21,7 @@ package org.neo4j.graphalgo.bench;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.utils.Pools;
-import org.neo4j.graphalgo.core.utils.ProgressLoggerAdapter;
-import org.neo4j.graphalgo.impl.msbfs.BfsConsumer;
+import org.neo4j.graphalgo.helper.ldbc.LdbcDownloader;
 import org.neo4j.graphalgo.impl.msbfs.MultiSourceBFS;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -51,7 +50,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 @Threads(1)
 @Fork(value = 3, jvmArgs = {"-Xms8g", "-Xmx8g", "-XX:+UseG1GC"})
-@Warmup(iterations = 5)
+@Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)

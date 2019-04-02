@@ -138,16 +138,19 @@ public final class ParallelUtil {
         return executor != null && !(executor.isShutdown() || executor.isTerminated());
     }
 
-    public static int availableThreads(ExecutorService executor, int desiredConcurrency) {
+    public static int availableThreads(ExecutorService executor) {
         if (!canRunInParallel(executor)) {
             return 0;
         }
         if (executor instanceof ThreadPoolExecutor) {
             ThreadPoolExecutor pool = (ThreadPoolExecutor) executor;
-            int availableConcurrency = pool.getCorePoolSize() - pool.getActiveCount();
-            return Math.min(availableConcurrency, desiredConcurrency);
+            // TPE only increases to max threads if the queue is full, (see their JavaDoc)
+            // so the number of threads available that are guaranteed to start immediately is
+            // only based on the number of core threads.
+            return pool.getCorePoolSize() - pool.getActiveCount();
         }
-        return desiredConcurrency;
+        // If we have another pool, we just have to hope for the best (or, maybe throw?)
+        return Integer.MAX_VALUE;
     }
 
     /**
@@ -192,32 +195,39 @@ public final class ParallelUtil {
      * Executes read operations in parallel, based on the given batch size
      * and executor.
      */
-    public static <T extends Runnable> void readParallel(
+    public static <T extends Runnable> List<T> readParallel(
             int concurrency,
             int batchSize,
             HugeBatchNodeIterable idMapping,
-            HugeParallelGraphImporter<T> importer,
-            ExecutorService executor) {
+            ExecutorService executor,
+            HugeParallelGraphImporter<T> importer) {
 
         Collection<PrimitiveLongIterable> iterators =
                 idMapping.hugeBatchIterables(batchSize);
 
         int threads = iterators.size();
 
+        final List<T> tasks = new ArrayList<>(threads);
         if (!canRunInParallel(executor) || threads == 1) {
-            long nodeOffset = 0;
+            long nodeOffset = 0L;
             for (PrimitiveLongIterable iterator : iterators) {
                 final T task = importer.newImporter(nodeOffset, iterator);
+                tasks.add(task);
                 task.run();
                 nodeOffset += batchSize;
             }
         } else {
             AtomicLong nodeOffset = new AtomicLong();
-            Collection<T> tasks = LazyMappingCollection.of(
+            Collection<T> importers = LazyMappingCollection.of(
                     iterators,
-                    it -> importer.newImporter(nodeOffset.getAndAdd(batchSize), it));
-            runWithConcurrency(concurrency, tasks, executor);
+                    it -> {
+                        T task = importer.newImporter(nodeOffset.getAndAdd(batchSize), it);
+                        tasks.add(task);
+                        return task;
+                    });
+            runWithConcurrency(concurrency, importers, executor);
         }
+        return tasks;
     }
 
     public static Collection<Runnable> tasks(
@@ -350,8 +360,8 @@ public final class ParallelUtil {
      * and never tried again.
      *
      * @param concurrency how many tasks should be run simultaneous
-     * @param tasks the tasks to execute
-     * @param executor the executor to submit the tasks to
+     * @param tasks       the tasks to execute
+     * @param executor    the executor to submit the tasks to
      */
     public static void runWithConcurrency(
             int concurrency,
@@ -405,10 +415,10 @@ public final class ParallelUtil {
      * tasks and if it signals termination, running tasks are cancelled and
      * not-yet-started tasks are abandoned.
      *
-     * @param concurrency how many tasks should be run simultaneous
-     * @param tasks the tasks to execute
+     * @param concurrency     how many tasks should be run simultaneous
+     * @param tasks           the tasks to execute
      * @param terminationFlag a flag to check periodically if the execution should be terminated
-     * @param executor the executor to submit the tasks to
+     * @param executor        the executor to submit the tasks to
      */
     public static void runWithConcurrency(
             int concurrency,
@@ -460,10 +470,10 @@ public final class ParallelUtil {
      * and retry submitting the tasks indefinitely.
      *
      * @param concurrency how many tasks should be run simultaneous
-     * @param tasks the tasks to execute
-     * @param waitTime how long to wait between retries
-     * @param timeUnit the unit for {@code waitTime}
-     * @param executor the executor to submit the tasks to
+     * @param tasks       the tasks to execute
+     * @param waitTime    how long to wait between retries
+     * @param timeUnit    the unit for {@code waitTime}
+     * @param executor    the executor to submit the tasks to
      */
     public static void runWithConcurrency(
             int concurrency,
@@ -519,12 +529,12 @@ public final class ParallelUtil {
      * tasks and if it signals termination, running tasks are cancelled and
      * not-yet-started tasks are abandoned.
      *
-     * @param concurrency how many tasks should be run simultaneous
-     * @param tasks the tasks to execute
-     * @param waitTime how long to wait between retries
-     * @param timeUnit the unit for {@code waitTime}
+     * @param concurrency     how many tasks should be run simultaneous
+     * @param tasks           the tasks to execute
+     * @param waitTime        how long to wait between retries
+     * @param timeUnit        the unit for {@code waitTime}
      * @param terminationFlag a flag to check periodically if the execution should be terminated
-     * @param executor the executor to submit the tasks to
+     * @param executor        the executor to submit the tasks to
      */
     public static void runWithConcurrency(
             int concurrency,
@@ -578,11 +588,11 @@ public final class ParallelUtil {
      * and retry submitting the tasks at most {@code maxRetries} times.
      *
      * @param concurrency how many tasks should be run simultaneous
-     * @param tasks the tasks to execute
-     * @param maxRetries how many retries when submitting on a full pool before giving up
-     * @param waitTime how long to wait between retries
-     * @param timeUnit the unit for {@code waitTime}
-     * @param executor the executor to submit the tasks to
+     * @param tasks       the tasks to execute
+     * @param maxRetries  how many retries when submitting on a full pool before giving up
+     * @param waitTime    how long to wait between retries
+     * @param timeUnit    the unit for {@code waitTime}
+     * @param executor    the executor to submit the tasks to
      */
     public static void runWithConcurrency(
             int concurrency,
@@ -639,13 +649,13 @@ public final class ParallelUtil {
      * tasks and if it signals termination, running tasks are cancelled and
      * not-yet-started tasks are abandoned.
      *
-     * @param concurrency how many tasks should be run simultaneous
-     * @param tasks the tasks to execute
-     * @param maxRetries how many retries when submitting on a full pool before giving up
-     * @param waitTime how long to wait between retries
-     * @param timeUnit the unit for {@code waitTime}
+     * @param concurrency     how many tasks should be run simultaneous
+     * @param tasks           the tasks to execute
+     * @param maxRetries      how many retries when submitting on a full pool before giving up
+     * @param waitTime        how long to wait between retries
+     * @param timeUnit        the unit for {@code waitTime}
      * @param terminationFlag a flag to check periodically if the execution should be terminated
-     * @param executor the executor to submit the tasks to
+     * @param executor        the executor to submit the tasks to
      */
     public static void runWithConcurrency(
             int concurrency,
@@ -693,7 +703,7 @@ public final class ParallelUtil {
             //noinspection StatementWithEmptyBody - add first concurrency tasks
             while (concurrency-- > 0
                     && terminationFlag.running()
-                    && completionService.trySubmit(ts));
+                    && completionService.trySubmit(ts)) ;
 
             if (!terminationFlag.running()) {
                 return;
@@ -868,7 +878,7 @@ public final class ParallelUtil {
                 running.remove(this);
                 if (!isCancelled()) {
                     //noinspection StatementWithEmptyBody - spin-wait on free slot
-                    while (!completionQueue.offer(this));
+                    while (!completionQueue.offer(this)) ;
                 }
             }
         }

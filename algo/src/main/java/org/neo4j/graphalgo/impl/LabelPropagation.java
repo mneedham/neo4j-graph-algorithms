@@ -18,293 +18,154 @@
  */
 package org.neo4j.graphalgo.impl;
 
-import com.carrotsearch.hppc.IntArrayList;
-import com.carrotsearch.hppc.IntDoubleHashMap;
-import com.carrotsearch.hppc.IntDoubleScatterMap;
-import com.carrotsearch.hppc.IntObjectHashMap;
-import com.carrotsearch.hppc.IntObjectMap;
-import com.carrotsearch.hppc.cursors.IntDoubleCursor;
-import org.neo4j.collection.primitive.PrimitiveIntIterable;
 import org.neo4j.collection.primitive.PrimitiveIntIterator;
-import org.neo4j.graphalgo.PropertyMapping;
+import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.api.NodeProperties;
 import org.neo4j.graphalgo.api.RelationshipConsumer;
 import org.neo4j.graphalgo.api.WeightMapping;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
-import org.neo4j.graphalgo.core.utils.ParallelUtil;
 import org.neo4j.graphalgo.core.utils.ProgressLogger;
+import org.neo4j.graphalgo.core.utils.RandomIntIterable;
+import org.neo4j.graphalgo.core.utils.RandomLongIterable;
+import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphdb.Direction;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
 
-public final class LabelPropagation extends Algorithm<LabelPropagation> {
+public final class LabelPropagation extends BaseLabelPropagation<Graph, WeightMapping, LabelPropagation> {
 
-    public static final String PARTITION_TYPE = "property";
-    public static final String WEIGHT_TYPE = "weight";
-
-    private static final int[] EMPTY_INTS = new int[0];
-
-    private final WeightMapping nodeProperties;
-    private final WeightMapping nodeWeights;
-
-    private HeavyGraph graph;
-    private final int batchSize;
-    private final int concurrency;
-    private final ExecutorService executor;
-    private final int nodeCount;
-
-    private int[] labels;
-    private long ranIterations;
-    private boolean didConverge;
-
-    public static class StreamResult {
-        public final long nodeId;
-        public final long label;
-
-        public StreamResult(long nodeId, long label) {
-            this.nodeId = nodeId;
-            this.label = label;
-        }
-    }
-    
     public LabelPropagation(
-            HeavyGraph graph,
+            Graph graph,
+            NodeProperties nodeProperties,
             int batchSize,
             int concurrency,
             ExecutorService executor) {
-        this.graph = graph;
-        nodeCount = Math.toIntExact(graph.nodeCount());
-        this.batchSize = batchSize;
-        this.concurrency = concurrency;
-        this.executor = executor;
-
-        this.nodeProperties = this.graph.nodeProperties(PARTITION_TYPE);
-        this.nodeWeights = this.graph.nodeProperties(WEIGHT_TYPE);
-    }
-
-    public LabelPropagation compute(
-        Direction direction,
-        long maxIterations) {
-        return compute(direction, maxIterations, true);
-    }
-
-    public LabelPropagation compute(
-            Direction direction,
-            long maxIterations,
-            boolean randomizeOrder) {
-        if (maxIterations <= 0) {
-            throw new IllegalArgumentException("Must iterate at least 1 time");
-        }
-
-        if (labels == null || labels.length != nodeCount) {
-            labels = new int[nodeCount];
-        }
-        ranIterations = 0;
-        didConverge = false;
-
-        final List<Runnable> computeSteps = ParallelUtil.readParallel(
-                concurrency,
-                batchSize,
+        super(
                 graph,
-                (offset, nodes) -> new InitStep(
-                        graph,
-                        labels,
-                        direction,
-                        randomizeOrder,
-                        getProgressLogger(),
-                        nodes,
-                        this.nodeProperties
-                ),
-                executor);
-
-        for (int i = 0, l = computeSteps.size(); i < l; i++) {
-            computeSteps.set(i, ((InitStep) computeSteps.get(i)).computeStep(this.nodeWeights));
-        }
-
-        for (long i = 0L; i < maxIterations; i++) {
-            ParallelUtil.runWithConcurrency(concurrency, computeSteps, executor);
-        }
-
-        long maxIteration = 0;
-        boolean converged = true;
-        for (Runnable computeStep : computeSteps) {
-            ComputeStep step = (ComputeStep) computeStep;
-            if (step.iteration > maxIteration) {
-                maxIteration = step.iteration;
-            }
-            converged = converged && !step.didChange;
-            step.release();
-        }
-
-        ranIterations = maxIteration;
-        didConverge = converged;
-
-        return this;
-    }
-
-    public long ranIterations() {
-        return ranIterations;
-    }
-
-    public boolean didConverge() {
-        return didConverge;
-    }
-
-    public int[] labels() {
-        return labels;
-    }
-
-    public IntObjectMap<IntArrayList> groupByPartition() {
-        if (labels == null) {
-            return null;
-        }
-        IntObjectMap<IntArrayList> cluster = new IntObjectHashMap<>();
-
-        for (int node = 0, l = labels.length; node < l; node++) {
-            int key = labels[node];
-            IntArrayList ids = cluster.get(key);
-            if (ids == null) {
-                ids = new IntArrayList();
-                cluster.put(key, ids);
-            }
-            ids.add(node);
-        }
-
-        return cluster;
+                nodeProperties.nodeProperties(PARTITION_TYPE),
+                nodeProperties.nodeProperties(WEIGHT_TYPE),
+                batchSize,
+                concurrency,
+                executor,
+                AllocationTracker.EMPTY);
     }
 
     @Override
-    public LabelPropagation me() {
-        return this;
+    LabelArray initialLabels(final long nodeCount, final AllocationTracker tracker) {
+        return new LabelArray(new long[Math.toIntExact(nodeCount)]);
     }
 
     @Override
-    public LabelPropagation release() {
-        graph = null;
-        return this;
+    Initialization initStep(
+            final Graph graph,
+            final Labels labels,
+            final WeightMapping nodeProperties,
+            final WeightMapping nodeWeights,
+            final Direction direction,
+            final ProgressLogger progressLogger,
+            final RandomProvider randomProvider,
+            final RandomLongIterable nodes) {
+        return new InitStep(
+                graph,
+                labels,
+                direction,
+                randomProvider,
+                getProgressLogger(),
+                new RandomIntIterable(nodes),
+                nodeProperties,
+                nodeWeights
+        );
     }
 
-    private static final class InitStep implements Runnable {
+    private static final class InitStep extends Initialization {
 
-        private final HeavyGraph graph;
-        private final int[] existingLabels;
+        private final Graph graph;
+        private final Labels existingLabels;
         private final Direction direction;
-        private final boolean randomizeOrder;
+        private final RandomProvider random;
         private final ProgressLogger progressLogger;
-        private final PrimitiveIntIterable nodes;
+        private final RandomIntIterable nodes;
         private final WeightMapping nodeProperties;
+        private final WeightMapping nodeWeights;
 
         private InitStep(
-                HeavyGraph graph,
-                int[] existingLabels,
+                Graph graph,
+                Labels existingLabels,
                 Direction direction,
-                boolean randomizeOrder,
+                RandomProvider random,
                 ProgressLogger progressLogger,
-                PrimitiveIntIterable nodes, WeightMapping nodeProperties) {
+                RandomIntIterable nodes,
+                WeightMapping nodeProperties,
+                WeightMapping nodeWeights) {
             this.graph = graph;
             this.existingLabels = existingLabels;
             this.direction = direction;
-            this.randomizeOrder = randomizeOrder;
+            this.random = random;
             this.progressLogger = progressLogger;
             this.nodes = nodes;
             this.nodeProperties = nodeProperties;
+            this.nodeWeights = nodeWeights;
         }
 
         @Override
-        public void run() {
-            initLabels();
-        }
-
-        private void initLabels() {
+        void setExistingLabels() {
             PrimitiveIntIterator iterator = nodes.iterator();
             while (iterator.hasNext()) {
                 int nodeId = iterator.next();
-                int existingLabel = (int) this.nodeProperties.get(nodeId, (double) nodeId);
-                existingLabels[nodeId] = existingLabel;
+                long existingLabel = (long) this.nodeProperties.get(nodeId, (double) nodeId);
+                existingLabels.setLabelFor(nodeId, existingLabel);
             }
         }
 
-        private ComputeStep computeStep(WeightMapping nodeWeights) {
+        @Override
+        Computation computeStep() {
             return new ComputeStep(
                     graph,
                     existingLabels,
                     direction,
-                    randomizeOrder,
+                    random,
                     progressLogger,
                     nodes,
                     nodeWeights);
         }
     }
 
-    private static final class ComputeStep implements Runnable, RelationshipConsumer {
+    private static final class ComputeStep extends Computation implements RelationshipConsumer {
 
-        private final HeavyGraph graph;
-        private final int[] existingLabels;
+        private final Graph graph;
         private final Direction direction;
-        private final ProgressLogger progressLogger;
-        private final PrimitiveIntIterable nodes;
-        private final int maxNode;
-        private final IntDoubleHashMap votes;
+        private final RandomIntIterable nodes;
         private final WeightMapping nodeWeights;
 
-        private boolean didChange = true;
-        private long iteration = 0L;
-
         private ComputeStep(
-                HeavyGraph graph,
-                int[] existingLabels,
+                Graph graph,
+                Labels existingLabels,
                 Direction direction,
-                boolean randomizeOrder,
+                RandomProvider random,
                 ProgressLogger progressLogger,
-                PrimitiveIntIterable nodes,
+                RandomIntIterable nodes,
                 WeightMapping nodeWeights) {
+            super(existingLabels, progressLogger, graph.nodeCount() - 1L, random);
             this.graph = graph;
-            this.existingLabels = existingLabels;
             this.direction = direction;
-            this.progressLogger = progressLogger;
-            this.nodes = RandomlySwitchingIterable.of(randomizeOrder, nodes);
-            this.maxNode = (int) (graph.nodeCount() - 1L);
-            this.votes = new IntDoubleScatterMap();
+            this.nodes = nodes;
             this.nodeWeights = nodeWeights;
         }
 
         @Override
-        public void run() {
-            if (this.didChange) {
-                iteration++;
-                PrimitiveIntIterator iterator = nodes.iterator();
-                boolean didChange = false;
-                while (iterator.hasNext()) {
-                    didChange = compute(iterator.next(), didChange);
-                }
-                this.didChange = didChange;
-                if (!didChange) {
-                    release();
-                }
-            }
+        boolean computeAll() {
+            return iterateAll(nodes.iterator(randomProvider.randomForNewIteration()));
         }
 
-        private boolean compute(int nodeId, boolean didChange) {
-            votes.clear();
-            int partition = existingLabels[nodeId];
-            int previous = partition;
-            graph.forEachRelationship(nodeId, direction, this);
-            double weight = Double.NEGATIVE_INFINITY;
-            for (IntDoubleCursor vote : votes) {
-                if (weight < vote.value) {
-                    weight = vote.value;
-                    partition = vote.key;
-                }
-            }
-            progressLogger.logProgress(nodeId, maxNode);
-            if (partition != previous) {
-                existingLabels[nodeId] = partition;
-                return true;
-            }
-            return didChange;
+        @Override
+        void forEach(final long nodeId) {
+            graph.forEachRelationship((int) nodeId, direction, this);
+        }
+
+        @Override
+        double weightOf(final long nodeId, final long candidate) {
+            double relationshipWeight = graph.weightOf((int) nodeId, (int) candidate);
+            double nodeWeight = nodeWeights.get((int) candidate);
+            return relationshipWeight * nodeWeight;
         }
 
         @Override
@@ -312,79 +173,8 @@ public final class LabelPropagation extends Algorithm<LabelPropagation> {
                 final int sourceNodeId,
                 final int targetNodeId,
                 final long relationId) {
-            int partition = existingLabels[targetNodeId];
-            double weight = graph.weightOf(sourceNodeId, targetNodeId) * nodeWeights.get(targetNodeId);
-            votes.addTo(partition, weight);
+            castVote((long) sourceNodeId, (long) targetNodeId);
             return true;
-        }
-
-        private void release() {
-            // the HPPC release() method allocates new arrays
-            // the clear() method overwrite the existing keys with the default value
-            // we want to throw away all data to allow for GC collection instead.
-
-            if (votes.keys != null) {
-                votes.keys = EMPTY_INTS;
-                votes.clear();
-                votes.keys = null;
-                votes.values = null;
-            }
-        }
-    }
-
-    private static final class RandomlySwitchingIterable implements PrimitiveIntIterable {
-        private final PrimitiveIntIterable delegate;
-        private final Random random;
-
-        static PrimitiveIntIterable of(
-                boolean randomize,
-                PrimitiveIntIterable delegate) {
-            return randomize
-                    ? new RandomlySwitchingIterable(delegate, ThreadLocalRandom.current())
-                    : delegate;
-        }
-
-        private RandomlySwitchingIterable(PrimitiveIntIterable delegate, Random random) {
-            this.delegate = delegate;
-            this.random = random;
-        }
-
-        @Override
-        public PrimitiveIntIterator iterator() {
-            return new RandomlySwitchingIterator(delegate.iterator(), random);
-        }
-    }
-
-    private static final class RandomlySwitchingIterator implements PrimitiveIntIterator {
-        private final PrimitiveIntIterator delegate;
-        private final Random random;
-        private boolean hasSkipped;
-        private int skipped;
-
-        private RandomlySwitchingIterator(PrimitiveIntIterator delegate, Random random) {
-            this.delegate = delegate;
-            this.random = random;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return hasSkipped || delegate.hasNext();
-        }
-
-        @Override
-        public int next() {
-            if (hasSkipped) {
-                int elem = skipped;
-                hasSkipped = false;
-                return elem;
-            }
-            int next = delegate.next();
-            if (delegate.hasNext() && random.nextBoolean()) {
-                skipped = next;
-                hasSkipped = true;
-                return delegate.next();
-            }
-            return next;
         }
     }
 }

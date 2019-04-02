@@ -21,7 +21,7 @@ package org.neo4j.graphalgo.bench;
 import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.utils.Pools;
-import org.neo4j.internal.kernel.api.exceptions.KernelException;
+import org.neo4j.graphalgo.helper.ldbc.LdbcDownloader;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 
 @Threads(1)
 @Fork(value = 1, jvmArgs = {"-Xms8g", "-Xmx8g", "-XX:+UseG1GC"})
-@Warmup(iterations = 5)
+@Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.SingleShotTime)

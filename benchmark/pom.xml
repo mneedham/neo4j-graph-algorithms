@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.neo4j</groupId>
         <artifactId>graph-algorithms-parent</artifactId>
-        <version>3.4.12.5</version>
+        <version>3.4.12.6</version>
     </parent>
 
     <artifactId>graph-algorithms-benchmark</artifactId>
@@ -70,6 +70,17 @@
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-math3</artifactId>
+                    <groupId>org.apache.commons</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.6.1</version>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

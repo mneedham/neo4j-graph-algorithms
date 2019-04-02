@@ -18,18 +18,25 @@
  */
 package org.neo4j.graphalgo;
 
+import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.api.GraphFactory;
+import org.neo4j.graphalgo.api.HugeGraph;
+import org.neo4j.graphalgo.api.HugeNodeProperties;
+import org.neo4j.graphalgo.api.NodeProperties;
+import org.neo4j.graphalgo.api.WeightMapping;
 import org.neo4j.graphalgo.core.GraphLoader;
+import org.neo4j.graphalgo.core.NullWeightMap;
 import org.neo4j.graphalgo.core.ProcedureConfiguration;
-import org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.ProgressLogger;
 import org.neo4j.graphalgo.core.utils.ProgressTimer;
 import org.neo4j.graphalgo.core.utils.TerminationFlag;
+import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
 import org.neo4j.graphalgo.core.write.Exporter;
-import org.neo4j.graphalgo.core.write.Translators;
+import org.neo4j.graphalgo.impl.HugeLabelPropagation;
 import org.neo4j.graphalgo.impl.LabelPropagation;
+import org.neo4j.graphalgo.impl.LabelPropagationAlgorithm;
+import org.neo4j.graphalgo.impl.LabelPropagationAlgorithm.Labels;
 import org.neo4j.graphalgo.results.LabelPropagationStats;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.kernel.api.KernelTransaction;
@@ -44,6 +51,7 @@ import org.neo4j.procedure.Procedure;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public final class LabelPropagationProc {
@@ -115,20 +123,21 @@ public final class LabelPropagationProc {
             graphLoader.withDirection(direction);
         }
 
-        HeavyGraph graph = load(graphLoader, configuration, stats);
+        AllocationTracker tracker = AllocationTracker.create();
+        Graph graph = load(graphLoader.withAllocationTracker(tracker), configuration, stats);
 
         if(graph.nodeCount() == 0) {
             graph.release();
             return Stream.of(LabelPropagationStats.EMPTY);
         }
 
-        final int[] labels = compute(direction, iterations, batchSize, concurrency, graph, stats);
+        final Labels labels = compute(configuration, direction, iterations, batchSize, concurrency, graph, tracker, stats);
         if (configuration.isWriteFlag(DEFAULT_WRITE) && writeProperty != null) {
             stats.withWrite(true);
             write(concurrency, writeProperty, graph, labels, stats);
         }
 
-        return Stream.of(stats.build(graph.nodeCount(), l -> (long) labels[(int) l]));
+        return Stream.of(stats.build(graph.nodeCount(), labels::labelFor));
     }
 
     @Procedure(value = "algo.labelPropagation.stream")
@@ -160,34 +169,39 @@ public final class LabelPropagationProc {
             graphLoader.withDirection(direction);
         }
         LabelPropagationStats.Builder stats = new LabelPropagationStats.Builder();
-        HeavyGraph graph = load(graphLoader, configuration, stats);
 
+        AllocationTracker tracker = AllocationTracker.create();
+        Graph graph = load(graphLoader.withAllocationTracker(tracker), configuration, stats);
 
-        if(graph.nodeCount() == 0) {
+        if(graph.nodeCount() == 0L) {
             graph.release();
             return Stream.empty();
         }
 
-        int[] result = compute(direction, iterations, batchSize, concurrency, graph, stats, propertyMappings);
+        Labels result = compute(configuration, direction, iterations, batchSize, concurrency, graph, tracker, stats);
 
-        graph.release();
+        if (graph instanceof HugeGraph) {
+            HugeGraph hugeGraph = (HugeGraph) graph;
+            return LongStream.range(0L, result.size())
+                    .mapToObj(i -> new LabelPropagation.StreamResult(hugeGraph.toOriginalNodeId(i), result.labelFor(i)));
+        }
 
-        return IntStream.range(0, result.length)
-                .mapToObj(i -> new LabelPropagation.StreamResult(graph.toOriginalNodeId(i), result[i]));
+        return IntStream.range(0, (int) result.size())
+                .mapToObj(i -> new LabelPropagation.StreamResult(graph.toOriginalNodeId(i), result.labelFor(i)));
+
     }
 
     private PropertyMapping[] createPropertyMappings(String partitionProperty, String weightProperty) {
         return new PropertyMapping[]{
-                    PropertyMapping.of(LabelPropagation.PARTITION_TYPE, partitionProperty, 0d),
-                    PropertyMapping.of(LabelPropagation.WEIGHT_TYPE, weightProperty, 1d)
+                    PropertyMapping.of(LabelPropagationAlgorithm.PARTITION_TYPE, partitionProperty, 0d),
+                    PropertyMapping.of(LabelPropagationAlgorithm.WEIGHT_TYPE, weightProperty, 1d)
             };
     }
 
-    private HeavyGraph load(GraphLoader graphLoader, ProcedureConfiguration config, LabelPropagationStats.Builder stats) {
-        Class<? extends GraphFactory> graphImpl = config.getGraphImpl(
-                HeavyGraph.TYPE, HeavyGraph.TYPE, HeavyCypherGraphFactory.TYPE);
-        try (ProgressTimer timer = stats.timeLoad()) {
-            return (HeavyGraph) graphLoader.load(graphImpl);
+    private Graph load(GraphLoader graphLoader, ProcedureConfiguration config, LabelPropagationStats.Builder stats) {
+        Class<? extends GraphFactory> graphImpl = config.getGraphImpl();
+        try (ProgressTimer ignored = stats.timeLoad()) {
+            return graphLoader.load(graphImpl);
         }
     }
 
@@ -200,23 +214,69 @@ public final class LabelPropagationProc {
                 .withOptionalNodeProperty(partitionProperty, 0.0d);
     }
 
-    private int[] compute(
+    private Labels compute(
+            ProcedureConfiguration configuration,
             Direction direction,
             int iterations,
             int batchSize,
             int concurrency,
-            HeavyGraph graph,
-            LabelPropagationStats.Builder stats,
-            PropertyMapping... propertyMappings) {
-        try (ProgressTimer timer = stats.timeEval()) {
-            ExecutorService pool = batchSize > 0 ? Pools.DEFAULT : null;
-            batchSize = Math.max(1, batchSize);
-            final LabelPropagation labelPropagation = new LabelPropagation(graph, batchSize, concurrency, pool);
+            Graph graph,
+            AllocationTracker tracker,
+            LabelPropagationStats.Builder stats) {
+        NodeProperties nodeProperties;
+        if (graph instanceof NodeProperties) {
+            nodeProperties = (NodeProperties) graph;
+        } else {
+            log.info("The loaded graph does not support node properties, label propagation will have to fall " +
+                    "back to use default weights and properties for nodes.");
+            WeightMapping weightMap = new NullWeightMap(configuration.getWeightPropertyDefaultValue(1d));
+            nodeProperties = new NodeProperties() {
+                @Override
+                public WeightMapping nodeProperties(final String type) {
+                    return weightMap;
+                }
+
+                @Override
+                public Set<String> availableNodeProperties() {
+                    return Collections.emptySet();
+                }
+            };
+        }
+
+        try {
+            return compute(direction, iterations, batchSize, concurrency, graph, nodeProperties, tracker, stats);
+        } finally {
+            graph.release();
+        }
+    }
+
+    private Labels compute(
+            Direction direction,
+            int iterations,
+            int batchSize,
+            int concurrency,
+            Graph graph,
+            NodeProperties nodeProperties,
+            AllocationTracker tracker,
+            LabelPropagationStats.Builder stats) {
+
+        ExecutorService pool = batchSize > 0 ? Pools.DEFAULT : null;
+        batchSize = Math.max(1, batchSize);
+        final LabelPropagationAlgorithm<?> labelPropagation;
+        if (graph instanceof HugeGraph && nodeProperties instanceof HugeNodeProperties) {
+            HugeGraph hugeGraph = (HugeGraph) graph;
+            HugeNodeProperties properties = (HugeNodeProperties) nodeProperties;
+            labelPropagation = new HugeLabelPropagation(hugeGraph, properties, batchSize, concurrency, pool, tracker);
+        } else {
+            labelPropagation = new LabelPropagation(graph, nodeProperties, batchSize, concurrency, pool);
+        }
+        try (ProgressTimer ignored = stats.timeEval()) {
             labelPropagation
                     .withProgressLogger(ProgressLogger.wrap(log, "LabelPropagation"))
                     .withTerminationFlag(TerminationFlag.wrap(transaction))
                     .compute(direction, iterations);
-            final int[] result = labelPropagation.labels();
+
+            final Labels result = labelPropagation.labels();
 
             stats.iterations(labelPropagation.ranIterations());
             stats.didConverge(labelPropagation.didConverge());
@@ -230,10 +290,10 @@ public final class LabelPropagationProc {
     private void write(
             int concurrency,
             String partitionKey,
-            HeavyGraph graph,
-            int[] labels,
+            Graph graph,
+            Labels labels,
             LabelPropagationStats.Builder stats) {
-        try (ProgressTimer timer = stats.timeWrite()) {
+        try (ProgressTimer ignored = stats.timeWrite()) {
             Exporter.of(dbAPI, graph)
                     .withLog(log)
                     .parallel(Pools.DEFAULT, concurrency, TerminationFlag.wrap(transaction))
@@ -241,7 +301,7 @@ public final class LabelPropagationProc {
                     .write(
                             partitionKey,
                             labels,
-                            Translators.INT_ARRAY_TRANSLATOR
+                            LabelPropagationAlgorithm.LABEL_TRANSLATOR
                 );
         }
     }

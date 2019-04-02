@@ -22,8 +22,9 @@ import org.neo4j.graphalgo.api.Graph;
 import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.utils.Pools;
 import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
+import org.neo4j.graphalgo.helper.ldbc.LdbcDownloader;
 import org.neo4j.graphalgo.impl.pagerank.PageRankAlgorithm;
-import org.neo4j.graphalgo.impl.pagerank.PageRankResult;
+import org.neo4j.graphalgo.impl.results.CentralityResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -35,7 +36,7 @@ import java.util.stream.LongStream;
 
 @Threads(1)
 @Fork(value = 3, jvmArgs = {"-Xms8g", "-Xmx8g", "-XX:+UseG1GC"})
-@Warmup(iterations = 5)
+@Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
@@ -80,7 +81,7 @@ public class PageRankBenchmarkLdbc {
     }
 
     @Benchmark
-    public PageRankResult run() throws Exception {
+    public CentralityResult run() throws Exception {
         return PageRankAlgorithm.of(
                 AllocationTracker.EMPTY,
                 grph,

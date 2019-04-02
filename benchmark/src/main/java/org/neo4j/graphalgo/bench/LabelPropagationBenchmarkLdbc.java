@@ -23,6 +23,7 @@ import org.neo4j.graphalgo.core.GraphLoader;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
+import org.neo4j.graphalgo.helper.ldbc.LdbcDownloader;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
@@ -53,8 +54,8 @@ import java.util.function.Consumer;
  */
 @Threads(1)
 @Fork(1)
-@Warmup(iterations = 1)
-@Measurement(iterations = 1)
+@Warmup(iterations = 1, time = 1)
+@Measurement(iterations = 1, time = 1)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -116,7 +117,8 @@ public class LabelPropagationBenchmarkLdbc {
 
     @Benchmark
     public Object _03_direct() {
-        return new org.neo4j.graphalgo.impl.LabelPropagation(graph, batchSize, Pools.DEFAULT_CONCURRENCY, Pools.DEFAULT)
+        return new org.neo4j.graphalgo.impl
+                .LabelPropagation(graph, graph, batchSize, Pools.DEFAULT_CONCURRENCY, Pools.DEFAULT)
                 .compute(Direction.OUTGOING, iterations);
     }
 

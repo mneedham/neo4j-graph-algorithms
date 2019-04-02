@@ -27,36 +27,51 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.neo4j.graphalgo.PropertyMapping;
+import org.neo4j.graphalgo.api.Graph;
+import org.neo4j.graphalgo.api.GraphFactory;
+import org.neo4j.graphalgo.api.HugeGraph;
+import org.neo4j.graphalgo.api.HugeNodeProperties;
+import org.neo4j.graphalgo.api.NodeProperties;
 import org.neo4j.graphalgo.core.GraphLoader;
-import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
+import org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
+import org.neo4j.graphalgo.core.huge.loader.HugeGraphFactory;
 import org.neo4j.graphalgo.core.utils.Pools;
+import org.neo4j.graphalgo.core.utils.paged.AllocationTracker;
+import org.neo4j.graphalgo.impl.LabelPropagationAlgorithm.Labels;
 import org.neo4j.graphdb.Direction;
-import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.rule.ImpermanentDatabaseRule;
 
 import java.util.Arrays;
+import java.util.Collection;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.neo4j.graphalgo.impl.LabelPropagationAlgorithm.PARTITION_TYPE;
+import static org.neo4j.graphalgo.impl.LabelPropagationAlgorithm.WEIGHT_TYPE;
 
 //@formatter:off
 /**
  *
- *                                       +-----+
- *                                 +---->+  B  |
- *                                 |     +-+---+
- *                                 v       | ^
- *  +----+    +---+    +---+     +-+-+     | |
- *  | Ma +<-->+ D |<---+ C |<----+ A |     | |
- *  +----+    +---+    +---+     +-+-+     | |
- *                                 ^       v |
- *                                 |     +---+-+
- *                                 +---->| Mic |
- *                                       +-----+
+ *                                         +-----+
+ *                                   +---->+  B  |
+ *                                   |     |  1  |
+ *                                   |     +-+---+
+ *                                   v       | ^
+ *  +-----+     +---+    +---+     +-+-+     | |
+ *  |  Ma +<--->+ D |<---+ C |<----+ A |     | |
+ *  |  4  |     | 3 |    | 2 |     | 0 |     | |
+ *  +-----+     +---+    +---+     +-+-+     | |
+ *                                   ^       v |
+ *                                   |     +---+-+
+ *                                   +---->| Mic |
+ *                                         |  5  |
+ *                                         +-----+
  *
  * Ideally, the iterations would go like this.
  *
@@ -80,6 +95,7 @@ import static org.junit.Assert.assertTrue;
  *  nothing to do, finished
  */
 //@formatter:on
+@RunWith(Parameterized.class)
 public final class LabelPropagation420Test {
 
     private static final String GRAPH =
@@ -100,59 +116,111 @@ public final class LabelPropagation420Test {
                     ",(nMichael)-[:FOLLOW]->(nBridget)\n" +
                     ",(nCharles)-[:FOLLOW]->(nDoug)";
 
+    @Parameterized.Parameters(name = "graph={0}")
+    public static Collection<Object[]> data() {
+        return Arrays.asList(
+                new Object[]{HeavyGraphFactory.class},
+                new Object[]{HeavyCypherGraphFactory.class},
+                new Object[]{HugeGraphFactory.class}
+        );
+    }
+
     @ClassRule
     public static final ImpermanentDatabaseRule DB = new ImpermanentDatabaseRule();
 
     @BeforeClass
-    public static void setupGraph() throws KernelException {
+    public static void setupGraph() {
         DB.execute(GRAPH).close();
     }
 
     @Rule
     public ErrorCollector collector = new ErrorCollector();
 
-    private HeavyGraph graph;
+    private final Class<? extends GraphFactory> graphImpl;
+    private Graph graph;
+
+    public LabelPropagation420Test(Class<? extends GraphFactory> graphImpl) {
+        this.graphImpl = graphImpl;
+    }
 
     @Before
     public void setup() {
-        graph = (HeavyGraph) new GraphLoader(DB, Pools.DEFAULT)
-                .withLabel("User")
-                .withRelationshipType("FOLLOW")
+        GraphLoader graphLoader = new GraphLoader(DB, Pools.DEFAULT)
                 .withRelationshipWeightsFromProperty("weight", 1.0)
-                .withNodeWeightsFromProperty("weight", 1.0)
-                .withNodeProperty("partition", 0.0)
                 .withOptionalNodeProperties(
-                        PropertyMapping.of(LabelPropagation.PARTITION_TYPE, "partition", 0.0),
-                        PropertyMapping.of(LabelPropagation.WEIGHT_TYPE, "weight", 1.0)
+                        PropertyMapping.of(WEIGHT_TYPE, WEIGHT_TYPE, 1.0),
+                        PropertyMapping.of(PARTITION_TYPE, PARTITION_TYPE, 0.0)
                 )
                 .withDirection(Direction.BOTH)
-                .withConcurrency(Pools.DEFAULT_CONCURRENCY)
-                .load(HeavyGraphFactory.class);
+                .withConcurrency(Pools.DEFAULT_CONCURRENCY);
+
+        if (graphImpl == HeavyCypherGraphFactory.class) {
+            graphLoader
+                    .withLabel("MATCH (u:User) RETURN id(u) as id")
+                    .withRelationshipType("MATCH (u1:User)-[rel:FOLLOW]->(u2:User) \n" +
+                            "RETURN id(u1) as source,id(u2) as target")
+                    .withName("cypher");
+        } else {
+            graphLoader
+                    .withLabel("User")
+                    .withRelationshipType("FOLLOW")
+                    .withName(graphImpl.getSimpleName());
+        }
+        graph = graphLoader.load(graphImpl);
     }
 
     @Test
-    public void testSingleThreadClustering() throws Exception {
+    public void testSingleThreadClustering() {
         testClustering(100);
     }
 
     @Test
-    public void testMultiThreadClustering() throws Exception {
+    public void testMultiThreadClustering() {
         testClustering(2);
     }
 
+    @Test
+    public void testHugeSingleThreadClustering() {
+        testHugeClustering(100);
+    }
 
-    private void testClustering(int batchSize) throws Exception {
-        final LabelPropagation lp = new LabelPropagation(
+    @Test
+    public void testHugeMultiThreadClustering() {
+        testHugeClustering(2);
+    }
+
+    private void testClustering(int batchSize) {
+        testClustering(new LabelPropagation(
                 graph,
+                (NodeProperties) graph,
                 batchSize,
                 Pools.DEFAULT_CONCURRENCY,
-                Pools.DEFAULT);
+                Pools.DEFAULT));
+    }
 
-        lp.compute(Direction.OUTGOING, 10);
+    private void testHugeClustering(int batchSize) {
+        if (graph instanceof HugeGraph) {
+            testClustering(new HugeLabelPropagation(
+                    (HugeGraph) graph,
+                    (HugeNodeProperties) graph,
+                    batchSize,
+                    Pools.DEFAULT_CONCURRENCY,
+                    Pools.DEFAULT,
+                    AllocationTracker.EMPTY));
+        }
+    }
 
-        int[] labels = lp.labels();
+    // possible bad seed: -2300107887844480632
+    private void testClustering(LabelPropagationAlgorithm<?> lp) {
+        Long seed = Long.getLong("tests.seed");
+        if (seed != null) {
+            lp.compute(Direction.OUTGOING, 10L, seed);
+        } else {
+            lp.compute(Direction.OUTGOING, 10L);
+        }
+        Labels labels = lp.labels();
         assertNotNull(labels);
-        IntObjectMap<IntArrayList> cluster = lp.groupByPartition();
+        IntObjectMap<IntArrayList> cluster = LabelPropagationTests.groupByPartitionInt(labels);
         assertNotNull(cluster);
 
         // It could happen that the labels for Charles, Doug, and Mark oscillate,
@@ -161,15 +229,19 @@ public final class LabelPropagation420Test {
         // to minimize the oscillations, but it cannot be guaranteed that
         // it will never happen. It's RNG after all: http://dilbert.com/strip/2001-10-25
         if (lp.didConverge()) {
-            assertTrue("expected at least 2 iterations, got " + lp.ranIterations(), 2 <= lp.ranIterations());
-            assertEquals(2, cluster.size());
+            assertTrue("expected at least 2 iterations, got " + lp.ranIterations(), 2L <= lp.ranIterations());
+            assertEquals(2L, (long) cluster.size());
             for (IntObjectCursor<IntArrayList> cursor : cluster) {
                 int[] ids = cursor.value.toArray();
                 Arrays.sort(ids);
-                if (cursor.key == 5) {
+                if (cursor.key == 0 || cursor.key == 1 || cursor.key == 5) {
                     assertArrayEquals(new int[]{0, 1, 5}, ids);
-                } else {
-                    assertArrayEquals(new int[]{2, 3, 4}, ids);
+                } else if (cursor.key == 2) {
+                    if (ids[0] == 0) {
+                        assertArrayEquals(new int[]{0, 1, 5}, ids);
+                    } else {
+                        assertArrayEquals(new int[]{2, 3, 4}, ids);
+                    }
                 }
             }
         } else {

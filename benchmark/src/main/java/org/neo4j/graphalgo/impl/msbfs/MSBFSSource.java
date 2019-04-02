@@ -21,6 +21,7 @@ package org.neo4j.graphalgo.impl.msbfs;
 import org.neo4j.graphalgo.api.HugeIdMapping;
 import org.neo4j.graphalgo.api.HugeRelationshipConsumer;
 import org.neo4j.graphalgo.api.HugeRelationshipIterator;
+import org.neo4j.graphalgo.api.HugeWeightedRelationshipConsumer;
 import org.neo4j.graphalgo.api.IdMapping;
 import org.neo4j.graphalgo.api.RelationshipConsumer;
 import org.neo4j.graphalgo.api.RelationshipIterator;
@@ -113,6 +114,14 @@ public enum MSBFSSource {
                     consumer.accept(nodeId, i);
                 }
             }
+        }
+
+        @Override
+        public void forEachRelationship(
+                long nodeId,
+                Direction direction,
+                HugeWeightedRelationshipConsumer consumer) {
+            forEachRelationship(nodeId, direction, (s, t) -> consumer.accept(s, t, Double.NaN));
         }
     }
 }

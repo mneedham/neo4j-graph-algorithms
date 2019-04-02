@@ -23,7 +23,7 @@ import org.neo4j.graphalgo.api.HugeGraph;
 import org.neo4j.graphalgo.core.heavyweight.HeavyCypherGraphFactory;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraph;
 import org.neo4j.graphalgo.core.heavyweight.HeavyGraphFactory;
-import org.neo4j.graphalgo.core.huge.HugeGraphFactory;
+import org.neo4j.graphalgo.core.huge.loader.HugeGraphFactory;
 import org.neo4j.graphalgo.core.lightweight.LightGraph;
 import org.neo4j.graphalgo.core.loading.LoadGraphFactory;
 import org.neo4j.graphalgo.core.neo4jview.GraphView;
@@ -290,9 +290,7 @@ public class ProcedureConfiguration {
     }
 
     /**
-     * return the Graph-Implementation Factory class
-     *
-     * @return
+     * @return the Graph-Implementation Factory class
      */
     public Class<? extends GraphFactory> getGraphImpl(String defaultGraphImpl) {
         final String graphImpl = getGraphName(defaultGraphImpl);
