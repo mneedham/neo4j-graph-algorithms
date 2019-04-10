@@ -36,7 +36,7 @@ public class WeightedInputTest {
         data.add(MapUtil.map("item", 1L,"weights", Arrays.asList(2.0, 3.0, 4.0)));
         data.add(MapUtil.map("item", 2L,"weights", Arrays.asList(2.0, 3.0, Double.NaN)));
 
-        WeightedInput[] weightedInputs = WeightedInput.preparseDenseWeights(data, 2L, Double.NaN);
+        WeightedInput[] weightedInputs = WeightedInput.prepareDenseWeights(data, 2L, Double.NaN);
 
         assertEquals(1, weightedInputs.length);
     }
@@ -47,7 +47,7 @@ public class WeightedInputTest {
         data.add(MapUtil.map("item", 1L,"weights", Arrays.asList(2.0, 3.0, 4.0)));
         data.add(MapUtil.map("item", 2L,"weights", Arrays.asList(2.0, 3.0, Double.NaN)));
 
-        WeightedInput[] weightedInputs = WeightedInput.preparseDenseWeights(data, 2L, null);
+        WeightedInput[] weightedInputs = WeightedInput.prepareDenseWeights(data, 2L, null);
 
         assertEquals(2, weightedInputs.length);
     }
@@ -58,7 +58,7 @@ public class WeightedInputTest {
         data.add(MapUtil.map("item", 1L,"weights", Arrays.asList(2.0, 3.0, 4.0)));
         data.add(MapUtil.map("item", 2L,"weights", Arrays.asList(2.0, 3.0, 5.0)));
 
-        WeightedInput[] weightedInputs = WeightedInput.preparseDenseWeights(data, 2L, 5.0);
+        WeightedInput[] weightedInputs = WeightedInput.prepareDenseWeights(data, 2L, 5.0);
 
         assertEquals(1, weightedInputs.length);
     }

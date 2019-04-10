@@ -156,7 +156,7 @@ public class SimilarityProc {
             return prepareSparseWeights(api, (String) rawData,  skipValue, configuration);
         } else {
             List<Map<String, Object>> data = (List<Map<String, Object>>) rawData;
-            return WeightedInput.preparseDenseWeights(data, getDegreeCutoff(configuration), skipValue);
+            return WeightedInput.prepareDenseWeights(data, getDegreeCutoff(configuration), skipValue);
         }
     }
 

@@ -66,7 +66,7 @@ class WeightedInput implements Comparable<WeightedInput>, SimilarityInput {
         return new WeightedInput(id, weights);
     }
 
-    static  WeightedInput[] preparseDenseWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
+    static  WeightedInput[] prepareDenseWeights(List<Map<String, Object>> data, long degreeCutoff, Double skipValue) {
         WeightedInput[] inputs = new WeightedInput[data.size()];
         int idx = 0;
 
